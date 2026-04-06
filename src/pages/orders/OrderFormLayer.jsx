@@ -27,7 +27,7 @@ function parseMeta(text) {
 
 function lineItems(meta) {
   if (!meta || typeof meta !== "object") return [];
-  const r = meta.items ?? meta.lineItems ?? meta.orderItems;
+  const r = meta.lines ?? meta.items ?? meta.lineItems ?? meta.orderItems;
   return Array.isArray(r) ? r : [];
 }
 
@@ -203,9 +203,9 @@ const OrderFormLayer = ({ isEdit = false, isView = false, orderId }) => {
                     {items.map((row, i) => (
                       <tr key={i}>
                         <td>{i + 1}</td>
-                        <td>{pick(row, ["name", "productName", "title"])}</td>
+                        <td>{pick(row, ["name", "productName", "title", "productId"])}</td>
                         <td>{pick(row, ["quantity", "qty"])}</td>
-                        <td>{formatInrAmount(row.total ?? row.price ?? row.unitPrice)}</td>
+                        <td>{formatInrAmount(row.lineTotal ?? row.total ?? row.price ?? row.unitPrice)}</td>
                       </tr>
                     ))}
                   </tbody>
