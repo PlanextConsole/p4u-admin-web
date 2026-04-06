@@ -115,14 +115,35 @@ const VendorListLayer = () => {
                         <td>{offset + index + 1}</td>
                         <td>
                           <div className="d-flex align-items-center">
-                            <img
-                              src={vendor.logoUrl || "https://via.placeholder.com/40"}
-                              alt=""
-                              className="w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden"
-                              onError={(e) => {
-                                e.target.src = "https://via.placeholder.com/40";
+                            {vendor.logoUrl ? (
+                              <img
+                                src={vendor.logoUrl}
+                                alt=""
+                                className="w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden"
+                                style={{ objectFit: "cover" }}
+                                onError={(e) => {
+                                  e.target.style.display = "none";
+                                  e.target.nextElementSibling.style.display = "flex";
+                                }}
+                              />
+                            ) : null}
+                            <span
+                              className="w-40-px h-40-px rounded-circle flex-shrink-0 me-12 fw-semibold text-white"
+                              style={{
+                                display: vendor.logoUrl ? "none" : "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "14px",
+                                background: `hsl(${((vendor.ownerName || "V").charCodeAt(0) * 37) % 360}, 55%, 50%)`,
                               }}
-                            />
+                            >
+                              {(vendor.ownerName || "V")
+                                .split(" ")
+                                .filter(Boolean)
+                                .map((w) => w[0].toUpperCase())
+                                .slice(0, 2)
+                                .join("")}
+                            </span>
                             <span className="text-md mb-0 fw-normal text-secondary-light">
                               {vendor.ownerName || "—"}
                             </span>

@@ -160,15 +160,26 @@ const CustomerList = () => {
                         </td>
                       </tr>
                     ) : (
-                      customers.map((c) => (
+                      customers.map((c) => {
+                        const custInitials = (c.fullName || "C")
+                          .split(" ")
+                          .filter(Boolean)
+                          .map((w) => w[0].toUpperCase())
+                          .slice(0, 2)
+                          .join("");
+                        return (
                         <tr key={c.id}>
                           <td>
                             <div className='d-flex align-items-center'>
-                              <img
-                                src='https://via.placeholder.com/40'
-                                alt=''
-                                className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
-                              />
+                              <span
+                                className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 fw-semibold text-white d-flex align-items-center justify-content-center'
+                                style={{
+                                  fontSize: "14px",
+                                  background: `hsl(${((c.fullName || "C").charCodeAt(0) * 37) % 360}, 55%, 50%)`,
+                                }}
+                              >
+                                {custInitials}
+                              </span>
                               <div className='flex-grow-1'>
                                 <h6 className='text-md mb-0 fw-medium'>{c.fullName || "—"}</h6>
                                 <span className='text-sm text-secondary-light fw-medium'>
@@ -183,7 +194,7 @@ const CustomerList = () => {
                             <span className={customerStatusClass(c.status)}>{c.status || "—"}</span>
                           </td>
                         </tr>
-                      ))
+                      );})
                     )}
                   </tbody>
                 </table>
@@ -229,14 +240,33 @@ const CustomerList = () => {
                         <tr key={v.id}>
                           <td>
                             <div className='d-flex align-items-center'>
-                              <img
-                                src={v.logoUrl || "https://via.placeholder.com/40"}
-                                alt=''
-                                className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
-                                onError={(e) => {
-                                  e.target.src = "https://via.placeholder.com/40";
+                              {v.logoUrl ? (
+                                <img
+                                  src={v.logoUrl}
+                                  alt=''
+                                  className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
+                                  style={{ objectFit: "cover" }}
+                                  onError={(e) => {
+                                    e.target.style.display = "none";
+                                    e.target.nextElementSibling.style.display = "flex";
+                                  }}
+                                />
+                              ) : null}
+                              <span
+                                className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 fw-semibold text-white d-flex align-items-center justify-content-center'
+                                style={{
+                                  display: v.logoUrl ? "none" : "flex",
+                                  fontSize: "14px",
+                                  background: `hsl(${((v.businessName || v.ownerName || "V").charCodeAt(0) * 37) % 360}, 55%, 50%)`,
                                 }}
-                              />
+                              >
+                                {(v.businessName || v.ownerName || "V")
+                                  .split(" ")
+                                  .filter(Boolean)
+                                  .map((w) => w[0].toUpperCase())
+                                  .slice(0, 2)
+                                  .join("")}
+                              </span>
                               <div className='flex-grow-1'>
                                 <h6 className='text-md mb-0 fw-medium'>{v.businessName || "—"}</h6>
                                 <span className='text-sm text-secondary-light fw-medium'>
