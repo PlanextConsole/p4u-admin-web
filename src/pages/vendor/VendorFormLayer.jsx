@@ -2,11 +2,66 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { createVendor, getVendor, listCategories, updateVendor } from "../../lib/api/adminApi";
+import {
+  createVendor,
+  getVendor,
+  listCategories,
+  listCatalogServices,
+  updateVendor,
+  uploadFile,
+} from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 
-const STATUS_OPTIONS = ["pending", "active", "suspended", "rejected"];
-const KYC_OPTIONS = ["not_started", "in_progress", "submitted", "verified", "rejected"];
+const STATUS_OPTIONS = ["not_verified", "pending", "active", "suspended", "rejected"];
+const GENDER_OPTIONS = ["Male", "Female", "Other"];
+const MEMBERSHIP_OPTIONS = ["basic", "silver", "gold", "platinum"];
+const TRENDING_OPTIONS = ["Yes", "No"];
+
+const emptyForm = () => ({
+  ownerName: "",
+  businessName: "",
+  age: "",
+  gender: "",
+  thumbnailUrl: "",
+  bannerUrl: "",
+  gst: "",
+  pan: "",
+  phone: "",
+  secondaryPhone: "",
+  email: "",
+  membershipStatus: "",
+  status: "not_verified",
+  experience: "",
+  trending: "No",
+  appliedReferralCode: "",
+  aboutBusiness: "",
+  // Address
+  addrBuildingNumber: "",
+  addrAreaLocality: "",
+  addrState: "",
+  addrCity: "",
+  addrLatitude: "",
+  addrLongitude: "",
+  addrPincode: "",
+  addrLandmark: "",
+  // Commission
+  commissionRate: "",
+  // Categories & Services
+  categorySlugs: [],
+  pickCategoryId: "",
+  serviceSlugs: [],
+  pickServiceId: "",
+  // Documents
+  gstCertUrl: "",
+  panCardUrl: "",
+  // Bank
+  bankName: "",
+  ifscCode: "",
+  accountHolderName: "",
+  accountNumber: "",
+  branch: "",
+  upiId: "",
+});
 
 function slugify(s) {
   return String(s)
@@ -22,18 +77,18 @@ function categoryKey(c) {
   return slugify(c.name || "");
 }
 
-function normalizeCategoriesFromJson(v) {
+function normalizeSlugsFromJson(v) {
   if (v == null) return [];
   if (Array.isArray(v)) {
     return v
-      .map((x) => (typeof x === "string" ? x.trim() : x?.slug || x?.name))
+      .map((x) => (typeof x === "string" ? x.trim() : x?.slug || x?.name || x?.id))
       .filter(Boolean);
   }
   if (typeof v === "string") {
     const t = v.trim();
     if (!t) return [];
     try {
-      return normalizeCategoriesFromJson(JSON.parse(t));
+      return normalizeSlugsFromJson(JSON.parse(t));
     } catch {
       return [t];
     }
@@ -43,66 +98,76 @@ function normalizeCategoriesFromJson(v) {
 
 function parseAddressJson(j) {
   const empty = {
-    addrLine1: "",
-    addrLine2: "",
-    addrCity: "",
+    addrBuildingNumber: "",
+    addrAreaLocality: "",
     addrState: "",
-    addrPostal: "",
-    addrCountry: "",
+    addrCity: "",
+    addrLatitude: "",
+    addrLongitude: "",
+    addrPincode: "",
+    addrLandmark: "",
   };
   if (j == null) return empty;
   let o = j;
   if (typeof j === "string") {
-    const t = j.trim();
-    if (!t) return empty;
-    try {
-      o = JSON.parse(t);
-    } catch {
-      return { ...empty, addrLine1: t };
-    }
+    try { o = JSON.parse(j); } catch { return empty; }
   }
   if (typeof o !== "object" || !o) return empty;
   return {
-    addrLine1: String(o.line1 ?? o.street ?? o.addressLine1 ?? "").trim(),
-    addrLine2: String(o.line2 ?? o.addressLine2 ?? "").trim(),
+    addrBuildingNumber: String(o.buildingNumber ?? "").trim(),
+    addrAreaLocality: String(o.areaLocality ?? "").trim(),
+    addrState: String(o.state ?? "").trim(),
     addrCity: String(o.city ?? "").trim(),
-    addrState: String(o.state ?? o.region ?? "").trim(),
-    addrPostal: String(o.postalCode ?? o.pincode ?? o.zip ?? "").trim(),
-    addrCountry: String(o.country ?? "").trim(),
+    addrLatitude: String(o.latitude ?? "").trim(),
+    addrLongitude: String(o.longitude ?? "").trim(),
+    addrPincode: String(o.pincode ?? "").trim(),
+    addrLandmark: String(o.landmark ?? "").trim(),
   };
 }
 
 function buildAddressJson(form) {
   const o = {
-    line1: form.addrLine1.trim(),
-    line2: form.addrLine2.trim(),
-    city: form.addrCity.trim(),
+    buildingNumber: form.addrBuildingNumber.trim(),
+    areaLocality: form.addrAreaLocality.trim(),
     state: form.addrState.trim(),
-    postalCode: form.addrPostal.trim(),
-    country: form.addrCountry.trim(),
+    city: form.addrCity.trim(),
+    latitude: form.addrLatitude.trim(),
+    longitude: form.addrLongitude.trim(),
+    pincode: form.addrPincode.trim(),
+    landmark: form.addrLandmark.trim(),
   };
   return Object.values(o).some(Boolean) ? o : null;
 }
 
-const emptyForm = () => ({
-  businessName: "",
-  ownerName: "",
-  email: "",
-  phone: "",
-  status: "pending",
-  kycStatus: "not_started",
-  categorySlugs: [],
-  newCategoryDraft: "",
-  pickCategoryId: "",
-  addrLine1: "",
-  addrLine2: "",
-  addrCity: "",
-  addrState: "",
-  addrPostal: "",
-  addrCountry: "",
-  notes: "",
-  keycloakUserId: "",
-});
+function parseBankJson(j) {
+  const empty = { bankName: "", ifscCode: "", accountHolderName: "", accountNumber: "", branch: "", upiId: "" };
+  if (j == null) return empty;
+  let o = j;
+  if (typeof j === "string") {
+    try { o = JSON.parse(j); } catch { return empty; }
+  }
+  if (typeof o !== "object" || !o) return empty;
+  return {
+    bankName: String(o.bankName ?? "").trim(),
+    ifscCode: String(o.ifscCode ?? "").trim(),
+    accountHolderName: String(o.accountHolderName ?? "").trim(),
+    accountNumber: String(o.accountNumber ?? "").trim(),
+    branch: String(o.branch ?? "").trim(),
+    upiId: String(o.upiId ?? "").trim(),
+  };
+}
+
+function buildBankJson(form) {
+  const o = {
+    bankName: form.bankName.trim(),
+    ifscCode: form.ifscCode.trim(),
+    accountHolderName: form.accountHolderName.trim(),
+    accountNumber: form.accountNumber.trim(),
+    branch: form.branch.trim(),
+    upiId: form.upiId.trim(),
+  };
+  return Object.values(o).some(Boolean) ? o : null;
+}
 
 /**
  * @param {{ isEdit?: boolean, isView?: boolean, vendorId?: string }} props
@@ -114,44 +179,67 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId }) => {
   const [loadError, setLoadError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [catalogCategories, setCatalogCategories] = useState([]);
+  const [catalogServices, setCatalogServices] = useState([]);
+  // Pending file objects (not yet uploaded)
+  const [pendingFiles, setPendingFiles] = useState({ thumbnailUrl: null, bannerUrl: null, gstCertUrl: null, panCardUrl: null });
 
   useEffect(() => {
     let cancelled = false;
-    listCategories({ purpose: "all" })
-      .then((res) => {
-        if (!cancelled) setCatalogCategories(Array.isArray(res?.items) ? res.items : []);
+    Promise.all([
+      listCategories({ purpose: "all" }),
+      listCatalogServices({ limit: 200, offset: 0 }),
+    ])
+      .then(([cRes, sRes]) => {
+        if (!cancelled) {
+          setCatalogCategories(Array.isArray(cRes?.items) ? cRes.items : []);
+          setCatalogServices(Array.isArray(sRes?.items) ? sRes.items : []);
+        }
       })
       .catch(() => {
-        if (!cancelled) setCatalogCategories([]);
+        if (!cancelled) {
+          setCatalogCategories([]);
+          setCatalogServices([]);
+        }
       });
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   const applyRow = useCallback((row) => {
     const addr = parseAddressJson(row.addressJson);
+    const bank = parseBankJson(row.bankJson);
+    const docs = row.documentsJson || {};
     setFormData({
-      businessName: row.businessName || "",
       ownerName: row.ownerName || "",
-      email: row.email || "",
+      businessName: row.businessName || "",
+      age: row.age != null ? String(row.age) : "",
+      gender: row.gender || "",
+      thumbnailUrl: row.thumbnailUrl || "",
+      bannerUrl: row.bannerUrl || "",
+      gst: row.gst || "",
+      pan: row.pan || "",
       phone: row.phone || "",
-      status: row.status || "pending",
-      kycStatus: row.kycStatus || "not_started",
-      categorySlugs: normalizeCategoriesFromJson(row.categoriesJson),
-      newCategoryDraft: "",
-      pickCategoryId: "",
+      secondaryPhone: row.secondaryPhone || "",
+      email: row.email || "",
+      membershipStatus: row.membershipStatus || "",
+      status: row.status || "not_verified",
+      experience: row.experience || "",
+      trending: row.trending ? "Yes" : "No",
+      appliedReferralCode: row.appliedReferralCode || "",
+      aboutBusiness: row.aboutBusiness || "",
       ...addr,
-      notes: row.notes || "",
-      keycloakUserId: row.keycloakUserId || "",
+      commissionRate: row.commissionRate != null ? String(row.commissionRate) : "",
+      categorySlugs: normalizeSlugsFromJson(row.categoriesJson),
+      pickCategoryId: "",
+      serviceSlugs: normalizeSlugsFromJson(row.servicesJson),
+      pickServiceId: "",
+      gstCertUrl: docs.gstCertificateUrl || "",
+      panCardUrl: docs.panCardUrl || "",
+      ...bank,
     });
   }, []);
 
   useEffect(() => {
-    if (!vendorId) {
-      setEntityLoading(false);
-      return;
-    }
+    if (!vendorId) { setEntityLoading(false); return; }
     let cancelled = false;
     (async () => {
       setEntityLoading(true);
@@ -169,9 +257,7 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId }) => {
         if (!cancelled) setEntityLoading(false);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [vendorId, applyRow]);
 
   const handleChange = (e) => {
@@ -180,63 +266,95 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId }) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const addSlug = (slug) => {
+  // Category helpers
+  const addCategorySlug = (slug) => {
     const s = String(slug || "").trim();
     if (!s) return;
     setFormData((prev) =>
       prev.categorySlugs.includes(s) ? prev : { ...prev, categorySlugs: [...prev.categorySlugs, s] },
     );
   };
-
-  const removeSlug = (slug) => {
-    setFormData((prev) => ({
-      ...prev,
-      categorySlugs: prev.categorySlugs.filter((x) => x !== slug),
-    }));
+  const removeCategorySlug = (slug) => {
+    setFormData((prev) => ({ ...prev, categorySlugs: prev.categorySlugs.filter((x) => x !== slug) }));
   };
-
   const addPickedCategory = () => {
     const id = formData.pickCategoryId;
     if (!id) return;
     const c = catalogCategories.find((x) => String(x.id) === String(id));
-    if (c) addSlug(categoryKey(c));
+    if (c) addCategorySlug(categoryKey(c));
     setFormData((prev) => ({ ...prev, pickCategoryId: "" }));
   };
 
-  const addNewCategoryFromInput = () => {
-    const raw = formData.newCategoryDraft.trim();
-    if (!raw) return;
-    addSlug(slugify(raw) || raw.replace(/\s+/g, "-").toLowerCase());
-    setFormData((prev) => ({ ...prev, newCategoryDraft: "" }));
+  // Service helpers
+  const addServiceSlug = (slug) => {
+    const s = String(slug || "").trim();
+    if (!s) return;
+    setFormData((prev) =>
+      prev.serviceSlugs.includes(s) ? prev : { ...prev, serviceSlugs: [...prev.serviceSlugs, s] },
+    );
   };
-
-  const buildPayload = () => {
-    const categoriesJson = formData.categorySlugs.length ? [...formData.categorySlugs] : null;
-    const addressJson = buildAddressJson(formData);
-    return {
-      businessName: formData.businessName.trim(),
-      ownerName: formData.ownerName.trim(),
-      email: formData.email.trim() ? formData.email.trim() : null,
-      phone: formData.phone.trim() ? formData.phone.trim() : null,
-      status: formData.status,
-      kycStatus: formData.kycStatus,
-      categoriesJson,
-      addressJson,
-      notes: formData.notes.trim() ? formData.notes.trim() : null,
-      keycloakUserId: formData.keycloakUserId.trim() ? formData.keycloakUserId.trim() : null,
-    };
+  const removeServiceSlug = (slug) => {
+    setFormData((prev) => ({ ...prev, serviceSlugs: prev.serviceSlugs.filter((x) => x !== slug) }));
+  };
+  const addPickedService = () => {
+    const id = formData.pickServiceId;
+    if (!id) return;
+    const s = catalogServices.find((x) => String(x.id) === String(id));
+    if (s) addServiceSlug(s.name || s.id);
+    setFormData((prev) => ({ ...prev, pickServiceId: "" }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isView) return;
-    const payload = buildPayload();
-    if (!payload.businessName || !payload.ownerName) {
-      toast.error("Business name and owner name are required.");
-      return;
-    }
     setSubmitting(true);
     try {
+      // Upload any pending files first
+      const uploaded = { ...formData };
+      const fileKeys = ["thumbnailUrl", "bannerUrl", "gstCertUrl", "panCardUrl"];
+      for (const key of fileKeys) {
+        if (pendingFiles[key]) {
+          const res = await uploadFile(pendingFiles[key]);
+          uploaded[key] = res.url;
+        }
+      }
+      // Update formData with uploaded URLs so buildPayload picks them up
+      setFormData(uploaded);
+
+      const categoriesJson = uploaded.categorySlugs?.length ? [...uploaded.categorySlugs] : null;
+      const servicesJson = uploaded.serviceSlugs?.length ? [...uploaded.serviceSlugs] : null;
+      const addressJson = buildAddressJson(uploaded);
+      const bankJson = buildBankJson(uploaded);
+      const documentsJson = {};
+      if (uploaded.gstCertUrl?.trim()) documentsJson.gstCertificateUrl = uploaded.gstCertUrl.trim();
+      if (uploaded.panCardUrl?.trim()) documentsJson.panCardUrl = uploaded.panCardUrl.trim();
+
+      const payload = {
+        ownerName: uploaded.ownerName?.trim() || null,
+        businessName: uploaded.businessName?.trim() || null,
+        age: uploaded.age ? Number(uploaded.age) : null,
+        gender: uploaded.gender || null,
+        thumbnailUrl: uploaded.thumbnailUrl?.trim() || null,
+        bannerUrl: uploaded.bannerUrl?.trim() || null,
+        gst: uploaded.gst?.trim() || null,
+        pan: uploaded.pan?.trim() || null,
+        phone: uploaded.phone?.trim() || null,
+        secondaryPhone: uploaded.secondaryPhone?.trim() || null,
+        email: uploaded.email?.trim() || null,
+        membershipStatus: uploaded.membershipStatus || null,
+        status: uploaded.status,
+        experience: uploaded.experience?.trim() || null,
+        trending: uploaded.trending === "Yes",
+        appliedReferralCode: uploaded.appliedReferralCode?.trim() || null,
+        aboutBusiness: uploaded.aboutBusiness?.trim() || null,
+        categoriesJson,
+        servicesJson,
+        addressJson,
+        commissionRate: uploaded.commissionRate ? uploaded.commissionRate : null,
+        documentsJson: Object.keys(documentsJson).length > 0 ? documentsJson : null,
+        bankJson,
+      };
+
       if (isEdit && vendorId) {
         await updateVendor(vendorId, payload);
         toast.success("Vendor updated.");
@@ -251,6 +369,11 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId }) => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleReset = () => {
+    setFormData(emptyForm());
+    setPendingFiles({ thumbnailUrl: null, bannerUrl: null, gstCertUrl: null, panCardUrl: null });
   };
 
   const disabled = isView || submitting || entityLoading;
@@ -273,275 +396,284 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId }) => {
           <p className="text-secondary-light mb-0">Loading vendor...</p>
         ) : (
           <form onSubmit={handleSubmit}>
+            {/* ── Basic Info ── */}
             <div className="row">
               <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">
-                  Business name <span className="text-danger-600">*</span>
-                </label>
-                <input
-                  type="text"
-                  className="form-control radius-8"
-                  name="businessName"
-                  value={formData.businessName}
-                  onChange={handleChange}
-                  required
-                  disabled={disabled}
-                  maxLength={255}
-                />
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Name</label>
+                <input type="text" className="form-control radius-8" name="ownerName" value={formData.ownerName} onChange={handleChange} disabled={disabled} maxLength={255} />
               </div>
               <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">
-                  Owner name <span className="text-danger-600">*</span>
-                </label>
-                <input
-                  type="text"
-                  className="form-control radius-8"
-                  name="ownerName"
-                  value={formData.ownerName}
-                  onChange={handleChange}
-                  required
-                  disabled={disabled}
-                  maxLength={255}
-                />
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Business Name</label>
+                <input type="text" className="form-control radius-8" name="businessName" value={formData.businessName} onChange={handleChange} disabled={disabled} maxLength={255} />
+              </div>
+
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Age</label>
+                <input type="number" className="form-control radius-8" name="age" value={formData.age} onChange={handleChange} disabled={disabled} min={0} />
               </div>
               <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Email</label>
-                <input
-                  type="email"
-                  className="form-control radius-8"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  disabled={disabled}
-                  maxLength={255}
-                />
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Phone</label>
-                <input
-                  type="text"
-                  className="form-control radius-8"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  disabled={disabled}
-                  maxLength={32}
-                />
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Status</label>
-                <select
-                  className="form-control radius-8 form-select"
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  disabled={disabled}
-                >
-                  {STATUS_OPTIONS.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">KYC status</label>
-                <select
-                  className="form-control radius-8 form-select"
-                  name="kycStatus"
-                  value={formData.kycStatus}
-                  onChange={handleChange}
-                  disabled={disabled}
-                >
-                  {KYC_OPTIONS.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Gender</label>
+                <select className="form-control radius-8 form-select" name="gender" value={formData.gender} onChange={handleChange} disabled={disabled}>
+                  <option value="">Select...</option>
+                  {GENDER_OPTIONS.map((g) => (<option key={g} value={g}>{g}</option>))}
                 </select>
               </div>
 
-              <div className="col-md-12 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Categories</label>
-                <p className="text-secondary-light text-xs mb-8">
-                  Add from catalog or type a new label — stored as a list for the vendor.
-                </p>
-                <div className="d-flex flex-wrap gap-2 align-items-start mb-12">
-                  <select
-                    className="form-control radius-8 form-select"
-                    style={{ maxWidth: 280 }}
-                    value={formData.pickCategoryId}
-                    onChange={(e) => setFormData((p) => ({ ...p, pickCategoryId: e.target.value }))}
-                    disabled={disabled}
-                  >
-                    <option value="">Select a category from catalog…</option>
-                    {catalogCategories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                        {c.slug ? ` (${c.slug})` : ""}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    className="btn btn-outline-primary btn-sm radius-8"
-                    disabled={disabled || !formData.pickCategoryId}
-                    onClick={addPickedCategory}
-                  >
-                    Add
-                  </button>
-                </div>
-                <div className="d-flex flex-wrap gap-2 align-items-center mb-12">
-                  <input
-                    type="text"
-                    className="form-control radius-8"
-                    style={{ maxWidth: 280 }}
-                    name="newCategoryDraft"
-                    placeholder="New category (e.g. Home Services)"
-                    value={formData.newCategoryDraft}
-                    onChange={handleChange}
-                    disabled={disabled}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        addNewCategoryFromInput();
-                      }
-                    }}
-                  />
-                  <button
-                    type="button"
-                    className="btn btn-outline-secondary btn-sm radius-8"
-                    disabled={disabled || !formData.newCategoryDraft.trim()}
-                    onClick={addNewCategoryFromInput}
-                  >
-                    Add custom
-                  </button>
-                </div>
-                {formData.categorySlugs.length > 0 ? (
-                  <div className="d-flex flex-wrap gap-2">
-                    {formData.categorySlugs.map((slug) => (
-                      <span
-                        key={slug}
-                        className="d-inline-flex align-items-center gap-1 px-12 py-4 radius-8 bg-neutral-200 text-sm"
-                      >
-                        {slug}
-                        {!disabled && (
-                          <button
-                            type="button"
-                            className="border-0 bg-transparent p-0 lh-1 text-danger-600"
-                            aria-label={`Remove ${slug}`}
-                            onClick={() => removeSlug(slug)}
-                          >
-                            ×
-                          </button>
-                        )}
-                      </span>
-                    ))}
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Thumbnail</label>
+                <input type="file" className="form-control radius-8" accept="image/*" disabled={disabled}
+                  onChange={(e) => { if (e.target.files?.[0]) setPendingFiles((p) => ({ ...p, thumbnailUrl: e.target.files[0] })); }}
+                />
+                {(pendingFiles.thumbnailUrl || formData.thumbnailUrl) && (
+                  <div className="mt-8">
+                    <img src={pendingFiles.thumbnailUrl ? URL.createObjectURL(pendingFiles.thumbnailUrl) : formData.thumbnailUrl} alt="Thumbnail" style={{ maxWidth: 120, maxHeight: 120, objectFit: "cover", borderRadius: 8 }} onError={(e) => { e.target.style.display = "none"; }} />
                   </div>
-                ) : (
-                  <span className="text-secondary-light text-sm">No categories yet.</span>
+                )}
+              </div>
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Banner</label>
+                <input type="file" className="form-control radius-8" accept="image/*" disabled={disabled}
+                  onChange={(e) => { if (e.target.files?.[0]) setPendingFiles((p) => ({ ...p, bannerUrl: e.target.files[0] })); }}
+                />
+                {(pendingFiles.bannerUrl || formData.bannerUrl) && (
+                  <div className="mt-8">
+                    <img src={pendingFiles.bannerUrl ? URL.createObjectURL(pendingFiles.bannerUrl) : formData.bannerUrl} alt="Banner" style={{ maxWidth: 200, maxHeight: 100, objectFit: "cover", borderRadius: 8 }} onError={(e) => { e.target.style.display = "none"; }} />
+                  </div>
                 )}
               </div>
 
-              <div className="col-md-12 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Address</label>
-                <div className="row g-2">
-                  <div className="col-12">
-                    <input
-                      type="text"
-                      className="form-control radius-8"
-                      name="addrLine1"
-                      placeholder="Address line 1"
-                      value={formData.addrLine1}
-                      onChange={handleChange}
-                      disabled={disabled}
-                    />
-                  </div>
-                  <div className="col-12">
-                    <input
-                      type="text"
-                      className="form-control radius-8"
-                      name="addrLine2"
-                      placeholder="Address line 2 (optional)"
-                      value={formData.addrLine2}
-                      onChange={handleChange}
-                      disabled={disabled}
-                    />
-                  </div>
-                  <div className="col-md-4">
-                    <input
-                      type="text"
-                      className="form-control radius-8"
-                      name="addrCity"
-                      placeholder="City"
-                      value={formData.addrCity}
-                      onChange={handleChange}
-                      disabled={disabled}
-                    />
-                  </div>
-                  <div className="col-md-4">
-                    <input
-                      type="text"
-                      className="form-control radius-8"
-                      name="addrState"
-                      placeholder="State"
-                      value={formData.addrState}
-                      onChange={handleChange}
-                      disabled={disabled}
-                    />
-                  </div>
-                  <div className="col-md-4">
-                    <input
-                      type="text"
-                      className="form-control radius-8"
-                      name="addrPostal"
-                      placeholder="PIN / ZIP"
-                      value={formData.addrPostal}
-                      onChange={handleChange}
-                      disabled={disabled}
-                    />
-                  </div>
-                  <div className="col-12">
-                    <input
-                      type="text"
-                      className="form-control radius-8"
-                      name="addrCountry"
-                      placeholder="Country"
-                      value={formData.addrCountry}
-                      onChange={handleChange}
-                      disabled={disabled}
-                    />
-                  </div>
-                </div>
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Goods and Services Tax (GST)</label>
+                <input type="text" className="form-control radius-8" name="gst" value={formData.gst} onChange={handleChange} disabled={disabled} maxLength={64} />
+              </div>
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Permanent Account Number (PAN)</label>
+                <input type="text" className="form-control radius-8" name="pan" value={formData.pan} onChange={handleChange} disabled={disabled} maxLength={64} />
+              </div>
+
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Mobile Number</label>
+                <input type="text" className="form-control radius-8" name="phone" value={formData.phone} onChange={handleChange} disabled={disabled} maxLength={32} />
+              </div>
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Secondary Phone Number</label>
+                <input type="text" className="form-control radius-8" name="secondaryPhone" value={formData.secondaryPhone} onChange={handleChange} disabled={disabled} maxLength={32} />
+              </div>
+
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Email</label>
+                <input type="email" className="form-control radius-8" name="email" value={formData.email} onChange={handleChange} disabled={disabled} maxLength={255} />
+              </div>
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Membership Status</label>
+                <select className="form-control radius-8 form-select" name="membershipStatus" value={formData.membershipStatus} onChange={handleChange} disabled={disabled}>
+                  <option value="">Select...</option>
+                  {MEMBERSHIP_OPTIONS.map((m) => (<option key={m} value={m}>{m}</option>))}
+                </select>
+              </div>
+
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Status</label>
+                <select className="form-control radius-8 form-select" name="status" value={formData.status} onChange={handleChange} disabled={disabled}>
+                  {STATUS_OPTIONS.map((s) => (<option key={s} value={s}>{s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}</option>))}
+                </select>
+              </div>
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Experience</label>
+                <input type="text" className="form-control radius-8" name="experience" value={formData.experience} onChange={handleChange} disabled={disabled} maxLength={255} />
+              </div>
+
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Trending</label>
+                <select className="form-control radius-8 form-select" name="trending" value={formData.trending} onChange={handleChange} disabled={disabled}>
+                  {TRENDING_OPTIONS.map((t) => (<option key={t} value={t}>{t}</option>))}
+                </select>
+              </div>
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Applied ReferralCode</label>
+                <input type="text" className="form-control radius-8" name="appliedReferralCode" value={formData.appliedReferralCode} onChange={handleChange} disabled={disabled} maxLength={64} />
               </div>
 
               <div className="col-md-12 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Notes</label>
-                <textarea
-                  className="form-control radius-8"
-                  name="notes"
-                  rows={3}
-                  value={formData.notes}
-                  onChange={handleChange}
-                  disabled={disabled}
-                />
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">About Business</label>
+                <textarea className="form-control radius-8" name="aboutBusiness" rows={4} value={formData.aboutBusiness} onChange={handleChange} disabled={disabled} />
               </div>
             </div>
 
+            {/* ── Service Provider Address Information ── */}
+            <h5 className="text-md fw-semibold mb-16 mt-8">Service Provider Address Information</h5>
+            <div className="row bg-neutral-50 radius-12 p-16 mb-20">
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Building Number</label>
+                <input type="text" className="form-control radius-8" name="addrBuildingNumber" value={formData.addrBuildingNumber} onChange={handleChange} disabled={disabled} />
+              </div>
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Area/Locality</label>
+                <input type="text" className="form-control radius-8" name="addrAreaLocality" value={formData.addrAreaLocality} onChange={handleChange} disabled={disabled} />
+              </div>
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">State</label>
+                <input type="text" className="form-control radius-8" name="addrState" value={formData.addrState} onChange={handleChange} disabled={disabled} />
+              </div>
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">City</label>
+                <input type="text" className="form-control radius-8" name="addrCity" value={formData.addrCity} onChange={handleChange} disabled={disabled} />
+              </div>
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Latitude</label>
+                <input type="text" className="form-control radius-8" name="addrLatitude" value={formData.addrLatitude} onChange={handleChange} disabled={disabled} />
+              </div>
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Longitude</label>
+                <input type="text" className="form-control radius-8" name="addrLongitude" value={formData.addrLongitude} onChange={handleChange} disabled={disabled} />
+              </div>
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Pincode</label>
+                <input type="text" className="form-control radius-8" name="addrPincode" value={formData.addrPincode} onChange={handleChange} disabled={disabled} />
+              </div>
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Landmark</label>
+                <input type="text" className="form-control radius-8" name="addrLandmark" value={formData.addrLandmark} onChange={handleChange} disabled={disabled} />
+              </div>
+            </div>
+
+            {/* ── Service Provider Commission Rate ── */}
+            <h5 className="text-md fw-semibold mb-16 mt-8">Service Provider Commission Rate</h5>
+            <div className="row bg-neutral-50 radius-12 p-16 mb-20">
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Commission Rate (%)</label>
+                <input type="number" className="form-control radius-8" name="commissionRate" value={formData.commissionRate} onChange={handleChange} disabled={disabled} min={0} step="0.01" />
+              </div>
+            </div>
+
+            {/* ── Service Provider Category/Service Information ── */}
+            <h5 className="text-md fw-semibold mb-16 mt-8">Service Provider Category/Service Information</h5>
+            <div className="row bg-neutral-50 radius-12 p-16 mb-20">
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Categories</label>
+                <div className="d-flex gap-2 mb-8">
+                  <select className="form-control radius-8 form-select" value={formData.pickCategoryId}
+                    onChange={(e) => setFormData((p) => ({ ...p, pickCategoryId: e.target.value }))} disabled={disabled}>
+                    <option value="">Select...</option>
+                    {catalogCategories.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
+                  </select>
+                  <button type="button" className="btn btn-outline-primary btn-sm radius-8" disabled={disabled || !formData.pickCategoryId} onClick={addPickedCategory}>Add</button>
+                </div>
+                {formData.categorySlugs.length > 0 && (
+                  <div className="d-flex flex-wrap gap-2">
+                    {formData.categorySlugs.map((slug) => (
+                      <span key={slug} className="d-inline-flex align-items-center gap-1 px-12 py-4 radius-8 bg-neutral-200 text-sm">
+                        {slug}
+                        {!disabled && (<button type="button" className="border-0 bg-transparent p-0 lh-1 text-danger-600" onClick={() => removeCategorySlug(slug)}>&times;</button>)}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Services</label>
+                <div className="d-flex gap-2 mb-8">
+                  <select className="form-control radius-8 form-select" value={formData.pickServiceId}
+                    onChange={(e) => setFormData((p) => ({ ...p, pickServiceId: e.target.value }))} disabled={disabled}>
+                    <option value="">Select a category first...</option>
+                    {catalogServices.map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}
+                  </select>
+                  <button type="button" className="btn btn-outline-primary btn-sm radius-8" disabled={disabled || !formData.pickServiceId} onClick={addPickedService}>Add</button>
+                </div>
+                {formData.serviceSlugs.length > 0 && (
+                  <div className="d-flex flex-wrap gap-2">
+                    {formData.serviceSlugs.map((slug) => (
+                      <span key={slug} className="d-inline-flex align-items-center gap-1 px-12 py-4 radius-8 bg-neutral-200 text-sm">
+                        {slug}
+                        {!disabled && (<button type="button" className="border-0 bg-transparent p-0 lh-1 text-danger-600" onClick={() => removeServiceSlug(slug)}>&times;</button>)}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ── Service Provider Business Documents ── */}
+            <h5 className="text-md fw-semibold mb-16 mt-8">Service Provider Business Documents</h5>
+            <div className="row bg-neutral-50 radius-12 p-16 mb-20">
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Goods and Services Tax (GST) Certificate</label>
+                <input type="file" className="form-control radius-8" accept="image/*,.pdf" disabled={disabled}
+                  onChange={(e) => { if (e.target.files?.[0]) setPendingFiles((p) => ({ ...p, gstCertUrl: e.target.files[0] })); }}
+                />
+                {(pendingFiles.gstCertUrl || formData.gstCertUrl) && (
+                  <div className="mt-8">
+                    {pendingFiles.gstCertUrl ? (
+                      <span className="text-success-600 text-sm d-flex align-items-center gap-1">
+                        <Icon icon="mdi:check-circle-outline" className="text-xl" /> {pendingFiles.gstCertUrl.name} (ready to upload)
+                      </span>
+                    ) : (
+                      <a href={formData.gstCertUrl} target="_blank" rel="noopener noreferrer" className="text-primary-600 text-sm d-flex align-items-center gap-1">
+                        <Icon icon="mdi:file-document-outline" className="text-xl" /> View GST Certificate
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Permanent Account Number (PAN) Card</label>
+                <input type="file" className="form-control radius-8" accept="image/*,.pdf" disabled={disabled}
+                  onChange={(e) => { if (e.target.files?.[0]) setPendingFiles((p) => ({ ...p, panCardUrl: e.target.files[0] })); }}
+                />
+                {(pendingFiles.panCardUrl || formData.panCardUrl) && (
+                  <div className="mt-8">
+                    {pendingFiles.panCardUrl ? (
+                      <span className="text-success-600 text-sm d-flex align-items-center gap-1">
+                        <Icon icon="mdi:check-circle-outline" className="text-xl" /> {pendingFiles.panCardUrl.name} (ready to upload)
+                      </span>
+                    ) : (
+                      <a href={formData.panCardUrl} target="_blank" rel="noopener noreferrer" className="text-primary-600 text-sm d-flex align-items-center gap-1">
+                        <Icon icon="mdi:file-document-outline" className="text-xl" /> View PAN Card
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ── Service Provider Bank Information ── */}
+            <h5 className="text-md fw-semibold mb-16 mt-8">Service Provider Bank Information</h5>
+            <div className="row bg-neutral-50 radius-12 p-16 mb-20">
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Bank Name</label>
+                <input type="text" className="form-control radius-8" name="bankName" value={formData.bankName} onChange={handleChange} disabled={disabled} />
+              </div>
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">IFSC Code</label>
+                <input type="text" className="form-control radius-8" name="ifscCode" value={formData.ifscCode} onChange={handleChange} disabled={disabled} />
+              </div>
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Account Holder Name</label>
+                <input type="text" className="form-control radius-8" name="accountHolderName" value={formData.accountHolderName} onChange={handleChange} disabled={disabled} />
+              </div>
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Account Number</label>
+                <input type="text" className="form-control radius-8" name="accountNumber" value={formData.accountNumber} onChange={handleChange} disabled={disabled} />
+              </div>
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Branch</label>
+                <input type="text" className="form-control radius-8" name="branch" value={formData.branch} onChange={handleChange} disabled={disabled} />
+              </div>
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">UPI ID</label>
+                <input type="text" className="form-control radius-8" name="upiId" value={formData.upiId} onChange={handleChange} disabled={disabled} />
+              </div>
+            </div>
+
+            {/* ── Action Buttons ── */}
             <div className="d-flex align-items-center justify-content-between mt-24">
-              <button
-                type="button"
-                onClick={() => navigate(-1)}
-                className="btn border border-danger-600 text-danger-600 bg-hover-danger-200 text-md px-56 py-12 radius-8 d-flex align-items-center gap-2"
-              >
-                <Icon icon="mdi:close-circle-outline" className="text-xl" /> {isView ? "Back" : "Cancel"}
+              <button type="button" onClick={isView ? () => navigate(-1) : handleReset}
+                className="btn border border-danger-600 text-danger-600 bg-hover-danger-200 text-md px-56 py-12 radius-8 d-flex align-items-center gap-2">
+                <Icon icon="mdi:close-circle-outline" className="text-xl" /> {isView ? "Back" : "Reset"}
               </button>
               {!isView && (
-                <button
-                  type="submit"
-                  disabled={disabled}
-                  className="btn btn-primary text-md px-56 py-12 radius-8 d-flex align-items-center gap-2"
-                >
+                <button type="submit" disabled={disabled}
+                  className="btn btn-primary text-md px-56 py-12 radius-8 d-flex align-items-center gap-2">
                   <Icon icon="lucide:save" className="text-xl" />{" "}
                   {submitting ? "Saving..." : isEdit ? "Update" : "Save"}
                 </button>

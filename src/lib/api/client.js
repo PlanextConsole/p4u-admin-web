@@ -48,7 +48,8 @@ async function refreshAccessToken() {
   }
 }
 
-async function ensureTokenFresh() {
+/** Refresh access token when near expiry (used by apiRequest and uploadFile). */
+export async function ensureTokenFresh() {
   const access = getAccessToken();
   const refresh = getRefreshToken();
   if (!access || !refresh) return;

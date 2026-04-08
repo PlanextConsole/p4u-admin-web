@@ -3,14 +3,58 @@ import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import ThemeToggleButton from "../helper/ThemeToggleButton";
+import { getAccessToken } from "../lib/api/tokenStorage";
 import logo from '../assets/image/logo.png' 
 import logodark from '../assets/image/logo-lg.jpg'
 import logolIight from '../assets/image/logo-light.png'
 
+/** e.g. "Admin User" → "AU", "admin" → "AD", "John Doe" → "JD" */
+function displayNameToInitials(name) {
+  const s = String(name || "").trim();
+  if (!s) return "?";
+  const parts = s.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    const a = parts[0][0] || "";
+    const b = parts[parts.length - 1][0] || "";
+    return (a + b).toUpperCase().slice(0, 2);
+  }
+  const w = parts[0] || s;
+  return w.slice(0, 2).toUpperCase();
+}
+
+function readProfileLabelFromToken() {
+  const t = getAccessToken();
+  if (!t || typeof t !== "string") return null;
+  try {
+    const part = t.split(".")[1];
+    if (!part) return null;
+    const json = JSON.parse(atob(part.replace(/-/g, "+").replace(/_/g, "/")));
+    const n = json.name || json.preferred_username || json.email;
+    if (typeof n !== "string" || !n.trim()) return null;
+    const base = n.includes("@") ? n.split("@")[0].trim() : n.trim();
+    return base.replace(/[._]+/g, " ").trim() || null;
+  } catch {
+    return null;
+  }
+}
+
 const MasterLayout = ({ children }) => {
   let [sidebarActive, seSidebarActive] = useState(false);
   let [mobileMenu, setMobileMenu] = useState(false);
-  const location = useLocation(); 
+  const [displayName, setDisplayName] = useState("Admin User");
+  const location = useLocation();
+
+  useEffect(() => {
+    const sync = () => {
+      const fromToken = readProfileLabelFromToken();
+      setDisplayName(fromToken || "Admin User");
+    };
+    sync();
+    window.addEventListener("p4u-admin-token-updated", sync);
+    return () => window.removeEventListener("p4u-admin-token-updated", sync);
+  }, []);
+
+  const profileInitials = displayNameToInitials(displayName);
 
   useEffect(() => {
     const handleDropdownClick = (event) => {
@@ -126,8 +170,9 @@ const MasterLayout = ({ children }) => {
                 <span>Vendor</span>
               </Link>
               <ul className='sidebar-submenu'>
-                <li><NavLink to='/vendor'>Vendor List</NavLink></li>
+                <li><NavLink to='/vendor'>List Vendor</NavLink></li>
                 <li><NavLink to='/add-vendor'>Add Vendor</NavLink></li>
+                <li><NavLink to='/vendor-enquiry'>Vendor Enquiry</NavLink></li>
               </ul>
             </li>
             <li className='dropdown'>
@@ -347,14 +392,26 @@ const MasterLayout = ({ children }) => {
                 <ThemeToggleButton />
                 {/* Language, Messages, Notifications, and Profile sections remain unchanged */}
                 <div className='dropdown'>
-                  <button className='d-flex justify-content-center align-items-center rounded-circle' type='button' data-bs-toggle='dropdown'>
-                    <img src='assets/images/user.png' alt='user' className='w-40-px h-40-px object-fit-cover rounded-circle' />
+                  <button
+                    className='d-flex justify-content-center align-items-center w-40-px h-40-px p-0 border-0 bg-primary-600 text-white fw-bold text-sm rounded-circle flex-shrink-0'
+                    type='button'
+                    data-bs-toggle='dropdown'
+                    aria-label={`Account menu (${displayName})`}
+                  >
+                    {profileInitials}
                   </button>
                   <div className='dropdown-menu to-top dropdown-menu-sm'>
                     <div className='py-12 px-16 radius-8 bg-primary-50 mb-16 d-flex align-items-center justify-content-between gap-2'>
-                      <div>
-                        <h6 className='text-lg text-primary-light fw-semibold mb-2'>Admin User</h6>
-                        <span className='text-secondary-light fw-medium text-sm'>Admin</span>
+                      <div className='d-flex align-items-center gap-12'>
+                        <span
+                          className='w-40-px h-40-px rounded-circle bg-primary-600 text-white fw-bold text-sm d-flex align-items-center justify-content-center flex-shrink-0'
+                          aria-hidden
+                        >
+                          {profileInitials}
+                        </span>
+                        <div>
+                          <h6 className='text-lg text-primary-light fw-semibold mb-0'>{displayName}</h6>
+                        </div>
                       </div>
                     </div>
                     <ul className='to-top-list'>

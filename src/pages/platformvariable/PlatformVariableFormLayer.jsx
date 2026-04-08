@@ -1,16 +1,65 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import { createPlatformVariable, updatePlatformVariable, listPlatformVariables } from "../../lib/api/adminApi";
+import { ApiError } from "../../lib/api/client";
 
-const PlatformVariableFormLayer = ({ isEdit = false, isView = false, initialData = null }) => {
-  const [formData, setFormData] = useState(
-    initialData || {
-      variableType: "",
-      currencyType: "",
-      valueType: "",
-      value: "",
-      description: "",
-    }
-  );
+const VARIABLE_TYPES = [
+  "PLATFORM_FEE", "VENDOR_PENALTY", "CUSTOMER_PENALTY", "WELCOME_BONUS",
+  "WELCOME_BONUS_AMOUNT", "WELCOME_BONUS_MIN_ORDER_VALUE", "REFERRAL_BONUS",
+  "VENDOR_REFERRAL_BONUS", "BONUS_PER_LIKES", "BONUS_PER_VIEWS", "BONUS_PER_SHARES",
+  "POINTS_PER_RUPPEE", "ADVERTISEMENT_PER_POSTS", "BRONZE_CUT", "SILVER_CUT",
+  "GOLD_CUT", "PLATINUM_CUT", "PLATINUM_CUT", "POINTS_VALIDITY",
+  "POINTS_VALIDITY_MESSAGE", "POINTS_UTILIZATION_COOLDOWN_TIMER",
+  "BRANDED_PRODUCT_PERCENTAGE_CUT", "ORDER_CANCELLATION_NOTE_CUSTOMER",
+  "VENDOR_APP_VERSION", "CUSTOMER_APP_VERSION",
+];
+const CURRENCY_TYPES = ["Ruppees", "Points", "None"];
+const VALUE_TYPES = ["FLAT", "PERCENTAGE", "TEXT"];
+
+const emptyForm = () => ({
+  variableType: "PLATFORM_FEE",
+  currencyType: "",
+  valueType: "FLAT",
+  value: "0",
+  description: "",
+});
+
+const PlatformVariableFormLayer = ({ isEdit = false, isView = false, variableId }) => {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState(emptyForm);
+  const [loading, setLoading] = useState(Boolean(variableId));
+  const [submitting, setSubmitting] = useState(false);
+  const [existingRow, setExistingRow] = useState(null);
+
+  useEffect(() => {
+    if (!variableId) { setLoading(false); return; }
+    let c = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const res = await listPlatformVariables({ limit: 200, offset: 0 });
+        const row = (res.items || []).find((r) => r.id === variableId);
+        if (!c && row) {
+          setExistingRow(row);
+          const v = typeof row.value === "object" && row.value !== null ? row.value : {};
+          setFormData({
+            variableType: row.key || "",
+            currencyType: v.currencyType || "",
+            valueType: v.valueType || "FLAT",
+            value: v.amount != null ? String(v.amount) : (v.text || ""),
+            description: v.description || "",
+          });
+        }
+      } catch (e) {
+        if (!c) toast.error(e instanceof ApiError ? e.message : String(e));
+      } finally {
+        if (!c) setLoading(false);
+      }
+    })();
+    return () => { c = true; };
+  }, [variableId]);
 
   const handleChange = (e) => {
     if (isView) return;
@@ -18,109 +67,95 @@ const PlatformVariableFormLayer = ({ isEdit = false, isView = false, initialData
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (isView) return;
-    console.log(isEdit ? "Updating Platform Variable:" : "Adding Platform Variable:", formData);
+    setSubmitting(true);
+    try {
+      const payload = {
+        key: formData.variableType,
+        value: {
+          currencyType: formData.currencyType || "None",
+          valueType: formData.valueType,
+          amount: formData.valueType !== "TEXT" ? Number(formData.value) || 0 : undefined,
+          text: formData.valueType === "TEXT" ? formData.value : undefined,
+          description: formData.description,
+        },
+        category: "platform",
+      };
+      if (isEdit && variableId) {
+        await updatePlatformVariable(variableId, payload);
+        toast.success("Variable updated.");
+      } else {
+        await createPlatformVariable(payload);
+        toast.success("Variable created.");
+      }
+      navigate("/platform-variables");
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : String(err));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
+  const handleReset = () => setFormData(emptyForm());
+  const disabled = isView || submitting || loading;
+
   return (
-    <div className='card h-100 p-0 radius-12'>
-      <div className='card-header border-bottom bg-base py-16 px-24'>
-        <h4 className='text-lg fw-semibold mb-0'>
-          {isView ? "View Platform Variable" : isEdit ? "Edit Platform Variable" : "Add Platform Variable"}
+    <div className="card h-100 p-0 radius-12">
+      <div className="card-header border-bottom bg-base py-16 px-24">
+        <h4 className="text-lg fw-semibold mb-0">
+          {isView ? "View Platform Variables" : isEdit ? "Edit Platform Variables" : "Add Platform Variables"}
         </h4>
       </div>
-      <div className='card-body p-24'>
-        <form onSubmit={handleSubmit}>
-          <div className='row'>
-            
-            {/* Variable Type */}
-            <div className='col-md-6 mb-20'>
-              <label className='form-label fw-semibold text-primary-light text-sm mb-8'>
-                Variable Type <span className='text-danger-600'>*</span>
-              </label>
-              <select className='form-control radius-8 form-select' name='variableType' value={formData.variableType} onChange={handleChange} required disabled={isView}>
-                <option value=''>Select...</option>
-                <option value='PLATFORM_FEE'>PLATFORM_FEE</option>
-                <option value='VENDOR_PENALTY'>VENDOR_PENALTY</option>
-                <option value='CUSTOMER_PENALTY'>CUSTOMER_PENALTY</option>
-                <option value='WELCOME_BONUS'>WELCOME_BONUS</option>
-                <option value='WELCOME_BONUS_AMOUNT'>WELCOME_BONUS_AMOUNT</option>
-                <option value='WELCOME_BONUS_MIN_ORDER_VALUE'>WELCOME_BONUS_MIN_ORDER_VALUE</option>
-                <option value='REFERRAL_BONUS'>REFERRAL_BONUS</option>
-                <option value='VENDOR_REFERRAL_BONUS'>VENDOR_REFERRAL_BONUS</option>
-                <option value='BONUS_PER_LIKES'>BONUS_PER_LIKES</option>
-                <option value='BONUS_PER_VIEWS'>BONUS_PER_VIEWS</option>
-                <option value='BONUS_PER_SHARES'>BONUS_PER_SHARES</option>
-                <option value='POINTS_PER_RUPPEE'>POINTS_PER_RUPPEE</option>
-                <option value='ADVERTISEMENT_PER_POSTS'>ADVERTISEMENT_PER_POSTS</option>
-                <option value='BRONZE_CUT'>BRONZE_CUT</option>
-                <option value='SILVER_CUT'>SILVER_CUT</option>
-                <option value='GOLD_CUT'>GOLD_CUT</option>
-                <option value='PLATINUM_CUT'>PLATINUM_CUT</option>
-                <option value='POINTS_VALIDITY'>POINTS_VALIDITY</option>
-              </select>
+      <div className="card-body p-24">
+        {loading ? <p className="text-secondary-light">Loading...</p> : (
+          <form onSubmit={handleSubmit}>
+            <div className="row">
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Variable Type</label>
+                <select className="form-control radius-8 form-select mb-8" value={VARIABLE_TYPES.includes(formData.variableType) ? formData.variableType : "__custom__"} onChange={(e) => { if (e.target.value !== "__custom__") setFormData((p) => ({ ...p, variableType: e.target.value })); else setFormData((p) => ({ ...p, variableType: "" })); }} disabled={disabled}>
+                  {VARIABLE_TYPES.map((v) => (<option key={v} value={v}>{v}</option>))}
+                  <option value="__custom__">-- Custom (type below) --</option>
+                </select>
+                {!VARIABLE_TYPES.includes(formData.variableType) && (
+                  <input type="text" className="form-control radius-8" name="variableType" value={formData.variableType} onChange={handleChange} disabled={disabled} placeholder="Enter custom variable type..." />
+                )}
+              </div>
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Currency Type</label>
+                <select className="form-control radius-8 form-select" name="currencyType" value={formData.currencyType} onChange={handleChange} disabled={disabled}>
+                  <option value="">Select...</option>
+                  {CURRENCY_TYPES.map((c) => (<option key={c} value={c}>{c}</option>))}
+                </select>
+              </div>
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Value Type</label>
+                <select className="form-control radius-8 form-select" name="valueType" value={formData.valueType} onChange={handleChange} disabled={disabled}>
+                  {VALUE_TYPES.map((v) => (<option key={v} value={v}>{v}</option>))}
+                </select>
+              </div>
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Value (&#8377;)</label>
+                <input type={formData.valueType === "TEXT" ? "text" : "number"} className="form-control radius-8" name="value" value={formData.value} onChange={handleChange} disabled={disabled} />
+              </div>
+              <div className="col-md-12 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Description</label>
+                <textarea className="form-control radius-8" name="description" rows={5} value={formData.description} onChange={handleChange} disabled={disabled} />
+              </div>
             </div>
-
-            {/* Currency Type */}
-            <div className='col-md-6 mb-20'>
-              <label className='form-label fw-semibold text-primary-light text-sm mb-8'>
-                Currency Type <span className='text-danger-600'>*</span>
-              </label>
-              <select className='form-control radius-8 form-select' name='currencyType' value={formData.currencyType} onChange={handleChange} required disabled={isView}>
-                <option value=''>Select...</option>
-                <option value='Ruppees'>Ruppees</option>
-                <option value='Points'>Points</option>
-                <option value='None'>None</option>
-              </select>
-            </div>
-
-            {/* Value Type */}
-            <div className='col-md-6 mb-20'>
-              <label className='form-label fw-semibold text-primary-light text-sm mb-8'>
-                Value Type <span className='text-danger-600'>*</span>
-              </label>
-              <select className='form-control radius-8 form-select' name='valueType' value={formData.valueType} onChange={handleChange} required disabled={isView}>
-                <option value=''>Select...</option>
-                <option value='FLAT'>FLAT</option>
-                <option value='PERCENTAGE'>PERCENTAGE</option>
-                <option value='TEXT'>TEXT</option>
-              </select>
-            </div>
-
-            {/* Value */}
-            <div className='col-md-6 mb-20'>
-              <label className='form-label fw-semibold text-primary-light text-sm mb-8'>
-                Value {formData.currencyType === 'Ruppees' ? '(₹)' : formData.currencyType === 'Points' ? '(Pts)' : ''} <span className='text-danger-600'>*</span>
-              </label>
-              <input type={formData.valueType === 'TEXT' ? 'text' : 'number'} className='form-control radius-8' name='value' value={formData.value} onChange={handleChange} required disabled={isView} placeholder="Enter value..." />
-            </div>
-
-            {/* Description */}
-            <div className='col-md-12 mb-20'>
-              <label className='form-label fw-semibold text-primary-light text-sm mb-8'>
-                Description <span className='text-danger-600'>*</span>
-              </label>
-              <textarea className='form-control radius-8' name='description' rows="3" value={formData.description} onChange={handleChange} required disabled={isView} placeholder="Explain the purpose of this variable..."></textarea>
-            </div>
-
-          </div>
-
-          {/* Action Buttons */}
-          <div className='d-flex align-items-center justify-content-between mt-24'>
-            <button type='button' onClick={() => window.history.back()} className='btn border border-danger-600 text-danger-600 bg-hover-danger-200 text-md px-56 py-12 radius-8 d-flex align-items-center gap-2'>
-              <Icon icon='mdi:close-circle-outline' className='text-xl' /> {isView ? "Back" : "Cancel"}
-            </button>
-            
-            {!isView && (
-              <button type='submit' className='btn btn-primary text-md px-56 py-12 radius-8 d-flex align-items-center gap-2'>
-                <Icon icon='lucide:save' className='text-xl' /> {isEdit ? "Update Variable" : "Save Variable"}
+            <div className="d-flex align-items-center justify-content-between mt-24">
+              <button type="button" onClick={isView ? () => navigate(-1) : handleReset} className="btn border border-danger-600 text-danger-600 bg-hover-danger-200 text-md px-56 py-12 radius-8">
+                {isView ? "Back" : "Reset"}
               </button>
-            )}
-          </div>
-
-        </form>
+              {!isView && (
+                <button type="submit" disabled={disabled} className="btn btn-primary text-md px-56 py-12 radius-8">
+                  {submitting ? "Saving..." : isEdit ? "Update" : "Save"}
+                </button>
+              )}
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

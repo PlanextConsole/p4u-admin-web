@@ -106,6 +106,7 @@ import Vendorpage from './pages/vendor/VendorPage'
 import AddVendor from './pages/vendor/AddVendor'
 import EditVendorPage from './pages/vendor/EditVendorPage';
 import ViewVendorPage from './pages/vendor/ViewVendorPage';
+import VendorEnquiryPage from './pages/vendor/VendorEnquiryPage';
 
 
 // PRODUCT (New Imports)
@@ -131,6 +132,11 @@ import CustomerListPage from './pages/customer/CustomerListPage';
 import AddCustomer from './pages/customer/AddCustomer';
 import EditCustomerPage from './pages/customer/EditCustomerPage';
 import ViewCustomerPage from './pages/customer/ViewCustomerPage';
+
+import PlatformVariablesListPage from './pages/platformvariable/PlatformVariablesListPage';
+import AddPlatformVariablePage from './pages/platformvariable/AddPlatformVariablePage';
+import EditPlatformVariablePage from './pages/platformvariable/EditPlatformVariablePage';
+import ViewPlatformVariablePage from './pages/platformvariable/ViewPlatformVariablePage';
 
 import CouponListPage from './pages/coupon/CouponListPage';
 import AddCoupon from './pages/coupon/AddCoupon';
@@ -172,6 +178,7 @@ function App() {
         <Route exact path='/add-vendor' element={<AddVendor />} />
         <Route exact path='/edit-vendor/:id' element={<EditVendorPage />} />
         <Route exact path='/view-vendor/:id' element={<ViewVendorPage />} />
+        <Route exact path='/vendor-enquiry' element={<VendorEnquiryPage />} />
 
 
 
@@ -201,7 +208,11 @@ function App() {
 <Route exact path='/view-customer/:id' element={<ViewCustomerPage />} />
 
 {/* COUPONS */}
-<Route exact path='/coupons' element={<CouponListPage />} />
+<Route exact path='/platform-variables' element={<PlatformVariablesListPage />} />
+        <Route exact path='/add-platform-variable' element={<AddPlatformVariablePage />} />
+        <Route exact path='/edit-platform-variable/:id' element={<EditPlatformVariablePage />} />
+        <Route exact path='/view-platform-variable/:id' element={<ViewPlatformVariablePage />} />
+        <Route exact path='/coupons' element={<CouponListPage />} />
 <Route exact path='/add-coupon' element={<AddCoupon />} />
 <Route exact path='/edit-coupon/:id' element={<EditCouponPage />} />
 <Route exact path='/view-coupon/:id' element={<ViewCouponPage />} />

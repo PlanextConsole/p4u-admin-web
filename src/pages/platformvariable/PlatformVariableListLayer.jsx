@@ -1,139 +1,139 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link } from "react-router-dom";
-
-const initialVariables = [
-  {
-    id: 1,
-    variableType: "PLATFORM_FEE",
-    currencyType: "Ruppees",
-    valueType: "FLAT",
-    value: "10",
-    description: "Standard platform fee applied per order.",
-  },
-  {
-    id: 2,
-    variableType: "WELCOME_BONUS",
-    currencyType: "Points",
-    valueType: "FLAT",
-    value: "500",
-    description: "Bonus points credited on new user registration.",
-  },
-  {
-    id: 3,
-    variableType: "VENDOR_PENALTY",
-    currencyType: "None",
-    valueType: "PERCENTAGE",
-    value: "5",
-    description: "Penalty deducted for delayed orders.",
-  }
-];
+import { listPlatformVariables, deletePlatformVariable } from "../../lib/api/adminApi";
+import { ApiError } from "../../lib/api/client";
 
 const PlatformVariableListLayer = () => {
-  const [variables, setVariables] = useState(initialVariables);
+  const [variables, setVariables] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [limit] = useState(50);
+  const [offset, setOffset] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
 
-  const handleDelete = (id) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this platform variable?");
-    if (confirmDelete) {
-      setVariables(variables.filter((v) => v.id !== id));
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await listPlatformVariables({ limit, offset });
+      setVariables(res.items || []);
+      setTotal(typeof res.total === "number" ? res.total : 0);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  }, [limit, offset]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this variable?")) return;
+    try {
+      await deletePlatformVariable(id);
+      await load();
+    } catch (e) {
+      window.alert(e instanceof ApiError ? e.message : String(e));
     }
   };
 
+  const filtered = search.trim()
+    ? variables.filter((v) => (v.key || "").toLowerCase().includes(search.toLowerCase()))
+    : variables;
+
+  const getVal = (row) => {
+    const v = row.value;
+    if (v == null) return { amount: "", valueType: "", currencyType: "", description: "" };
+    if (typeof v === "object") return { amount: v.amount ?? v.text ?? "", valueType: v.valueType || "", currencyType: v.currencyType || "None", description: v.description || "" };
+    return { amount: String(v), valueType: "", currencyType: "", description: "" };
+  };
+
+  const formatDate = (d) => {
+    if (!d) return "—";
+    const dt = new Date(d);
+    if (isNaN(dt)) return "—";
+    return dt.toISOString().replace("T", " ").substring(0, 19);
+  };
+
+  const canPrev = offset > 0;
+  const canNext = offset + limit < total;
+  const page = Math.floor(offset / limit) + 1;
+  const totalPages = Math.ceil(total / limit) || 1;
+
   return (
-    <div className='card h-100 p-0 radius-12'>
-      <div className='card-header border-bottom bg-base py-16 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between'>
-        <div className='d-flex align-items-center flex-wrap gap-3'>
-          <span className='text-md fw-medium text-secondary-light mb-0'>Show</span>
-          <select className='form-select form-select-sm w-auto ps-12 py-6 radius-12 h-40-px' defaultValue='10'>
-            <option value='10'>10</option>
-            <option value='20'>20</option>
-          </select>
-          <form className='navbar-search'>
-            <input type='text' className='bg-base h-40-px w-auto' name='search' placeholder='Search Variable...' />
-            <Icon icon='ion:search-outline' className='icon' />
-          </form>
-        </div>
-        <Link to='/add-platform-variable' className='btn btn-primary text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2'>
-          <Icon icon='ic:baseline-plus' className='icon text-xl line-height-1' />
-          Add Variable
+    <div className="card h-100 p-0 radius-12">
+      <div className="card-header border-bottom bg-base py-16 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between">
+        <Link to="/add-platform-variable" className="btn btn-primary text-sm btn-sm px-12 py-8 radius-8 d-flex align-items-center gap-2">
+          <Icon icon="ic:baseline-plus" className="icon text-xl line-height-1" /> Add Variable
         </Link>
+        <input type="text" className="form-control radius-8" style={{ maxWidth: 300 }} placeholder="Search Platform Variables" value={search} onChange={(e) => setSearch(e.target.value)} />
       </div>
-      <div className='card-body p-24'>
-        <div className='table-responsive scroll-sm'>
-          <table className='table bordered-table sm-table mb-0 text-nowrap'>
-            <thead>
-              <tr>
-                <th scope='col'>S.No</th>
-                <th scope='col'>Variable Type</th>
-                <th scope='col'>Currency Type</th>
-                <th scope='col'>Value Type</th>
-                <th scope='col'>Value</th>
-                <th scope='col'>Description</th>
-                <th scope='col' className='text-center'>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {variables.length > 0 ? (
-                variables.map((item, index) => (
-                  <tr key={item.id}>
-                    <td>{index + 1}</td>
-                    <td><span className='fw-semibold text-primary-light'>{item.variableType}</span></td>
-                    <td>{item.currencyType}</td>
-                    <td>
-                      <span className={`px-12 py-4 radius-4 fw-medium text-sm ${item.valueType === 'PERCENTAGE' ? 'bg-purple-focus text-purple-600' : item.valueType === 'FLAT' ? 'bg-info-focus text-info-600' : 'bg-neutral-200 text-neutral-600'}`}>
-                        {item.valueType}
-                      </span>
-                    </td>
-                    <td className="fw-bold">
-                      {item.currencyType === 'Ruppees' && '₹'}
-                      {item.value}
-                      {item.valueType === 'PERCENTAGE' && '%'}
-                      {item.currencyType === 'Points' && ' Pts'}
-                    </td>
-                    <td><span className="text-secondary-light text-truncate d-inline-block" style={{ maxWidth: '200px' }}>{item.description}</span></td>
-                    <td className='text-center'>
-                      <div className='d-flex align-items-center gap-10 justify-content-center'>
-                        <Link to={`/view-platform-variable/${item.id}`} className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle' title="View">
-                          <Icon icon='majesticons:eye-line' className='icon text-xl' />
-                        </Link>
-                        <Link to={`/edit-platform-variable/${item.id}`} className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle' title="Edit">
-                          <Icon icon='lucide:edit' className='menu-icon' />
-                        </Link>
-                        <button type='button' onClick={() => handleDelete(item.id)} className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle' title="Delete">
-                          <Icon icon='fluent:delete-24-regular' className='menu-icon' />
-                        </button>
-                      </div>
-                    </td>
+      <div className="card-body p-24">
+        {error && <div className="alert alert-danger radius-12 mb-16" role="alert">{error}</div>}
+        {loading ? (
+          <p className="text-secondary-light mb-0">Loading platform variables...</p>
+        ) : (
+          <>
+            <div className="table-responsive scroll-sm">
+              <table className="table bordered-table sm-table mb-0">
+                <thead>
+                  <tr>
+                    <th><input type="checkbox" disabled /></th>
+                    <th>S.No</th>
+                    <th>Variable Type</th>
+                    <th>Value</th>
+                    <th>Value Type</th>
+                    <th>Currency Type</th>
+                    <th>CreatedAt</th>
+                    <th className="text-center">Action</th>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="7" className="text-center py-4">No platform variables found.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        
-        {/* Pagination Details */}
-        <div className='d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24'>
-          <span>Showing 1 to {variables.length} of {variables.length} entries</span>
-          <ul className='pagination d-flex flex-wrap align-items-center gap-2 justify-content-center'>
-            <li className='page-item'>
-              <Link className='page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px text-md' to='#'>
-                <Icon icon='ep:d-arrow-left' />
-              </Link>
-            </li>
-            <li className='page-item'>
-              <Link className='page-link text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px text-md bg-primary-600 text-white' to='#'>1</Link>
-            </li>
-            <li className='page-item'>
-              <Link className='page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px text-md' to='#'>
-                <Icon icon='ep:d-arrow-right' />
-              </Link>
-            </li>
-          </ul>
-        </div>
+                </thead>
+                <tbody>
+                  {filtered.length > 0 ? (
+                    filtered.map((row, index) => {
+                      const v = getVal(row);
+                      return (
+                        <tr key={row.id}>
+                          <td><input type="checkbox" /></td>
+                          <td>{offset + index + 1}</td>
+                          <td className="fw-medium">{row.key || "—"}</td>
+                          <td>{v.amount}</td>
+                          <td>{v.valueType || "—"}</td>
+                          <td>{v.currencyType || "None"}</td>
+                          <td>{formatDate(row.createdAt)}</td>
+                          <td className="text-center">
+                            <div className="d-flex align-items-center gap-10 justify-content-center">
+                              <Link to={`/view-platform-variable/${row.id}`} className="text-info-600" title="View">
+                                <Icon icon="mdi:information-outline" className="text-xl" />
+                              </Link>
+                              <Link to={`/edit-platform-variable/${row.id}`} className="text-success-600" title="Edit">
+                                <Icon icon="lucide:edit" className="text-xl" />
+                              </Link>
+                              <button type="button" onClick={() => handleDelete(row.id)} className="border-0 bg-transparent text-danger-600 p-0" title="Delete">
+                                <Icon icon="fluent:delete-24-regular" className="text-xl" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr><td colSpan="8" className="text-center py-4">No platform variables found.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24">
+              <span>{page} of {totalPages}</span>
+              <div className="d-flex gap-2">
+                <button type="button" className="btn btn-sm btn-outline-secondary radius-8" disabled={!canPrev} onClick={() => setOffset(Math.max(0, offset - limit))}>Prev</button>
+                <button type="button" className="btn btn-sm btn-primary radius-8" disabled={!canNext} onClick={() => setOffset(offset + limit)}>Next</button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

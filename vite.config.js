@@ -9,6 +9,14 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       proxy: {
+        '/api/admin/upload': {
+          target: env.VITE_ADMIN_SERVICE_URL || 'http://localhost:8082',
+          changeOrigin: true,
+        },
+        '/uploads': {
+          target: env.VITE_ADMIN_SERVICE_URL || 'http://localhost:8082',
+          changeOrigin: true,
+        },
         '/api': {
           target: proxyTarget,
           changeOrigin: true,

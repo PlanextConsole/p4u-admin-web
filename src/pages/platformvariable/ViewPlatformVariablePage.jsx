@@ -1,21 +1,15 @@
 import React from "react";
+import { useParams } from "react-router-dom";
 import MasterLayout from "../../masterLayout/MasterLayout";
 import Breadcrumb from "../../components/Breadcrumb";
 import PlatformVariableFormLayer from "./PlatformVariableFormLayer";
 
 const ViewPlatformVariablePage = () => {
-  const dummyVariableData = {
-    variableType: "PLATFORM_FEE",
-    currencyType: "Ruppees",
-    valueType: "FLAT",
-    value: "10",
-    description: "Standard platform fee applied per order.",
-  };
-
+  const { id } = useParams();
   return (
     <MasterLayout>
       <Breadcrumb title='View Platform Variable' pagetitle='Platform Settings' />
-      <PlatformVariableFormLayer isView={true} initialData={dummyVariableData} />
+      <PlatformVariableFormLayer isView={true} variableId={id} />
     </MasterLayout>
   );
 };
