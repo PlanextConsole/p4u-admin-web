@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 
-const CFServiceFormLayer = ({ isEdit = false, isView = false, initialData = null }) => {
+const CFServiceFormLayer = ({ isEdit = false, isView = false, initialData = null, onSuccess, onCancel }) => {
   const [formData, setFormData] = useState(
     initialData || {
       name: "",
@@ -30,6 +30,7 @@ const CFServiceFormLayer = ({ isEdit = false, isView = false, initialData = null
     e.preventDefault();
     if (isView) return;
     console.log(isEdit ? "Updating CF Service:" : "Adding CF Service:", formData);
+    if (onSuccess) onSuccess();
   };
 
   const categoryOptions = [
@@ -151,7 +152,7 @@ const CFServiceFormLayer = ({ isEdit = false, isView = false, initialData = null
           <div className='d-flex align-items-center justify-content-between mt-24'>
             <button 
               type='button' 
-              onClick={() => window.history.back()} 
+              onClick={() => (onCancel ? onCancel() : window.history.back())}
               className='btn border border-danger-600 text-danger-600 bg-hover-danger-200 text-md px-56 py-12 radius-8 d-flex align-items-center gap-2'
             >
               <Icon icon='mdi:close-circle-outline' className='text-xl' /> {isView ? "Back" : "Cancel"}

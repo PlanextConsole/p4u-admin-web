@@ -103,50 +103,26 @@ import BlankPagePage from "./pages/BlankPagePage";
 //  VENDOR
 
 import Vendorpage from './pages/vendor/VendorPage'
-import AddVendor from './pages/vendor/AddVendor'
-import EditVendorPage from './pages/vendor/EditVendorPage';
-import ViewVendorPage from './pages/vendor/ViewVendorPage';
 import VendorEnquiryPage from './pages/vendor/VendorEnquiryPage';
 
 
-// PRODUCT (New Imports)
+// PRODUCT
 import ProductListPage from './pages/product/ProductListPage';
-import AddProduct from './pages/product/AddProduct';
-import EditProductPage from './pages/product/EditProductPage';
-import ViewProductPage from './pages/product/ViewProductPage';
 
-// CATEGORY IMPORTS
+// CATEGORY
 import CategoryListPage from './pages/category/CategoryListPage';
-import AddCategory from './pages/category/AddCategory';
-import EditCategoryPage from './pages/category/EditCategoryPage';
-import ViewCategoryPage from './pages/category/ViewCategoryPage';
 
-// SERVICE IMPORTS
+// SERVICE
 import ServiceListPage from './pages/service/ServiceListPage';
-import AddService from './pages/service/AddService';
-import EditServicePage from './pages/service/EditServicePage';
-import ViewServicePage from './pages/service/ViewServicePage';
 
-// CUSTOMER IMPORTS
+// CUSTOMER
 import CustomerListPage from './pages/customer/CustomerListPage';
-import AddCustomer from './pages/customer/AddCustomer';
-import EditCustomerPage from './pages/customer/EditCustomerPage';
-import ViewCustomerPage from './pages/customer/ViewCustomerPage';
 
 import PlatformVariablesListPage from './pages/platformvariable/PlatformVariablesListPage';
-import AddPlatformVariablePage from './pages/platformvariable/AddPlatformVariablePage';
-import EditPlatformVariablePage from './pages/platformvariable/EditPlatformVariablePage';
-import ViewPlatformVariablePage from './pages/platformvariable/ViewPlatformVariablePage';
 
 import CouponListPage from './pages/coupon/CouponListPage';
-import AddCoupon from './pages/coupon/AddCoupon';
-import EditCouponPage from './pages/coupon/EditCouponPage';
-import ViewCouponPage from './pages/coupon/ViewCouponPage';
 
 import OccupationListPage from './pages/occupation/OccupationListPage';
-import AddOccupation from './pages/occupation/AddOccupation';
-import EditOccupationPage from './pages/occupation/EditOccupationPage';
-import ViewOccupationPage from './pages/occupation/ViewOccupationPage';
 
 // POINTS
 
@@ -158,8 +134,20 @@ import Login from './pages/auth/Login';
 
 // ORDER IMPORTS
 import OrderListPage from './pages/orders/OrderListPage';
-import EditOrderPage from './pages/orders/EditOrderPage';
-import ViewOrderPage from './pages/orders/ViewOrderPage';
+
+// CF MODULES
+import CFVendorsListPage from './pages/cf-vendor/CFVendorsListPage';
+import CFCategoriesListPage from './pages/cf-category/CFCategoriesListPage';
+import CFProductsListPage from './pages/cf-product/CFProductsListPage';
+import CFServicesListPage from './pages/cf-service/CFServicesListPage';
+import CFCityListPage from './pages/cf-city/CFCityListPage';
+
+// SETTLEMENTS / TAX / MARKETING
+import SettlementsPage from './pages/settlement/SettlementsPage';
+import TaxListPage from './pages/tax/TaxListPage';
+import BannerListPage from './pages/banner/BannerListPage';
+import PopupBannersListPage from './pages/popupbanner/PopupBannersListPage';
+import AdvertisementsListPage from './pages/advertisement/AdvertisementsListPage';
 
 
 
@@ -173,55 +161,32 @@ function App() {
 
   <Route element={<ProtectedRouteLayout />}>
   <Route exact path='/dashboard' element={<Dashboard />} /> 
-        {/* VENDOR */} 
+        {/* VENDOR */}
         <Route exact path='/vendor' element={<Vendorpage />} />
-        <Route exact path='/add-vendor' element={<AddVendor />} />
-        <Route exact path='/edit-vendor/:id' element={<EditVendorPage />} />
-        <Route exact path='/view-vendor/:id' element={<ViewVendorPage />} />
         <Route exact path='/vendor-enquiry' element={<VendorEnquiryPage />} />
 
 
 
         {/* PRODUCT */}
         <Route exact path='/product' element={<ProductListPage />} />
-        <Route exact path='/add-product' element={<AddProduct />} />
-        <Route exact path='/edit-product/:id' element={<EditProductPage />} />
-        <Route exact path='/view-product/:id' element={<ViewProductPage />} />
-
 
 {/* CATEGORY */}
 <Route exact path='/category' element={<CategoryListPage />} />
-<Route exact path='/add-category' element={<AddCategory />} />
-<Route exact path='/edit-category/:id' element={<EditCategoryPage />} />
-<Route exact path='/view-category/:id' element={<ViewCategoryPage />} />
 
 {/* SERVICE */}
 <Route exact path='/service' element={<ServiceListPage />} />
-<Route exact path='/add-service' element={<AddService />} />
-<Route exact path='/edit-service/:id' element={<EditServicePage />} />
-<Route exact path='/view-service/:id' element={<ViewServicePage />} />
 
 {/* CUSTOMER */}
 <Route exact path='/customer' element={<CustomerListPage />} />
-<Route exact path='/add-customer' element={<AddCustomer />} />
-<Route exact path='/edit-customer/:id' element={<EditCustomerPage />} />
-<Route exact path='/view-customer/:id' element={<ViewCustomerPage />} />
+
+{/* PLATFORM VARIABLES */}
+<Route exact path='/platform-variables' element={<PlatformVariablesListPage />} />
 
 {/* COUPONS */}
-<Route exact path='/platform-variables' element={<PlatformVariablesListPage />} />
-        <Route exact path='/add-platform-variable' element={<AddPlatformVariablePage />} />
-        <Route exact path='/edit-platform-variable/:id' element={<EditPlatformVariablePage />} />
-        <Route exact path='/view-platform-variable/:id' element={<ViewPlatformVariablePage />} />
-        <Route exact path='/coupons' element={<CouponListPage />} />
-<Route exact path='/add-coupon' element={<AddCoupon />} />
-<Route exact path='/edit-coupon/:id' element={<EditCouponPage />} />
-<Route exact path='/view-coupon/:id' element={<ViewCouponPage />} />
+<Route exact path='/coupons' element={<CouponListPage />} />
 
 {/* OCCUPATIONS */}
 <Route exact path='/occupations' element={<OccupationListPage />} />
-<Route exact path='/add-occupation' element={<AddOccupation />} />
-<Route exact path='/edit-occupation/:id' element={<EditOccupationPage />} />
-<Route exact path='/view-occupation/:id' element={<ViewOccupationPage />} />
 
 {/* POINTS */}
 <Route exact path='/points' element={<PointsListPage />} />
@@ -230,8 +195,24 @@ function App() {
 
 {/* ORDERS */}
 <Route exact path='/orders' element={<OrderListPage />} />
-<Route exact path='/edit-order/:id' element={<EditOrderPage />} />
-<Route exact path='/view-order/:id' element={<ViewOrderPage />} />
+
+{/* CF MODULES */}
+<Route exact path='/cf-vendors' element={<CFVendorsListPage />} />
+<Route exact path='/cf-categories' element={<CFCategoriesListPage />} />
+<Route exact path='/cf-products' element={<CFProductsListPage />} />
+<Route exact path='/cf-services' element={<CFServicesListPage />} />
+<Route exact path='/cf-cities' element={<CFCityListPage />} />
+
+{/* SETTLEMENTS */}
+<Route exact path='/settlements' element={<SettlementsPage />} />
+
+{/* TAX */}
+<Route exact path='/tax' element={<TaxListPage />} />
+
+{/* MARKETING */}
+<Route exact path='/banners' element={<BannerListPage />} />
+<Route exact path='/popup-banners' element={<PopupBannersListPage />} />
+<Route exact path='/advertisements' element={<AdvertisementsListPage />} />
 
     
 

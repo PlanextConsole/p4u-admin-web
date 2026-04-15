@@ -1,43 +1,51 @@
 import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { fetchAdminMetadata } from "../../lib/api/adminApi";
+import { fetchAdminMetadata, listCatalogServices, listOrders } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 
-const gradients = [
-  "bg-gradient-start-1",
-  "bg-gradient-start-2",
-  "bg-gradient-start-3",
-  "bg-gradient-start-4",
-  "bg-gradient-start-5",
-  "bg-gradient-start-1",
-  "bg-gradient-start-2",
-  "bg-gradient-start-3",
-];
+/** Compact Indian currency for card headline (e.g. ₹1.2L). */
+function formatInrCompact(n) {
+  const x = Number(n);
+  if (!Number.isFinite(x) || x === 0) return "₹0";
+  const abs = Math.abs(x);
+  if (abs >= 1e7) return `₹${(x / 1e7).toFixed(2)}Cr`;
+  if (abs >= 1e5) return `₹${(x / 1e5).toFixed(2)}L`;
+  if (abs >= 1e3) return `₹${(x / 1e3).toFixed(2)}K`;
+  return `₹${Math.round(x)}`;
+}
 
-const icons = [
-  "mdi:account-group-outline",
-  "mdi:account-check-outline",
-  "mdi:store-outline",
-  "mdi:store-check-outline",
-  "mdi:cart-outline",
-  "mdi:check-decagram-outline",
-  "mdi:bank-transfer-out",
-  "mdi:package-variant",
-];
+async function sumAllOrdersTotalAmount() {
+  const limit = 100;
+  let offset = 0;
+  let totalRows = Infinity;
+  let sum = 0;
+  while (offset < totalRows && offset < 50000) {
+    const res = await listOrders({ limit, offset });
+    const items = res.items || [];
+    totalRows = typeof res.total === "number" ? res.total : offset + items.length;
+    for (const o of items) {
+      sum += parseFloat(o.totalAmount) || 0;
+    }
+    offset += items.length;
+    if (items.length === 0 || offset >= totalRows) break;
+  }
+  return sum;
+}
 
-const bgColors = [
-  "bg-cyan",
-  "bg-purple",
-  "bg-info",
-  "bg-warning-main",
-  "bg-primary-600",
-  "bg-success-main",
-  "bg-danger-main",
-  "bg-cyan",
+const METRICS = [
+  { key: "customers", label: "Customers", icon: "mdi:account-group-outline", accent: "#14b8a6" },
+  { key: "vendors", label: "Vendors", icon: "mdi:store-outline", accent: "#3b82f6" },
+  { key: "orders", label: "Orders", icon: "mdi:cart-outline", accent: "#22c55e" },
+  { key: "revenue", label: "Revenue", icon: "mdi:currency-inr", accent: "#f97316" },
+  { key: "settlements", label: "Settlements", icon: "mdi:receipt-text-outline", accent: "#ec4899" },
+  { key: "services", label: "Services", icon: "mdi:wrench-outline", accent: "#06b6d4" },
+  { key: "activeAds", label: "Active Ads", icon: "mdi:bullhorn-outline", accent: "#0d9488" },
 ];
 
 export default function DashboardSummary() {
   const [meta, setMeta] = useState(null);
+  const [revenueSum, setRevenueSum] = useState(null);
+  const [servicesCount, setServicesCount] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -47,8 +55,17 @@ export default function DashboardSummary() {
       setLoading(true);
       setError("");
       try {
-        const data = await fetchAdminMetadata();
-        if (!cancelled) setMeta(data);
+        const [data, rev, svcRes] = await Promise.all([
+          fetchAdminMetadata(),
+          sumAllOrdersTotalAmount().catch(() => null),
+          listCatalogServices({ purpose: "all" }).catch(() => null),
+        ]);
+        if (!cancelled) {
+          setMeta(data);
+          setRevenueSum(rev);
+          const svcItems = svcRes?.items;
+          setServicesCount(Array.isArray(svcItems) ? svcItems.length : null);
+        }
       } catch (e) {
         if (!cancelled) {
           const msg = e instanceof ApiError ? e.message : String(e);
@@ -65,15 +82,13 @@ export default function DashboardSummary() {
 
   if (loading) {
     return (
-      <div className="text-secondary-light text-md mb-24">
-        Loading dashboard metrics…
-      </div>
+      <div className='text-secondary-light text-md mb-24'>Loading dashboard metrics…</div>
     );
   }
 
   if (error) {
     return (
-      <div className="alert alert-danger radius-12 mb-24" role="alert">
+      <div className='alert alert-danger radius-12 mb-24' role='alert'>
         {error}
       </div>
     );
@@ -84,34 +99,41 @@ export default function DashboardSummary() {
   const cust = u.customers || {};
   const vend = u.vendors || {};
   const ord = c.orders || {};
-  const cards = [
-    { title: "Total customers", value: String(cust.total ?? "—") },
-    { title: "Active customers", value: String(cust.active ?? "—") },
-    { title: "Total vendors", value: String(vend.total ?? "—") },
-    { title: "Active vendors", value: String(vend.active ?? "—") },
-    { title: "Total orders", value: String(ord.total ?? "—") },
-    { title: "Completed orders", value: String(ord.completed ?? "—") },
-    { title: "Total settlements", value: String(c.settlements?.total ?? "—") },
-    { title: "Total products", value: String(c.products?.total ?? "—") },
-  ];
+
+  const values = {
+    customers: cust.total ?? "—",
+    vendors: vend.total ?? "—",
+    orders: ord.total ?? "—",
+    revenue: revenueSum != null ? formatInrCompact(revenueSum) : "—",
+    settlements: c.settlements?.total ?? "—",
+    services: servicesCount != null ? String(servicesCount) : "—",
+    activeAds: "—",
+  };
 
   return (
-    <div className="row row-cols-xxxl-4 row-cols-lg-4 row-cols-sm-2 row-cols-1 gy-4 mb-24">
-      {cards.map((item, index) => (
-        <div className="col" key={item.title}>
-          <div className={`card shadow-none border ${gradients[index % gradients.length]} h-100`}>
-            <div className="card-body p-20">
-              <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
-                <div>
-                  <p className="fw-medium text-primary-light mb-1">{item.title}</p>
-                  <h6 className="mb-0">{item.value}</h6>
-                </div>
-                <div
-                  className={`w-50-px h-50-px ${bgColors[index % bgColors.length]} rounded-circle d-flex justify-content-center align-items-center`}
-                >
-                  <Icon icon={icons[index % icons.length]} className="text-white text-2xl mb-0" />
-                </div>
+    <div
+      className='mb-24'
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+        gap: "1rem",
+      }}
+    >
+      {METRICS.map((m) => (
+        <div key={m.key} className='card border-0 shadow-sm radius-16 h-100 bg-base'>
+          <div className='card-body p-20'>
+            <div className='d-flex align-items-start justify-content-between gap-2'>
+              <div className='min-w-0'>
+                <p className='text-secondary-light text-sm fw-medium mb-8'>{m.label}</p>
+                <h3 className='fw-bold mb-0 text-primary-light text-2xl mt-8'>{values[m.key]}</h3>
               </div>
+              <span
+                className='w-48-px h-48-px radius-12 d-flex align-items-center justify-content-center flex-shrink-0'
+                style={{ background: `${m.accent}18`, color: m.accent }}
+                aria-hidden
+              >
+                <Icon icon={m.icon} className='text-2xl' />
+              </span>
             </div>
           </div>
         </div>

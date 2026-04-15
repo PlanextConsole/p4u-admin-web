@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 
-const SettlementFormLayer = ({ isView = false, initialData = null }) => {
+const SettlementFormLayer = ({ isView = false, initialData = null, onCancel }) => {
   const [formData, setFormData] = useState(
     initialData || {
       vendorName: "Sai Muruga Traders",
@@ -95,7 +95,7 @@ const SettlementFormLayer = ({ isView = false, initialData = null }) => {
 
           {/* Action Buttons */}
           <div className='d-flex align-items-center justify-content-end mt-24'>
-            <button type='button' onClick={() => window.history.back()} className='btn border border-danger-600 text-danger-600 bg-hover-danger-200 text-md px-56 py-12 radius-8 d-flex align-items-center gap-2'>
+            <button type='button' onClick={() => (onCancel ? onCancel() : window.history.back())} className='btn border border-danger-600 text-danger-600 bg-hover-danger-200 text-md px-56 py-12 radius-8 d-flex align-items-center gap-2'>
               <Icon icon='mdi:arrow-left-circle-outline' className='text-xl' /> Back
             </button>
           </div>

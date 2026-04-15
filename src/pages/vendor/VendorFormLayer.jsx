@@ -172,7 +172,7 @@ function buildBankJson(form) {
 /**
  * @param {{ isEdit?: boolean, isView?: boolean, vendorId?: string }} props
  */
-const VendorFormLayer = ({ isEdit = false, isView = false, vendorId }) => {
+const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, onSuccess, onCancel }) => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState(emptyForm);
   const [entityLoading, setEntityLoading] = useState(Boolean(vendorId));
@@ -362,7 +362,7 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId }) => {
         await createVendor(payload);
         toast.success("Vendor created.");
       }
-      navigate("/vendor");
+      if (onSuccess) onSuccess(); else navigate("/vendor");
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : String(err);
       toast.error(msg);
@@ -667,7 +667,7 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId }) => {
 
             {/* ── Action Buttons ── */}
             <div className="d-flex align-items-center justify-content-between mt-24">
-              <button type="button" onClick={isView ? () => navigate(-1) : handleReset}
+              <button type="button" onClick={isView ? (onCancel || (() => navigate(-1))) : handleReset}
                 className="btn border border-danger-600 text-danger-600 bg-hover-danger-200 text-md px-56 py-12 radius-8 d-flex align-items-center gap-2">
                 <Icon icon="mdi:close-circle-outline" className="text-xl" /> {isView ? "Back" : "Reset"}
               </button>

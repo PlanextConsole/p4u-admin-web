@@ -11,7 +11,7 @@ import { ApiError } from "../../lib/api/client";
 
 const empty = () => ({ name: "", sortOrder: 0, isActive: true });
 
-export default function OccupationFormLayer({ isEdit = false, isView = false, occupationId }) {
+export default function OccupationFormLayer({ isEdit = false, isView = false, occupationId, onSuccess, onCancel }) {
   const navigate = useNavigate();
   const [form, setForm] = useState(empty);
   const [loading, setLoading] = useState(Boolean(occupationId));
@@ -87,7 +87,7 @@ export default function OccupationFormLayer({ isEdit = false, isView = false, oc
         await createOccupation(body);
         toast.success("Occupation created.");
       }
-      navigate("/occupations");
+      if (onSuccess) onSuccess(); else navigate("/occupations");
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : String(err));
     } finally {
@@ -161,7 +161,7 @@ export default function OccupationFormLayer({ isEdit = false, isView = false, oc
             <div className="d-flex justify-content-between mt-24">
               <button
                 type="button"
-                onClick={() => navigate(-1)}
+                onClick={() => (onCancel ? onCancel() : navigate(-1))}
                 className="btn border border-danger-600 text-danger-600 radius-8 px-56 py-12 d-flex align-items-center gap-2"
               >
                 <Icon icon="mdi:close-circle-outline" className="text-xl" /> Back

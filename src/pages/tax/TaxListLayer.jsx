@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link } from "react-router-dom";
+import FormModal from "../../components/admin/FormModal";
+import TaxFormLayer from "./TaxFormLayer";
 
 const initialTaxes = [
   {
@@ -25,6 +27,8 @@ const initialTaxes = [
 
 const TaxListLayer = () => {
   const [taxes, setTaxes] = useState(initialTaxes);
+  const [modal, setModal] = useState(null);
+  const rowForId = (id) => taxes.find((t) => t.id === id) || null;
 
   const handleDelete = (id) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this tax rate?");
@@ -47,10 +51,10 @@ const TaxListLayer = () => {
             <Icon icon='ion:search-outline' className='icon' />
           </form>
         </div>
-        <Link to='/add-tax' className='btn btn-primary text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2'>
+        <button type='button' onClick={() => setModal({ mode: "add" })} className='btn btn-primary text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2'>
           <Icon icon='ic:baseline-plus' className='icon text-xl line-height-1' />
           Add Tax
-        </Link>
+        </button>
       </div>
       <div className='card-body p-24'>
         <div className='table-responsive scroll-sm'>
@@ -80,9 +84,9 @@ const TaxListLayer = () => {
                     </td>
                     <td className='text-center'>
                       <div className='d-flex align-items-center gap-10 justify-content-center'>
-                        <Link to={`/edit-tax/${tax.id}`} className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle' title="Edit">
+                        <button type='button' onClick={() => setModal({ mode: "edit", id: tax.id })} className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0' title="Edit">
                           <Icon icon='lucide:edit' className='menu-icon' />
-                        </Link>
+                        </button>
                         <button type='button' onClick={() => handleDelete(tax.id)} className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle' title="Delete">
                           <Icon icon='fluent:delete-24-regular' className='menu-icon' />
                         </button>
@@ -119,6 +123,17 @@ const TaxListLayer = () => {
           </ul>
         </div>
       </div>
+
+      {modal && (
+        <FormModal onClose={() => setModal(null)} size="md">
+          <TaxFormLayer
+            isEdit={modal.mode === "edit"}
+            initialData={modal.id ? rowForId(modal.id) : null}
+            onSuccess={() => setModal(null)}
+            onCancel={() => setModal(null)}
+          />
+        </FormModal>
+      )}
     </div>
   );
 };

@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { Link } from "react-router-dom";
 import { deleteCoupon, listCoupons } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import { formatDateTime, shortJson } from "../../lib/formatters";
+import FormModal from "../../components/admin/FormModal";
+import CouponFormLayer from "./CouponFormLayer";
 
 export default function CouponListLayer() {
   const [items, setItems] = useState([]);
@@ -12,6 +13,7 @@ export default function CouponListLayer() {
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [modal, setModal] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -62,10 +64,10 @@ export default function CouponListLayer() {
             <option value="50">50</option>
           </select>
         </div>
-        <Link to="/add-coupon" className="btn btn-primary text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2">
+        <button type="button" onClick={() => setModal({ mode: "add" })} className="btn btn-primary text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2">
           <Icon icon="ic:baseline-plus" className="icon text-xl line-height-1" />
           Add Coupon
-        </Link>
+        </button>
       </div>
       <div className="card-body p-24">
         {error && (
@@ -112,18 +114,12 @@ export default function CouponListLayer() {
                         <td>{formatDateTime(row.validTo)}</td>
                         <td>
                           <div className="d-flex gap-10 justify-content-center">
-                            <Link
-                              to={`/view-coupon/${row.id}`}
-                              className="bg-info-focus text-info-600 w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
-                            >
+                            <button type="button" onClick={() => setModal({ mode: "view", id: row.id })} className="bg-info-focus text-info-600 w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0">
                               <Icon icon="majesticons:eye-line" className="icon text-xl" />
-                            </Link>
-                            <Link
-                              to={`/edit-coupon/${row.id}`}
-                              className="bg-success-focus text-success-600 w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
-                            >
+                            </button>
+                            <button type="button" onClick={() => setModal({ mode: "edit", id: row.id })} className="bg-success-focus text-success-600 w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0">
                               <Icon icon="lucide:edit" />
-                            </Link>
+                            </button>
                             <button
                               type="button"
                               onClick={() => onDelete(row.id)}
@@ -165,6 +161,18 @@ export default function CouponListLayer() {
           </>
         )}
       </div>
+
+      {modal && (
+        <FormModal onClose={() => setModal(null)} size="lg">
+          <CouponFormLayer
+            isEdit={modal.mode === "edit"}
+            isView={modal.mode === "view"}
+            couponId={modal.id}
+            onSuccess={() => { setModal(null); load(); }}
+            onCancel={() => setModal(null)}
+          />
+        </FormModal>
+      )}
     </div>
   );
 }

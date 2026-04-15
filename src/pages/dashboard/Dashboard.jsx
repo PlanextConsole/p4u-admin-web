@@ -1,14 +1,14 @@
-import DashboardSummary from "./DashboardSummary"; 
-import UsersOverviewOne from "../../components/child/UsersOverviewOne";
-import CustomerList from "./CustomerList"; 
-import GeneratedContent from "../../components/child/GeneratedContent"; 
+import DashboardSummary from "./DashboardSummary";
+import DashboardCharts from "./DashboardCharts";
+import CustomerList from "./CustomerList";
 
 const DashBoardLayerOne = () => {
   return (
-    <> 
-        <DashboardSummary />
-      <section className='row gy-4 mt-1'>  
-        <CustomerList />  
+    <>
+      <DashboardSummary />
+      <DashboardCharts />
+      <section className='row gy-4 mt-1'>
+        <CustomerList />
       </section>
     </>
   );

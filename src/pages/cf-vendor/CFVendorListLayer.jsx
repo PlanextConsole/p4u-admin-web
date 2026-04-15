@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { Link } from "react-router-dom";
+import FormModal from "../../components/admin/FormModal";
+import CFVendorFormLayer from "./CFVendorFormLayer";
 
 const initialVendors = [
   {
@@ -29,12 +30,15 @@ const initialVendors = [
 
 const CFVendorListLayer = () => {
   const [vendors, setVendors] = useState(initialVendors);
+  const [modal, setModal] = useState(null);
 
   const handleDelete = (id) => {
     if (window.confirm("Are you sure you want to delete this vendor?")) {
       setVendors(vendors.filter((v) => v.id !== id));
     }
   };
+
+  const rowForId = (id) => vendors.find((v) => v.id === id) || null;
 
   return (
     <div className='card h-100 p-0 radius-12'>
@@ -50,9 +54,9 @@ const CFVendorListLayer = () => {
             <Icon icon='ion:search-outline' className='icon' />
           </form>
         </div>
-        <Link to='/add-cf-vendor' className='btn btn-primary text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2'>
+        <button type='button' onClick={() => setModal({ mode: "add" })} className='btn btn-primary text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2'>
           <Icon icon='ic:baseline-plus' className='icon text-xl' /> Add Vendor
-        </Link>
+        </button>
       </div>
       <div className='card-body p-24'>
         <div className='table-responsive scroll-sm'>
@@ -89,9 +93,9 @@ const CFVendorListLayer = () => {
                   </td>
                   <td className='text-center'>
                     <div className='d-flex align-items-center gap-10 justify-content-center'>
-                      <Link to={`/view-cf-vendor/${item.id}`} className='bg-info-focus text-info-600 w-32-px h-32-px d-flex justify-content-center align-items-center rounded-circle'><Icon icon='majesticons:eye-line' /></Link>
-                      <Link to={`/edit-cf-vendor/${item.id}`} className='bg-success-focus text-success-600 w-32-px h-32-px d-flex justify-content-center align-items-center rounded-circle'><Icon icon='lucide:edit' /></Link>
-                      <button onClick={() => handleDelete(item.id)} className='bg-danger-focus text-danger-600 w-32-px h-32-px d-flex justify-content-center align-items-center rounded-circle'><Icon icon='fluent:delete-24-regular' /></button>
+                      <button type='button' onClick={() => setModal({ mode: "view", id: item.id })} className='bg-info-focus text-info-600 w-32-px h-32-px d-flex justify-content-center align-items-center rounded-circle border-0'><Icon icon='majesticons:eye-line' /></button>
+                      <button type='button' onClick={() => setModal({ mode: "edit", id: item.id })} className='bg-success-focus text-success-600 w-32-px h-32-px d-flex justify-content-center align-items-center rounded-circle border-0'><Icon icon='lucide:edit' /></button>
+                      <button type='button' onClick={() => handleDelete(item.id)} className='bg-danger-focus text-danger-600 w-32-px h-32-px d-flex justify-content-center align-items-center rounded-circle border-0'><Icon icon='fluent:delete-24-regular' /></button>
                     </div>
                   </td>
                 </tr>
@@ -100,6 +104,18 @@ const CFVendorListLayer = () => {
           </table>
         </div>
       </div>
+
+      {modal && (
+        <FormModal onClose={() => setModal(null)} size="xl">
+          <CFVendorFormLayer
+            isEdit={modal.mode === "edit"}
+            isView={modal.mode === "view"}
+            initialData={modal.id ? rowForId(modal.id) : null}
+            onSuccess={() => setModal(null)}
+            onCancel={() => setModal(null)}
+          />
+        </FormModal>
+      )}
     </div>
   );
 };

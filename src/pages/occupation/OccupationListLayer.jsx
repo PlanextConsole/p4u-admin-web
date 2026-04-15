@@ -1,14 +1,16 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { Link } from "react-router-dom";
 import { deleteOccupation, listOccupations } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import { formatDateTime } from "../../lib/formatters";
+import FormModal from "../../components/admin/FormModal";
+import OccupationFormLayer from "./OccupationFormLayer";
 
 export default function OccupationListLayer() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [modal, setModal] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -41,10 +43,10 @@ export default function OccupationListLayer() {
     <div className="card h-100 p-0 radius-12">
       <div className="card-header border-bottom bg-base py-16 px-24 d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span className="text-md fw-medium text-secondary-light mb-0">Occupations</span>
-        <Link to="/add-occupation" className="btn btn-primary text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2">
+        <button type="button" onClick={() => setModal({ mode: "add" })} className="btn btn-primary text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2">
           <Icon icon="ic:baseline-plus" className="icon text-xl line-height-1" />
           Add Occupation
-        </Link>
+        </button>
       </div>
       <div className="card-body p-24">
         {error && (
@@ -84,18 +86,12 @@ export default function OccupationListLayer() {
                       <td>{formatDateTime(row.updatedAt)}</td>
                       <td>
                         <div className="d-flex gap-10 justify-content-center">
-                          <Link
-                            to={`/view-occupation/${row.id}`}
-                            className="bg-info-focus text-info-600 w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
-                          >
+                          <button type="button" onClick={() => setModal({ mode: "view", id: row.id })} className="bg-info-focus text-info-600 w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0">
                             <Icon icon="majesticons:eye-line" className="icon text-xl" />
-                          </Link>
-                          <Link
-                            to={`/edit-occupation/${row.id}`}
-                            className="bg-success-focus text-success-600 w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
-                          >
+                          </button>
+                          <button type="button" onClick={() => setModal({ mode: "edit", id: row.id })} className="bg-success-focus text-success-600 w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0">
                             <Icon icon="lucide:edit" />
-                          </Link>
+                          </button>
                           <button
                             type="button"
                             onClick={() => onDelete(row.id)}
@@ -113,6 +109,18 @@ export default function OccupationListLayer() {
           </div>
         )}
       </div>
+
+      {modal && (
+        <FormModal onClose={() => setModal(null)} size="md">
+          <OccupationFormLayer
+            isEdit={modal.mode === "edit"}
+            isView={modal.mode === "view"}
+            occupationId={modal.id}
+            onSuccess={() => { setModal(null); load(); }}
+            onCancel={() => setModal(null)}
+          />
+        </FormModal>
+      )}
     </div>
   );
 }

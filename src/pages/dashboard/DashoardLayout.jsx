@@ -8,7 +8,11 @@ const HomePageOne = () => {
       {/* MasterLayout */}
       <MasterLayout>
         {/* Breadcrumb */}
-        <Breadcrumb title='Dashboard' /> 
+        <Breadcrumb
+          pagetitle='Dashboard'
+          subtitle='Overview of your marketplace performance'
+          title='Dashboard'
+        />
         <Dashboard />
       </MasterLayout>
     </>

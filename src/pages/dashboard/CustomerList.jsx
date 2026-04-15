@@ -58,7 +58,7 @@ const CustomerList = () => {
 
   return (
     <div className='col-12'>
-      <div className='card h-100'>
+      <div className='card border-0 shadow-sm radius-16 h-100 bg-base'>
         <div className='card-body p-24'>
           <div className='d-flex flex-wrap align-items-center gap-1 justify-content-between mb-16'>
             <ul

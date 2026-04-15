@@ -54,7 +54,7 @@ const empty = () => ({
   validToLocal: "",
 });
 
-const CouponFormLayer = ({ isEdit = false, isView = false, couponId }) => {
+const CouponFormLayer = ({ isEdit = false, isView = false, couponId, onSuccess, onCancel }) => {
   const navigate = useNavigate();
   const [form, setForm] = useState(empty);
   const [loading, setLoading] = useState(Boolean(couponId));
@@ -141,7 +141,7 @@ const CouponFormLayer = ({ isEdit = false, isView = false, couponId }) => {
         await createCoupon(body);
         toast.success("Coupon created.");
       }
-      navigate("/coupons");
+      if (onSuccess) onSuccess(); else navigate("/coupons");
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : String(err));
     } finally {
@@ -246,7 +246,7 @@ const CouponFormLayer = ({ isEdit = false, isView = false, couponId }) => {
             <div className="d-flex justify-content-between mt-24">
               <button
                 type="button"
-                onClick={() => navigate(-1)}
+                onClick={() => (onCancel ? onCancel() : navigate(-1))}
                 className="btn border border-danger-600 text-danger-600 radius-8 px-56 py-12 d-flex align-items-center gap-2"
               >
                 <Icon icon="mdi:close-circle-outline" className="text-xl" /> {isView ? "Back" : "Cancel"}

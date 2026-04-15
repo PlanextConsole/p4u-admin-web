@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { Link } from "react-router-dom";
+import FormModal from "../../components/admin/FormModal";
+import CFProductFormLayer from "./CFProductFormLayer";
 
 const initialData = [
   { id: 1, name: "Organic Basmati Rice", description: "Long-grain aromatic rice, 5kg pack.", price: "₹850", icon: "assets/images/products/rice.png", status: "Yes" },
@@ -9,6 +10,8 @@ const initialData = [
 
 const CFProductListLayer = () => {
   const [products] = useState(initialData);
+  const [modal, setModal] = useState(null);
+  const rowForId = (id) => products.find((p) => p.id === id) || null;
 
   return (
     <div className='card h-100 p-0 radius-12'>
@@ -24,9 +27,9 @@ const CFProductListLayer = () => {
             <Icon icon='ion:search-outline' className='icon' />
           </form>
         </div>
-        <Link to='/add-cf-product' className='btn btn-primary text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2'>
+        <button type='button' onClick={() => setModal({ mode: "add" })} className='btn btn-primary text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2'>
           <Icon icon='ic:baseline-plus' className='icon text-xl' /> Add CF Product
-        </Link>
+        </button>
       </div>
       <div className='card-body p-24'>
         <div className='table-responsive scroll-sm'>
@@ -59,9 +62,9 @@ const CFProductListLayer = () => {
                   </td>
                   <td className='text-center'>
                     <div className='d-flex align-items-center gap-10 justify-content-center'>
-                      <Link to={`/view-cf-product/${item.id}`} className='bg-info-focus text-info-600 w-32-px h-32-px d-flex justify-content-center align-items-center rounded-circle'><Icon icon='majesticons:eye-line' /></Link>
-                      <Link to={`/edit-cf-product/${item.id}`} className='bg-success-focus text-success-600 w-32-px h-32-px d-flex justify-content-center align-items-center rounded-circle'><Icon icon='lucide:edit' /></Link>
-                      <button className='bg-danger-focus text-danger-600 w-32-px h-32-px d-flex justify-content-center align-items-center rounded-circle'><Icon icon='fluent:delete-24-regular' /></button>
+                      <button type='button' onClick={() => setModal({ mode: "view", id: item.id })} className='bg-info-focus text-info-600 w-32-px h-32-px d-flex justify-content-center align-items-center rounded-circle border-0'><Icon icon='majesticons:eye-line' /></button>
+                      <button type='button' onClick={() => setModal({ mode: "edit", id: item.id })} className='bg-success-focus text-success-600 w-32-px h-32-px d-flex justify-content-center align-items-center rounded-circle border-0'><Icon icon='lucide:edit' /></button>
+                      <button type='button' className='bg-danger-focus text-danger-600 w-32-px h-32-px d-flex justify-content-center align-items-center rounded-circle border-0'><Icon icon='fluent:delete-24-regular' /></button>
                     </div>
                   </td>
                 </tr>
@@ -70,6 +73,18 @@ const CFProductListLayer = () => {
           </table>
         </div>
       </div>
+
+      {modal && (
+        <FormModal onClose={() => setModal(null)} size="lg">
+          <CFProductFormLayer
+            isEdit={modal.mode === "edit"}
+            isView={modal.mode === "view"}
+            initialData={modal.id ? rowForId(modal.id) : null}
+            onSuccess={() => setModal(null)}
+            onCancel={() => setModal(null)}
+          />
+        </FormModal>
+      )}
     </div>
   );
 };

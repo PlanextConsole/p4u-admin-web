@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { Link } from "react-router-dom";
 import { deleteCategory, listCategories, listCatalogServices } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import CountAndChips from "../../components/admin/CountAndChips";
+import FormModal from "../../components/admin/FormModal";
+import CategoryFormLayer from "./CategoryFormLayer";
 
 const CategoryListLayer = () => {
   const [categories, setCategories] = useState([]);
@@ -11,6 +12,7 @@ const CategoryListLayer = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [modal, setModal] = useState(null); // { mode: "add"|"edit"|"view", id? }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -41,7 +43,6 @@ const CategoryListLayer = () => {
     }
   };
 
-  // Group services by categoryId
   const servicesByCategory = {};
   services.forEach((s) => {
     if (s.categoryId) {
@@ -68,9 +69,9 @@ const CategoryListLayer = () => {
       <div className="card-header border-bottom bg-base py-16 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between">
         <div className="d-flex align-items-center flex-wrap gap-3">
           <button className="btn btn-primary text-sm btn-sm px-16 py-8 radius-8">Export with Excel</button>
-          <Link to="/add-category" className="btn btn-primary text-sm btn-sm px-12 py-8 radius-8 d-flex align-items-center gap-2">
+          <button type="button" onClick={() => setModal({ mode: "add" })} className="btn btn-primary text-sm btn-sm px-12 py-8 radius-8 d-flex align-items-center gap-2">
             <Icon icon="ic:baseline-plus" className="icon text-xl line-height-1" /> Add Category
-          </Link>
+          </button>
         </div>
         <input
           type="text"
@@ -141,12 +142,12 @@ const CategoryListLayer = () => {
                           </td>
                           <td className="text-center">
                             <div className="d-flex align-items-center gap-10 justify-content-center">
-                              <Link to={`/view-category/${cat.id}`} className="bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle" title="View">
+                              <button type="button" onClick={() => setModal({ mode: "view", id: cat.id })} className="bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0" title="View">
                                 <Icon icon="majesticons:eye-line" className="icon text-xl" />
-                              </Link>
-                              <Link to={`/edit-category/${cat.id}`} className="bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle" title="Edit">
+                              </button>
+                              <button type="button" onClick={() => setModal({ mode: "edit", id: cat.id })} className="bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0" title="Edit">
                                 <Icon icon="lucide:edit" className="menu-icon" />
-                              </Link>
+                              </button>
                               <button type="button" onClick={() => handleDelete(cat.id)} className="remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0" title="Delete">
                                 <Icon icon="fluent:delete-24-regular" className="menu-icon" />
                               </button>
@@ -167,6 +168,18 @@ const CategoryListLayer = () => {
           </>
         )}
       </div>
+
+      {modal && (
+        <FormModal onClose={() => setModal(null)} size="lg">
+          <CategoryFormLayer
+            isEdit={modal.mode === "edit"}
+            isView={modal.mode === "view"}
+            categoryId={modal.id}
+            onSuccess={() => { setModal(null); load(); }}
+            onCancel={() => setModal(null)}
+          />
+        </FormModal>
+      )}
     </div>
   );
 };

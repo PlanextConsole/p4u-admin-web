@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { Link } from "react-router-dom";
+import FormModal from "../../components/admin/FormModal";
+import SettlementFormLayer from "./SettlementFormLayer";
 
 const initialCashData = [
   { id: 1, vendorName: "Sai Muruga Traders", mobile: "+916381725188", amount: "₹10,500", date: "02-04-2026", paymentMode: "Net Banking", transactionId: "TXN987654321", type: "Vendors" },
@@ -9,6 +10,8 @@ const initialCashData = [
 
 const ListCashLayer = () => {
   const [data, setData] = useState(initialCashData);
+  const [modal, setModal] = useState(null);
+  const rowForId = (id) => data.find((d) => d.id === id) || null;
 
   return (
     <div className='card h-100 p-0 radius-12'>
@@ -54,9 +57,9 @@ const ListCashLayer = () => {
                   <td>{item.type}</td>
                   <td className='text-center'>
                     <div className='d-flex align-items-center gap-10 justify-content-center'>
-                      <Link to={`/view-settlement/${item.id}`} className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle' title="View Settlement">
+                      <button type='button' onClick={() => setModal({ id: item.id })} className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0' title="View Settlement">
                         <Icon icon='majesticons:eye-line' className='icon text-xl' />
-                      </Link>
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -65,6 +68,16 @@ const ListCashLayer = () => {
           </table>
         </div>
       </div>
+
+      {modal && (
+        <FormModal onClose={() => setModal(null)} size="lg">
+          <SettlementFormLayer
+            isView
+            initialData={rowForId(modal.id)}
+            onCancel={() => setModal(null)}
+          />
+        </FormModal>
+      )}
     </div>
   );
 };

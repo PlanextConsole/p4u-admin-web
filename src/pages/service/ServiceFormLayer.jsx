@@ -22,7 +22,7 @@ const emptyForm = () => ({
   description: "",
 });
 
-const ServiceFormLayer = ({ isEdit = false, isView = false, serviceId }) => {
+const ServiceFormLayer = ({ isEdit = false, isView = false, serviceId, onSuccess, onCancel }) => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState(emptyForm);
   const [categories, setCategories] = useState([]);
@@ -126,7 +126,7 @@ const ServiceFormLayer = ({ isEdit = false, isView = false, serviceId }) => {
         await createCatalogService(payload);
         toast.success("Service created.");
       }
-      navigate("/service");
+      if (onSuccess) onSuccess(); else navigate("/service");
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : String(err);
       toast.error(msg);
@@ -202,7 +202,7 @@ const ServiceFormLayer = ({ isEdit = false, isView = false, serviceId }) => {
             <textarea className="form-control radius-8 mb-20" name="description" rows={5} value={formData.description} onChange={handleChange} disabled={disabled} />
 
             <div className="d-flex align-items-center justify-content-between mt-24">
-              <button type="button" onClick={isView ? () => navigate(-1) : handleReset}
+              <button type="button" onClick={isView ? (onCancel || (() => navigate(-1))) : handleReset}
                 className="btn border border-danger-600 text-danger-600 bg-hover-danger-200 text-md px-56 py-12 radius-8 d-flex align-items-center gap-2">
                 <Icon icon="mdi:close-circle-outline" className="text-xl" /> {isView ? "Back" : "Reset"}
               </button>

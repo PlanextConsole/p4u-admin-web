@@ -26,7 +26,7 @@ const emptyForm = () => ({
   description: "",
 });
 
-const PlatformVariableFormLayer = ({ isEdit = false, isView = false, variableId }) => {
+const PlatformVariableFormLayer = ({ isEdit = false, isView = false, variableId, onSuccess, onCancel }) => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState(emptyForm);
   const [loading, setLoading] = useState(Boolean(variableId));
@@ -90,7 +90,7 @@ const PlatformVariableFormLayer = ({ isEdit = false, isView = false, variableId 
         await createPlatformVariable(payload);
         toast.success("Variable created.");
       }
-      navigate("/platform-variables");
+      if (onSuccess) onSuccess(); else navigate("/platform-variables");
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : String(err));
     } finally {
@@ -145,7 +145,7 @@ const PlatformVariableFormLayer = ({ isEdit = false, isView = false, variableId 
               </div>
             </div>
             <div className="d-flex align-items-center justify-content-between mt-24">
-              <button type="button" onClick={isView ? () => navigate(-1) : handleReset} className="btn border border-danger-600 text-danger-600 bg-hover-danger-200 text-md px-56 py-12 radius-8">
+              <button type="button" onClick={isView ? (onCancel || (() => navigate(-1))) : handleReset} className="btn border border-danger-600 text-danger-600 bg-hover-danger-200 text-md px-56 py-12 radius-8">
                 {isView ? "Back" : "Reset"}
               </button>
               {!isView && (

@@ -171,93 +171,59 @@ const MasterLayout = ({ children }) => {
               </Link>
               <ul className='sidebar-submenu'>
                 <li><NavLink to='/vendor'>List Vendor</NavLink></li>
-                <li><NavLink to='/add-vendor'>Add Vendor</NavLink></li>
                 <li><NavLink to='/vendor-enquiry'>Vendor Enquiry</NavLink></li>
               </ul>
             </li>
-            <li className='dropdown'>
-              <Link to='#'>
+            <li>
+              <NavLink to='/category'>
                 <Icon icon='mdi:shape-outline' className='menu-icon' />
                 <span>Category</span>
-              </Link>
-              <ul className='sidebar-submenu'>
-                <li><NavLink to='/category'>Category List</NavLink></li>
-                <li><NavLink to='/add-category'>Add Category</NavLink></li>
-              </ul>
+              </NavLink>
             </li>
-            <li className='dropdown'>
-              <Link to='#'>
+            <li>
+              <NavLink to='/product'>
                 <Icon icon='mdi:package-variant-closed' className='menu-icon' />
                 <span>Product</span>
-              </Link>
-              <ul className='sidebar-submenu'>
-                <li><NavLink to='/product'>Product List</NavLink></li>
-                <li><NavLink to='/add-product'>Add Product</NavLink></li>
-              </ul>
+              </NavLink>
             </li>
-            <li className='dropdown'>
-              <Link to='#'>
+            <li>
+              <NavLink to='/service'>
                 <Icon icon='mdi:tools' className='menu-icon' />
                 <span>Service</span>
-              </Link>
-              <ul className='sidebar-submenu'>
-                <li><NavLink to='/service'>Service List</NavLink></li>
-                <li><NavLink to='/add-service'>Add Service</NavLink></li>
-              </ul>
+              </NavLink>
             </li>
 
             {/* ─── CLASSIFIED (CF) MANAGEMENT ─── */}
             <li className='sidebar-menu-group-title'>Classified (CF) Management</li>
-            <li className='dropdown'>
-              <Link to='#'>
+            <li>
+              <NavLink to='/cf-vendors'>
                 <Icon icon='mdi:store-check-outline' className='menu-icon' />
                 <span>CF Vendors</span>
-              </Link>
-              <ul className='sidebar-submenu'>
-                <li><NavLink to='/cf-vendors'>List CF Vendors</NavLink></li>
-                <li><NavLink to='/add-cf-vendor'>Add CF Vendor</NavLink></li>
-                <li><NavLink to='/vendor-enquiry'>Vendor Enquiry</NavLink></li>
-              </ul>
+              </NavLink>
             </li>
-            <li className='dropdown'>
-              <Link to='#'>
+            <li>
+              <NavLink to='/cf-categories'>
                 <Icon icon='mdi:shape-plus-outline' className='menu-icon' />
                 <span>CF Categories</span>
-              </Link>
-              <ul className='sidebar-submenu'>
-                <li><NavLink to='/cf-categories'>List CF Categories</NavLink></li>
-                <li><NavLink to='/add-cf-category'>Add CF Category</NavLink></li>
-              </ul>
+              </NavLink>
             </li>
-            <li className='dropdown'>
-              <Link to='#'>
+            <li>
+              <NavLink to='/cf-products'>
                 <Icon icon='mdi:package-variant' className='menu-icon' />
                 <span>CF Products</span>
-              </Link>
-              <ul className='sidebar-submenu'>
-                <li><NavLink to='/cf-products'>List CF Products</NavLink></li>
-                <li><NavLink to='/add-cf-product'>Add CF Product</NavLink></li>
-              </ul>
+              </NavLink>
             </li>
-            <li className='dropdown'>
-              <Link to='#'>
+            <li>
+              <NavLink to='/cf-services'>
                 <Icon icon='mdi:toolbox-outline' className='menu-icon' />
                 <span>CF Services</span>
-              </Link>
-              <ul className='sidebar-submenu'>
-                <li><NavLink to='/cf-services'>List CF Services</NavLink></li>
-                <li><NavLink to='/add-cf-service'>Add CF Service</NavLink></li>
-              </ul>
+              </NavLink>
             </li>
-            <li className='dropdown'>
-              <Link to='#'>
+            <li>
+              <NavLink to='/cf-cities'>
                 <Icon icon='mdi:city-variant-outline' className='menu-icon' />
                 <span>CF City Locations</span>
-              </Link>
-              <ul className='sidebar-submenu'>
-                <li><NavLink to='/cf-cities'>List Cities</NavLink></li>
-                <li><NavLink to='/add-cf-city'>Add City</NavLink></li>
-              </ul>
+              </NavLink>
             </li>
 
             {/* ─── SALES & FINANCIALS ─── */}
@@ -268,15 +234,11 @@ const MasterLayout = ({ children }) => {
                 <span>Orders</span>
               </NavLink>
             </li>
-            <li className='dropdown'>
-              <Link to='#'>
+            <li>
+              <NavLink to='/settlements'>
                 <Icon icon='fluent:wallet-credit-card-16-regular' className='menu-icon' />
                 <span>Settlements</span>
-              </Link>
-              <ul className='sidebar-submenu'>
-                <li><NavLink to='/list-cash'>List Cash</NavLink></li>
-                <li><NavLink to='/list-points'>List Points</NavLink></li>
-              </ul>
+              </NavLink>
             </li>
             <li>
               <NavLink to='/points'>
@@ -284,15 +246,11 @@ const MasterLayout = ({ children }) => {
                 <span>Points System</span>
               </NavLink>
             </li>
-            <li className='dropdown'>
-              <Link to='#'>
+            <li>
+              <NavLink to='/tax'>
                 <Icon icon='mdi:calculator-variant-outline' className='menu-icon' />
                 <span>Tax Management</span>
-              </Link>
-              <ul className='sidebar-submenu'>
-                <li><NavLink to='/tax'>List Tax</NavLink></li>
-                <li><NavLink to='/add-tax'>Add Tax</NavLink></li>
-              </ul>
+              </NavLink>
             </li>
 
             {/* ─── CUSTOMERS & OCCUPATIONS ─── */}
@@ -303,61 +261,41 @@ const MasterLayout = ({ children }) => {
                 <span>Customers</span>
               </NavLink>
             </li>
-            <li className='dropdown'>
-              <Link to='#'>
+            <li>
+              <NavLink to='/occupations'>
                 <Icon icon='mdi:briefcase-outline' className='menu-icon' />
                 <span>Occupations</span>
-              </Link>
-              <ul className='sidebar-submenu'>
-                <li><NavLink to='/occupations'>List Occupations</NavLink></li>
-                <li><NavLink to='/add-occupation'>Add Occupation</NavLink></li>
-              </ul>
+              </NavLink>
             </li>
 
             {/* ─── MARKETING & CONTENT ─── */}
             <li className='sidebar-menu-group-title'>Marketing & Content</li>
-            <li className='dropdown'>
-              <Link to='#'>
+            <li>
+              <NavLink to='/banners'>
                 <Icon icon='mdi:view-carousel-outline' className='menu-icon' />
                 <span>Banners</span>
-              </Link>
-              <ul className='sidebar-submenu'>
-                <li><NavLink to='/banners'>List Banners</NavLink></li>
-                <li><NavLink to='/add-banner'>Add Banner</NavLink></li>
-              </ul>
+              </NavLink>
             </li>
-            <li className='dropdown'>
-              <Link to='#'>
+            <li>
+              <NavLink to='/popup-banners'>
                 <Icon icon='mdi:message-image-outline' className='menu-icon' />
                 <span>Popup Banners</span>
-              </Link>
-              <ul className='sidebar-submenu'>
-                <li><NavLink to='/popup-banners'>List Popup Banners</NavLink></li>
-                <li><NavLink to='/add-popup-banner'>Add Popup Banner</NavLink></li>
-              </ul>
+              </NavLink>
             </li>
-            <li className='dropdown'>
-              <Link to='#'>
+            <li>
+              <NavLink to='/advertisements'>
                 <Icon icon='mdi:bullhorn-outline' className='menu-icon' />
                 <span>Advertisements</span>
-              </Link>
-              <ul className='sidebar-submenu'>
-                <li><NavLink to='/advertisements'>List Ads</NavLink></li>
-                <li><NavLink to='/add-advertisement'>Add Ad</NavLink></li>
-              </ul>
+              </NavLink>
             </li>
 
             {/* ─── SYSTEM & REPORTS ─── */}
             <li className='sidebar-menu-group-title'>System & Reports</li>
-            <li className='dropdown'>
-              <Link to='#'>
+            <li>
+              <NavLink to='/platform-variables'>
                 <Icon icon='mdi:cogs' className='menu-icon' />
                 <span>Platform Variables</span>
-              </Link>
-              <ul className='sidebar-submenu'>
-                <li><NavLink to='/platform-variables'>List Variables</NavLink></li>
-                <li><NavLink to='/add-platform-variable'>Add Variable</NavLink></li>
-              </ul>
+              </NavLink>
             </li>
             <li>
               <NavLink to='/report-log'>
@@ -382,7 +320,7 @@ const MasterLayout = ({ children }) => {
                   <Icon icon='heroicons:bars-3-solid' className='icon' />
                 </button>
                 <form className='navbar-search'>
-                  <input type='text' name='search' placeholder='Search' />
+                  <input type='text' name='search' placeholder='Search pages, features…' />
                   <Icon icon='ion:search-outline' className='icon' />
                 </form>
               </div>

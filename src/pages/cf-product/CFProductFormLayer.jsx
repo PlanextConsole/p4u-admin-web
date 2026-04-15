@@ -1,7 +1,12 @@
 import React, { useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 
-const CFProductFormLayer = ({ isEdit = false, isView = false, initialData = null }) => {
+const CFProductFormLayer = ({ isEdit = false, isView = false, initialData = null, onSuccess, onCancel }) => {
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (isView) return;
+    if (onSuccess) onSuccess();
+  };
   const [formData, setFormData] = useState(
     initialData || {
       name: "",
@@ -38,7 +43,7 @@ const CFProductFormLayer = ({ isEdit = false, isView = false, initialData = null
         </h4>
       </div>
       <div className='card-body p-24'>
-        <form>
+        <form onSubmit={handleSubmit}>
           <div className='row'>
             {/* Product Name */}
             <div className='col-md-6 mb-20'>
@@ -114,7 +119,7 @@ const CFProductFormLayer = ({ isEdit = false, isView = false, initialData = null
           </div>
 
           <div className='d-flex align-items-center justify-content-between mt-24'>
-            <button type='button' onClick={() => window.history.back()} className='btn border border-danger-600 text-danger-600 bg-hover-danger-200 text-md px-56 py-12 radius-8 d-flex align-items-center gap-2'>
+            <button type='button' onClick={() => (onCancel ? onCancel() : window.history.back())} className='btn border border-danger-600 text-danger-600 bg-hover-danger-200 text-md px-56 py-12 radius-8 d-flex align-items-center gap-2'>
               <Icon icon='mdi:close-circle-outline' className='text-xl' /> {isView ? "Back" : "Cancel"}
             </button>
             {!isView && (

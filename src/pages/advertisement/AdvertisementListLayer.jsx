@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link } from "react-router-dom";
+import FormModal from "../../components/admin/FormModal";
+import AdvertisementFormLayer from "./AdvertisementFormLayer";
 
 const initialAdvertisements = [
   {
@@ -25,6 +27,8 @@ const initialAdvertisements = [
 
 const AdvertisementListLayer = () => {
   const [ads, setAds] = useState(initialAdvertisements);
+  const [modal, setModal] = useState(null);
+  const rowForId = (id) => ads.find((a) => a.id === id) || null;
 
   const handleDelete = (id) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this advertisement?");
@@ -47,10 +51,10 @@ const AdvertisementListLayer = () => {
             <Icon icon='ion:search-outline' className='icon' />
           </form>
         </div>
-        <Link to='/add-advertisement' className='btn btn-primary text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2'>
+        <button type='button' onClick={() => setModal({ mode: "add" })} className='btn btn-primary text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2'>
           <Icon icon='ic:baseline-plus' className='icon text-xl line-height-1' />
           Add Advertisement
-        </Link>
+        </button>
       </div>
       <div className='card-body p-24'>
         <div className='table-responsive scroll-sm'>
@@ -95,12 +99,12 @@ const AdvertisementListLayer = () => {
                     </td>
                     <td className='text-center'>
                       <div className='d-flex align-items-center gap-10 justify-content-center'>
-                        <Link to={`/view-advertisement/${ad.id}`} className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle' title="View">
+                        <button type='button' onClick={() => setModal({ mode: "view", id: ad.id })} className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0' title="View">
                           <Icon icon='majesticons:eye-line' className='icon text-xl' />
-                        </Link>
-                        <Link to={`/edit-advertisement/${ad.id}`} className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle' title="Edit">
+                        </button>
+                        <button type='button' onClick={() => setModal({ mode: "edit", id: ad.id })} className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0' title="Edit">
                           <Icon icon='lucide:edit' className='menu-icon' />
-                        </Link>
+                        </button>
                         <button type='button' onClick={() => handleDelete(ad.id)} className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle' title="Delete">
                           <Icon icon='fluent:delete-24-regular' className='menu-icon' />
                         </button>
@@ -137,6 +141,18 @@ const AdvertisementListLayer = () => {
           </ul>
         </div>
       </div>
+
+      {modal && (
+        <FormModal onClose={() => setModal(null)} size="lg">
+          <AdvertisementFormLayer
+            isEdit={modal.mode === "edit"}
+            isView={modal.mode === "view"}
+            initialData={modal.id ? rowForId(modal.id) : null}
+            onSuccess={() => setModal(null)}
+            onCancel={() => setModal(null)}
+          />
+        </FormModal>
+      )}
     </div>
   );
 };

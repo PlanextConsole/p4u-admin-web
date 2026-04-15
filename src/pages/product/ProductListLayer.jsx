@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { Link } from "react-router-dom";
 import { deleteProduct, listProducts, listVendors, listCategories, listCatalogServices, listTaxConfigurations } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import CountAndChips from "../../components/admin/CountAndChips";
+import FormModal from "../../components/admin/FormModal";
+import ProductFormLayer from "./ProductFormLayer";
 
 const ProductListLayer = () => {
   const [products, setProducts] = useState([]);
@@ -17,6 +18,7 @@ const ProductListLayer = () => {
   const [categoryMap, setCategoryMap] = useState({});
   const [serviceMap, setServiceMap] = useState({});
   const [taxMap, setTaxMap] = useState({});
+  const [modal, setModal] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -91,7 +93,12 @@ const ProductListLayer = () => {
   return (
     <div className="card h-100 p-0 radius-12">
       <div className="card-header border-bottom bg-base py-16 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between">
-        <button className="btn btn-primary text-sm btn-sm px-16 py-8 radius-8">Export with Excel</button>
+        <div className="d-flex align-items-center flex-wrap gap-3">
+          <button className="btn btn-primary text-sm btn-sm px-16 py-8 radius-8">Export with Excel</button>
+          <button type="button" onClick={() => setModal({ mode: "add" })} className="btn btn-primary text-sm btn-sm px-12 py-8 radius-8 d-flex align-items-center gap-2">
+            <Icon icon="ic:baseline-plus" className="icon text-xl line-height-1" /> Add Product
+          </button>
+        </div>
         <input
           type="text"
           className="form-control radius-8"
@@ -156,12 +163,12 @@ const ProductListLayer = () => {
                           </td>
                           <td className="text-center">
                             <div className="d-flex align-items-center gap-10 justify-content-center">
-                              <Link to={`/view-product/${product.id}`} className="bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle" title="View">
+                              <button type="button" onClick={() => setModal({ mode: "view", id: product.id })} className="bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0" title="View">
                                 <Icon icon="majesticons:eye-line" className="icon text-xl" />
-                              </Link>
-                              <Link to={`/edit-product/${product.id}`} className="bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle" title="Edit">
+                              </button>
+                              <button type="button" onClick={() => setModal({ mode: "edit", id: product.id })} className="bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0" title="Edit">
                                 <Icon icon="lucide:edit" className="menu-icon" />
-                              </Link>
+                              </button>
                               <button type="button" onClick={() => handleDelete(product.id)} className="remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0" title="Delete">
                                 <Icon icon="fluent:delete-24-regular" className="menu-icon" />
                               </button>
@@ -191,6 +198,18 @@ const ProductListLayer = () => {
           </>
         )}
       </div>
+
+      {modal && (
+        <FormModal onClose={() => setModal(null)} size="xl">
+          <ProductFormLayer
+            isEdit={modal.mode === "edit"}
+            isView={modal.mode === "view"}
+            productId={modal.id}
+            onSuccess={() => { setModal(null); load(); }}
+            onCancel={() => setModal(null)}
+          />
+        </FormModal>
+      )}
     </div>
   );
 };

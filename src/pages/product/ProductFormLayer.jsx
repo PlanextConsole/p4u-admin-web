@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -13,6 +13,17 @@ import {
   uploadFile,
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
+import { buildApiUrl } from "../../lib/api/config";
+
+/** Resolve stored paths to a usable <img src> (absolute URLs unchanged; relative paths use API base). */
+function resolveMediaUrl(url) {
+  if (url == null || typeof url !== "string") return "";
+  const u = url.trim();
+  if (!u) return "";
+  if (/^https?:\/\//i.test(u)) return u;
+  const path = u.startsWith("/") ? u : `/${u}`;
+  return buildApiUrl(path);
+}
 
 const YES_NO = ["Yes", "No"];
 const HOURS = Array.from({ length: 13 }, (_, i) => i);
@@ -43,7 +54,7 @@ const VENDOR_PAGE_SIZE = 100;
 /**
  * @param {{ isEdit?: boolean, isView?: boolean, productId?: string }} props
  */
-const ProductFormLayer = ({ isEdit = false, isView = false, productId }) => {
+const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess, onCancel }) => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState(emptyForm);
   const [vendors, setVendors] = useState([]);
@@ -58,6 +69,38 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId }) => {
   const [pendingBanners, setPendingBanners] = useState([]);
   const pendingThumbnailRef = useRef(null);
   const pendingBannersRef = useRef([]);
+  const [thumbnailLoadError, setThumbnailLoadError] = useState(false);
+  const [bannerLoadError, setBannerLoadError] = useState({});
+
+  const pendingThumbPreviewUrl = useMemo(
+    () => (pendingThumbnail ? URL.createObjectURL(pendingThumbnail) : null),
+    [pendingThumbnail],
+  );
+  const pendingBannerPreviewUrls = useMemo(
+    () => pendingBanners.map((f) => URL.createObjectURL(f)),
+    [pendingBanners],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (pendingThumbPreviewUrl) URL.revokeObjectURL(pendingThumbPreviewUrl);
+    };
+  }, [pendingThumbPreviewUrl]);
+
+  useEffect(() => {
+    const urls = pendingBannerPreviewUrls;
+    return () => {
+      urls.forEach((u) => URL.revokeObjectURL(u));
+    };
+  }, [pendingBannerPreviewUrls]);
+
+  useEffect(() => {
+    setThumbnailLoadError(false);
+  }, [formData.thumbnailUrl, pendingThumbnail]);
+
+  useEffect(() => {
+    setBannerLoadError({});
+  }, [formData.bannerUrls, pendingBanners]);
 
   useEffect(() => {
     let cancelled = false;
@@ -147,6 +190,17 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId }) => {
     setFormData((prev) => ({ ...prev, bannerUrls: prev.bannerUrls.filter((_, i) => i !== index) }));
   };
 
+  const removePendingBannerAt = (index) => {
+    setPendingBanners((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      pendingBannersRef.current = next;
+      return next;
+    });
+  };
+
+  const thumbnailSrc = pendingThumbPreviewUrl || resolveMediaUrl(formData.thumbnailUrl);
+  const hasThumbnailPreview = Boolean(thumbnailSrc) && !thumbnailLoadError;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isView) return;
@@ -205,7 +259,7 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId }) => {
         await createProduct(payload);
         toast.success("Product created.");
       }
-      navigate("/product");
+      if (onSuccess) onSuccess(); else navigate("/product");
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : String(err);
       toast.error(msg);
@@ -277,7 +331,7 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId }) => {
                     </select>
                   </div>
                   {(formData.categoryId || formData.serviceId) && (
-                    <div className="bg-white radius-8 p-12 border border-neutral-200">
+                    <div className="bg-base radius-8 p-12 border border-neutral-200">
                       <span className="text-xs fw-bold text-secondary-light d-block mb-8">CURRENTLY SELECTED</span>
                       <div className="d-flex gap-8">
                         <div>
@@ -377,38 +431,132 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId }) => {
             <div className="row bg-neutral-50 radius-12 p-16 mb-20">
               <div className="col-md-6 mb-20">
                 <label className="form-label fw-semibold text-primary-light text-sm mb-8">Thumbnail</label>
-                <input type="file" className="form-control radius-8" accept="image/*" disabled={disabled}
-                  onChange={(e) => { if (e.target.files?.[0]) { setPendingThumbnail(e.target.files[0]); pendingThumbnailRef.current = e.target.files[0]; } }}
-                />
-                {(pendingThumbnail || formData.thumbnailUrl) && (
-                  <div className="mt-8">
-                    <img src={pendingThumbnail ? URL.createObjectURL(pendingThumbnail) : formData.thumbnailUrl} alt="Thumbnail" style={{ maxWidth: 120, maxHeight: 120, objectFit: "cover", borderRadius: 8 }} onError={(e) => { e.target.style.display = "none"; }} />
-                  </div>
+                {!isView && (
+                  <input
+                    type="file"
+                    className="form-control radius-8 mb-10"
+                    accept="image/*"
+                    disabled={disabled}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) {
+                        setPendingThumbnail(f);
+                        pendingThumbnailRef.current = f;
+                      }
+                    }}
+                  />
                 )}
+                <div className="border border-neutral-200 bg-base radius-12 p-12 d-flex flex-column align-items-start gap-10" style={{ minHeight: 140 }}>
+                  {hasThumbnailPreview ? (
+                    <>
+                      <a href={thumbnailSrc} target="_blank" rel="noopener noreferrer" className="d-inline-block">
+                        <img
+                          src={thumbnailSrc}
+                          alt="Product thumbnail"
+                          className="radius-8 border border-neutral-100"
+                          style={{ maxWidth: "100%", width: 220, height: 220, objectFit: "cover", display: "block" }}
+                          loading="lazy"
+                          onError={() => setThumbnailLoadError(true)}
+                        />
+                      </a>
+                      <span className="text-xs text-secondary-light">Click image to open full size</span>
+                    </>
+                  ) : thumbnailSrc && thumbnailLoadError ? (
+                    <span className="text-sm text-secondary-light">Could not load thumbnail.{" "}
+                      <a href={thumbnailSrc} target="_blank" rel="noopener noreferrer" className="text-primary-600">Open URL</a>
+                    </span>
+                  ) : (
+                    <span className="text-sm text-secondary-light mb-0">No thumbnail</span>
+                  )}
+                </div>
               </div>
               <div className="col-md-6 mb-20">
                 <label className="form-label fw-semibold text-primary-light text-sm mb-8">Banner</label>
-                <input type="file" className="form-control radius-8" accept="image/*" multiple disabled={disabled}
-                  onChange={(e) => { if (e.target.files?.length) { const files = [...e.target.files]; setPendingBanners(files); pendingBannersRef.current = files; } }}
-                />
-                {formData.bannerUrls.length > 0 && (
-                  <div className="d-flex flex-wrap gap-2 mt-8">
-                    {formData.bannerUrls.map((url, i) => (
-                      <div key={i} className="position-relative">
-                        <img src={url} alt={`Banner ${i + 1}`} style={{ width: 80, height: 50, objectFit: "cover", borderRadius: 6 }} onError={(e) => { e.target.style.display = "none"; }} />
-                        {!disabled && (
-                          <button type="button" className="position-absolute top-0 end-0 border-0 bg-danger-600 text-white rounded-circle d-flex align-items-center justify-content-center" style={{ width: 18, height: 18, fontSize: 10 }} onClick={() => removeBannerUrl(i)}>&times;</button>
+                {!isView && (
+                  <input
+                    type="file"
+                    className="form-control radius-8 mb-10"
+                    accept="image/*"
+                    multiple
+                    disabled={disabled}
+                    onChange={(e) => {
+                      if (e.target.files?.length) {
+                        const files = [...e.target.files];
+                        setPendingBanners(files);
+                        pendingBannersRef.current = files;
+                      }
+                    }}
+                  />
+                )}
+                {(formData.bannerUrls.length > 0 || pendingBannerPreviewUrls.length > 0) ? (
+                  <div className="d-flex flex-wrap gap-10 mt-0">
+                    {formData.bannerUrls.map((url, i) => {
+                      const src = resolveMediaUrl(url);
+                      const err = bannerLoadError[`saved-${i}`];
+                      return (
+                        <div key={`saved-${i}`} className="position-relative">
+                          {!err ? (
+                            <a href={src} target="_blank" rel="noopener noreferrer" className="d-block">
+                              <img
+                                src={src}
+                                alt={`Banner ${i + 1}`}
+                                className="border border-neutral-200 radius-8"
+                                style={{ width: 140, height: 88, objectFit: "cover", display: "block" }}
+                                loading="lazy"
+                                onError={() => setBannerLoadError((prev) => ({ ...prev, [`saved-${i}`]: true }))}
+                              />
+                            </a>
+                          ) : (
+                            <span className="text-xs text-secondary-light d-inline-block" style={{ width: 140 }}>
+                              Failed to load.{" "}
+                              <a href={src} target="_blank" rel="noopener noreferrer" className="text-primary-600">Open</a>
+                            </span>
+                          )}
+                          {!disabled && !isView && (
+                            <button
+                              type="button"
+                              className="position-absolute top-0 end-0 border-0 bg-danger-600 text-white rounded-circle d-flex align-items-center justify-content-center"
+                              style={{ width: 22, height: 22, fontSize: 12, transform: "translate(4px,-4px)" }}
+                              onClick={() => removeBannerUrl(i)}
+                              aria-label="Remove banner"
+                            >
+                              &times;
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {pendingBannerPreviewUrls.map((src, i) => (
+                      <div key={`pending-${i}`} className="position-relative">
+                        <img
+                          src={src}
+                          alt={`New banner ${i + 1}`}
+                          className="border border-primary-200 radius-8"
+                          style={{ width: 140, height: 88, objectFit: "cover", display: "block" }}
+                        />
+                        {!disabled && !isView && (
+                          <button
+                            type="button"
+                            className="position-absolute top-0 end-0 border-0 bg-danger-600 text-white rounded-circle d-flex align-items-center justify-content-center"
+                            style={{ width: 22, height: 22, fontSize: 12, transform: "translate(4px,-4px)" }}
+                            onClick={() => removePendingBannerAt(i)}
+                            aria-label="Remove new banner"
+                          >
+                            &times;
+                          </button>
                         )}
                       </div>
                     ))}
                   </div>
+                ) : (
+                  <p className="text-sm text-secondary-light mb-0">No banner images</p>
                 )}
               </div>
             </div>
 
             {/* ── Action Buttons ── */}
             <div className="d-flex align-items-center justify-content-between mt-24">
-              <button type="button" onClick={isView ? () => navigate(-1) : handleReset}
+              <button type="button" onClick={isView ? (onCancel || (() => navigate(-1))) : handleReset}
                 className="btn border border-danger-600 text-danger-600 bg-hover-danger-200 text-md px-56 py-12 radius-8 d-flex align-items-center gap-2">
                 <Icon icon="mdi:close-circle-outline" className="text-xl" /> {isView ? "Back" : "Reset"}
               </button>

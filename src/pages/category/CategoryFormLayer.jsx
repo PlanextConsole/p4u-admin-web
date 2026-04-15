@@ -27,7 +27,7 @@ const emptyForm = () => ({
 /**
  * @param {{ isEdit?: boolean, isView?: boolean, categoryId?: string }} props
  */
-const CategoryFormLayer = ({ isEdit = false, isView = false, categoryId }) => {
+const CategoryFormLayer = ({ isEdit = false, isView = false, categoryId, onSuccess, onCancel }) => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState(emptyForm);
   const [entityLoading, setEntityLoading] = useState(Boolean(categoryId));
@@ -149,7 +149,7 @@ const CategoryFormLayer = ({ isEdit = false, isView = false, categoryId }) => {
         await createCategory(payload);
         toast.success("Category created.");
       }
-      navigate("/category");
+      if (onSuccess) onSuccess(); else navigate("/category");
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : String(err);
       toast.error(msg);
@@ -276,7 +276,7 @@ const CategoryFormLayer = ({ isEdit = false, isView = false, categoryId }) => {
 
             {/* ── Action Buttons ── */}
             <div className="d-flex align-items-center justify-content-between mt-24">
-              <button type="button" onClick={isView ? () => navigate(-1) : handleReset}
+              <button type="button" onClick={isView ? (onCancel || (() => navigate(-1))) : handleReset}
                 className="btn border border-danger-600 text-danger-600 bg-hover-danger-200 text-md px-56 py-12 radius-8 d-flex align-items-center gap-2">
                 <Icon icon="mdi:close-circle-outline" className="text-xl" /> {isView ? "Back" : "Reset"}
               </button>

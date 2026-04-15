@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link } from "react-router-dom";
+import FormModal from "../../components/admin/FormModal";
+import BannerFormLayer from "./BannerFormLayer";
 
 const initialBanners = [
   {
@@ -27,6 +29,8 @@ const initialBanners = [
 
 const BannerListLayer = () => {
   const [banners, setBanners] = useState(initialBanners);
+  const [modal, setModal] = useState(null);
+  const rowForId = (id) => banners.find((b) => b.id === id) || null;
 
   const handleDelete = (id) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this banner?");
@@ -49,10 +53,10 @@ const BannerListLayer = () => {
             <Icon icon='ion:search-outline' className='icon' />
           </form>
         </div>
-        <Link to='/add-banner' className='btn btn-primary text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2'>
+        <button type='button' onClick={() => setModal({ mode: "add" })} className='btn btn-primary text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2'>
           <Icon icon='ic:baseline-plus' className='icon text-xl line-height-1' />
           Add Banner
-        </Link>
+        </button>
       </div>
       <div className='card-body p-24'>
         <div className='table-responsive scroll-sm'>
@@ -100,12 +104,12 @@ const BannerListLayer = () => {
                     </td>
                     <td className='text-center'>
                       <div className='d-flex align-items-center gap-10 justify-content-center'>
-                        <Link to={`/view-banner/${banner.id}`} className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle' title="View">
+                        <button type='button' onClick={() => setModal({ mode: "view", id: banner.id })} className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0' title="View">
                           <Icon icon='majesticons:eye-line' className='icon text-xl' />
-                        </Link>
-                        <Link to={`/edit-banner/${banner.id}`} className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle' title="Edit">
+                        </button>
+                        <button type='button' onClick={() => setModal({ mode: "edit", id: banner.id })} className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0' title="Edit">
                           <Icon icon='lucide:edit' className='menu-icon' />
-                        </Link>
+                        </button>
                         <button type='button' onClick={() => handleDelete(banner.id)} className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle' title="Delete">
                           <Icon icon='fluent:delete-24-regular' className='menu-icon' />
                         </button>
@@ -142,6 +146,18 @@ const BannerListLayer = () => {
           </ul>
         </div>
       </div>
+
+      {modal && (
+        <FormModal onClose={() => setModal(null)} size="lg">
+          <BannerFormLayer
+            isEdit={modal.mode === "edit"}
+            isView={modal.mode === "view"}
+            initialData={modal.id ? rowForId(modal.id) : null}
+            onSuccess={() => setModal(null)}
+            onCancel={() => setModal(null)}
+          />
+        </FormModal>
+      )}
     </div>
   );
 };

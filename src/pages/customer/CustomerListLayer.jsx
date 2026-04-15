@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { Link } from "react-router-dom";
 import { deleteCustomer, listCustomers, listOccupations } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
+import FormModal from "../../components/admin/FormModal";
+import CustomerFormLayer from "./CustomerFormLayer";
 
 const STATUS_OPTIONS = ["All", "active", "inactive", "suspended"];
 
@@ -18,6 +19,7 @@ const CustomerListLayer = () => {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [occupationMap, setOccupationMap] = useState({});
+  const [modal, setModal] = useState(null);
 
   useEffect(() => {
     listOccupations({ purpose: "all" }).then((res) => {
@@ -141,12 +143,12 @@ const CustomerListLayer = () => {
                           <td>{meta.appliedReferralCode || "N.A"}</td>
                           <td className="text-center">
                             <div className="d-flex align-items-center gap-10 justify-content-center">
-                              <Link to={`/view-customer/${customer.id}`} className="bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle" title="View">
+                              <button type="button" onClick={() => setModal({ mode: "view", id: customer.id })} className="bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0" title="View">
                                 <Icon icon="mdi:information-outline" className="icon text-xl" />
-                              </Link>
-                              <Link to={`/edit-customer/${customer.id}`} className="bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle" title="Edit">
+                              </button>
+                              <button type="button" onClick={() => setModal({ mode: "edit", id: customer.id })} className="bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0" title="Edit">
                                 <Icon icon="lucide:edit" className="menu-icon" />
-                              </Link>
+                              </button>
                               <button type="button" onClick={() => handleDelete(customer.id)} className="remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0" title="Delete">
                                 <Icon icon="fluent:delete-24-regular" className="menu-icon" />
                               </button>
@@ -176,6 +178,20 @@ const CustomerListLayer = () => {
           </>
         )}
       </div>
+
+      {modal && (
+        <FormModal onClose={() => setModal(null)} size="xl">
+          <div className="px-20 py-16 pt-48">
+            <CustomerFormLayer
+              isEdit={modal.mode === "edit"}
+              isView={modal.mode === "view"}
+              customerId={modal.id}
+              onSuccess={() => { setModal(null); load(); }}
+              onCancel={() => setModal(null)}
+            />
+          </div>
+        </FormModal>
+      )}
     </div>
   );
 };
