@@ -4,12 +4,13 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
   createOccupation,
+  deleteOccupation,
   getOccupation,
   updateOccupation,
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 
-const empty = () => ({ name: "", sortOrder: 0, isActive: true });
+const empty = () => ({ name: "", sortOrder: 0, isActive: true, customerCount: 0 });
 
 export default function OccupationFormLayer({ isEdit = false, isView = false, occupationId, onSuccess, onCancel }) {
   const navigate = useNavigate();
@@ -17,12 +18,14 @@ export default function OccupationFormLayer({ isEdit = false, isView = false, oc
   const [loading, setLoading] = useState(Boolean(occupationId));
   const [loadError, setLoadError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const apply = useCallback((row) => {
     setForm({
       name: row.name || "",
       sortOrder: row.sortOrder ?? 0,
       isActive: row.isActive !== false,
+      customerCount: typeof row.customerCount === "number" ? row.customerCount : 0,
     });
   }, []);
 
@@ -60,6 +63,8 @@ export default function OccupationFormLayer({ isEdit = false, isView = false, oc
       setForm((p) => ({ ...p, [name]: checked }));
     } else if (name === "sortOrder") {
       setForm((p) => ({ ...p, sortOrder: value === "" ? 0 : Number(value) }));
+    } else if (name === "status") {
+      setForm((p) => ({ ...p, isActive: value === "active" }));
     } else {
       setForm((p) => ({ ...p, [name]: value }));
     }
@@ -70,7 +75,7 @@ export default function OccupationFormLayer({ isEdit = false, isView = false, oc
     if (isView) return;
     const name = form.name.trim();
     if (!name) {
-      toast.error("Name is required.");
+      toast.error("Occupation name is required.");
       return;
     }
     const body = {
@@ -87,7 +92,8 @@ export default function OccupationFormLayer({ isEdit = false, isView = false, oc
         await createOccupation(body);
         toast.success("Occupation created.");
       }
-      if (onSuccess) onSuccess(); else navigate("/occupations");
+      if (onSuccess) onSuccess();
+      else navigate("/occupations");
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : String(err));
     } finally {
@@ -95,82 +101,123 @@ export default function OccupationFormLayer({ isEdit = false, isView = false, oc
     }
   }
 
-  const dis = isView || submitting || loading;
+  async function handleDelete() {
+    if (!occupationId || !isEdit) return;
+    if (!window.confirm("Delete this occupation? Customers assigned to it may need to be updated.")) return;
+    setDeleting(true);
+    try {
+      await deleteOccupation(occupationId);
+      toast.success("Occupation deleted.");
+      if (onSuccess) onSuccess();
+      else navigate("/occupations");
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : String(err));
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  const dis = isView || submitting || loading || deleting;
+  const headerTitle = isView
+    ? `View: ${form.name || "Occupation"}`
+    : isEdit
+      ? `Edit: ${form.name || "…"}`
+      : "Add occupation";
 
   return (
-    <div className="card h-100 p-0 radius-12">
-      <div className="card-header border-bottom bg-base py-16 px-24">
-        <h4 className="text-lg fw-semibold mb-0">
-          {isView ? "View Occupation" : isEdit ? "Edit Occupation" : "Add Occupation"}
-        </h4>
-      </div>
-      <div className="card-body p-24">
+    <div className="card h-100 p-0 radius-12 border-0 shadow-none">
+      <div className="card-body p-0">
+        <div className="d-flex align-items-start justify-content-between gap-12 px-4 pb-16 border-bottom mb-20">
+          <h4 className="text-lg fw-bold mb-0 text-primary-light">{headerTitle}</h4>
+          <button type="button" className="btn btn-sm btn-light border-0 rounded-circle" onClick={() => (onCancel ? onCancel() : navigate(-1))} aria-label="Close">
+            <Icon icon="mdi:close" className="text-xl text-secondary-light" />
+          </button>
+        </div>
+
         {loadError && occupationId && !loading && (
-          <div className="alert alert-danger radius-12 mb-16" role="alert">
+          <div className="alert alert-danger radius-12 mb-16 mx-4" role="alert">
             {loadError}
           </div>
         )}
+
         {loading ? (
-          <p className="text-secondary-light mb-0">Loading...</p>
+          <p className="text-secondary-light mb-0 px-4">Loading…</p>
         ) : (
-          <form onSubmit={onSubmit}>
-            <div className="row">
-              <div className="col-md-8 mb-20">
-                <label className="form-label fw-semibold text-sm mb-8">
-                  Name <span className="text-danger-600">*</span>
-                </label>
-                <input
-                  name="name"
-                  className="form-control radius-8"
-                  value={form.name}
-                  onChange={handleChange}
-                  disabled={dis}
-                  maxLength={255}
-                  required
-                />
+          <form onSubmit={onSubmit} className="px-4 pb-4">
+            <div className="mb-20">
+              <label className="form-label fw-semibold text-sm mb-8">
+                Occupation name <span className="text-danger-600">*</span>
+              </label>
+              <input
+                name="name"
+                className="form-control radius-10"
+                value={form.name}
+                onChange={handleChange}
+                disabled={dis}
+                maxLength={255}
+                required
+                placeholder="e.g. AC Technician"
+              />
+            </div>
+
+            <div className="mb-20">
+              <label className="form-label fw-semibold text-sm mb-8">Status</label>
+              <select name="status" className="form-select radius-10" value={form.isActive ? "active" : "inactive"} onChange={handleChange} disabled={dis}>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+
+            {(isEdit || isView) && occupationId ? (
+              <div className="mb-20 p-16 radius-12 bg-neutral-50 border">
+                <div className="text-secondary-light text-sm mb-4">Customers using this occupation</div>
+                <div className="h5 fw-bold mb-0 text-primary-light">{Number(form.customerCount ?? 0).toLocaleString("en-IN")}</div>
               </div>
-              <div className="col-md-4 mb-20">
+            ) : null}
+
+            <details className="mb-20">
+              <summary className="text-sm text-secondary-light cursor-pointer">Advanced</summary>
+              <div className="mt-12">
                 <label className="form-label fw-semibold text-sm mb-8">Sort order</label>
                 <input
                   type="number"
                   name="sortOrder"
-                  className="form-control radius-8"
+                  className="form-control radius-10"
                   value={form.sortOrder}
                   onChange={handleChange}
                   disabled={dis}
                   min={0}
                 />
               </div>
-              <div className="col-12 mb-20">
-                <div className="form-check">
-                  <input
-                    type="checkbox"
-                    name="isActive"
-                    className="form-check-input"
-                    id="occ-active"
-                    checked={form.isActive}
-                    onChange={handleChange}
-                    disabled={dis}
-                  />
-                  <label className="form-check-label" htmlFor="occ-active">
-                    Active
-                  </label>
-                </div>
+            </details>
+
+            <div className="d-flex flex-wrap align-items-center justify-content-between gap-12 mt-24 pt-20 border-top">
+              <div>
+                {isEdit && occupationId && !isView ? (
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={deleting || submitting}
+                    className="btn btn-danger radius-10 px-16 py-10 d-inline-flex align-items-center gap-8"
+                  >
+                    <Icon icon="mdi:delete-outline" className="text-xl" />
+                    {deleting ? "Deleting…" : "Delete"}
+                  </button>
+                ) : (
+                  <span />
+                )}
               </div>
-            </div>
-            <div className="d-flex justify-content-between mt-24">
-              <button
-                type="button"
-                onClick={() => (onCancel ? onCancel() : navigate(-1))}
-                className="btn border border-danger-600 text-danger-600 radius-8 px-56 py-12 d-flex align-items-center gap-2"
-              >
-                <Icon icon="mdi:close-circle-outline" className="text-xl" /> Back
-              </button>
-              {!isView && (
-                <button type="submit" disabled={dis} className="btn btn-primary radius-8 px-56 py-12 d-flex align-items-center gap-2">
-                  <Icon icon="lucide:save" className="text-xl" /> {submitting ? "Saving..." : "Save"}
+              <div className="d-flex gap-10">
+                <button type="button" onClick={() => (onCancel ? onCancel() : navigate(-1))} className="btn btn-light border radius-10 px-20 py-10">
+                  Cancel
                 </button>
-              )}
+                {!isView && (
+                  <button type="submit" disabled={dis} className="btn btn-primary radius-10 px-20 py-10 d-inline-flex align-items-center gap-8">
+                    <Icon icon="mdi:content-save-outline" className="text-xl" />
+                    {submitting ? "Saving…" : "Save"}
+                  </button>
+                )}
+              </div>
             </div>
           </form>
         )}

@@ -1,12 +1,62 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { loginPublic } from "../lib/api/adminApi";
+import { ensureTokenFresh } from "../lib/api/client";
 import { clearTokens, getAccessToken, getStoredRoles, setTokens } from "../lib/api/tokenStorage";
 
 const AuthContext = createContext(null);
 
+function decodeJwtExpMs(token) {
+  try {
+    const part = token.split(".")[1];
+    if (!part) return null;
+    const b64 = part.replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(atob(b64));
+    return typeof payload.exp === "number" ? payload.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
 export function AuthProvider({ children }) {
   const [accessToken, setAccessTokenState] = useState(() => getAccessToken());
   const [roles, setRolesState] = useState(() => getStoredRoles());
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  const syncFromStorage = useCallback(() => {
+    setAccessTokenState(getAccessToken());
+    setRolesState(getStoredRoles());
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = getAccessToken();
+        if (!token) {
+          if (!cancelled) {
+            setAccessTokenState(null);
+            setRolesState([]);
+          }
+          return;
+        }
+        const exp = decodeJwtExpMs(token);
+        const isExpired = exp != null && exp <= Date.now();
+        if (isExpired) {
+          try {
+            await ensureTokenFresh();
+          } catch {
+            clearTokens();
+          }
+        }
+        if (!cancelled) syncFromStorage();
+      } finally {
+        if (!cancelled) setIsInitializing(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [syncFromStorage]);
 
   const login = useCallback(async (username, password) => {
     const res = await loginPublic({ username, password });
@@ -22,6 +72,9 @@ export function AuthProvider({ children }) {
     setTokens(token, refresh, roleList);
     setAccessTokenState(token);
     setRolesState(roleList);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("p4u-admin-token-updated"));
+    }
   }, []);
 
   const logout = useCallback(() => {
@@ -31,19 +84,20 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    const sync = () => setAccessTokenState(getAccessToken());
+    const sync = () => syncFromStorage();
     window.addEventListener("p4u-admin-token-updated", sync);
     return () => window.removeEventListener("p4u-admin-token-updated", sync);
-  }, []);
+  }, [syncFromStorage]);
 
   const value = useMemo(
     () => ({
+      isInitializing,
       isAuthenticated: Boolean(accessToken),
       roles,
       login,
       logout,
     }),
-    [accessToken, roles, login, logout],
+    [isInitializing, accessToken, roles, login, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -48,8 +48,8 @@ export default function CouponListLayer() {
 
   return (
     <div className="card h-100 p-0 radius-12">
-      <div className="card-header border-bottom bg-base py-16 px-24 d-flex flex-wrap gap-3 justify-content-between align-items-center">
-        <div className="d-flex align-items-center flex-wrap gap-3">
+      <div className="card-header border-bottom bg-base py-16 px-24 p4u-admin-filter-row gap-3 justify-content-between align-items-center">
+        <div className="p4u-admin-filter-row align-items-center gap-3">
           <span className="text-md fw-medium text-secondary-light mb-0">Show</span>
           <select
             className="form-select form-select-sm w-auto ps-12 py-6 radius-12 h-40-px"
@@ -135,7 +135,7 @@ export default function CouponListLayer() {
                 </tbody>
               </table>
             </div>
-            <div className="d-flex justify-content-between flex-wrap gap-2 mt-24">
+            <div className="p4u-admin-filter-row justify-content-between gap-2 mt-24">
               <span className="text-sm">
                 Showing {pageFrom} to {pageTo} of {total}
               </span>

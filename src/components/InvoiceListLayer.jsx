@@ -4,8 +4,8 @@ import { Link } from "react-router-dom";
 const InvoiceListLayer = () => {
   return (
     <div className='card'>
-      <div className='card-header d-flex flex-wrap align-items-center justify-content-between gap-3'>
-        <div className='d-flex flex-wrap align-items-center gap-3'>
+      <div className='card-header p4u-admin-filter-row align-items-center justify-content-between gap-3'>
+        <div className='p4u-admin-filter-row align-items-center gap-3'>
           <div className='d-flex align-items-center gap-2'>
             <span>Show</span>
             <select
@@ -32,7 +32,7 @@ const InvoiceListLayer = () => {
             </span>
           </div>
         </div>
-        <div className='d-flex flex-wrap align-items-center gap-3'>
+        <div className='p4u-admin-filter-row align-items-center gap-3'>
           <select
             className='form-select form-select-sm w-auto'
             defaultValue='Select Status'
@@ -676,9 +676,9 @@ const InvoiceListLayer = () => {
             </tr>
           </tbody>
         </table>
-        <div className='d-flex flex-wrap align-items-center justify-content-between gap-2 mt-24'>
+        <div className='p4u-admin-filter-row align-items-center justify-content-between gap-2 mt-24'>
           <span>Showing 1 to 10 of 12 entries</span>
-          <ul className='pagination d-flex flex-wrap align-items-center gap-2 justify-content-center'>
+          <ul className='pagination d-flex p4u-admin-filter-row align-items-center gap-2 justify-content-center'>
             <li className='page-item'>
               <Link
                 className='page-link text-secondary-light fw-medium radius-4 border-0 px-10 py-10 d-flex align-items-center justify-content-center h-32-px  me-8 w-32-px bg-base'

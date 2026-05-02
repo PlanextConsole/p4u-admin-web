@@ -6,8 +6,8 @@ import CategoryListLayer from "./CategoryListLayer";
 const CategoryListPage = () => {
   return (
     <MasterLayout>
-      <Breadcrumb title='Categories List' pagetitle='Categories List' />
-      <CategoryListLayer />
+      <Breadcrumb title="Service categories" pagetitle="Service categories" />
+      <CategoryListLayer variant="service-roots" />
     </MasterLayout>
   );
 };

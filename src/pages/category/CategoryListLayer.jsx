@@ -1,83 +1,188 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { deleteCategory, listCategories, listCatalogServices } from "../../lib/api/adminApi";
+import {
+  deleteProductCategory,
+  deleteProductSubcategory,
+  deleteServiceCategory,
+  listCatalogServices,
+  listProductCategories,
+  listProductSubcategories,
+  listServiceCategories,
+} from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import CountAndChips from "../../components/admin/CountAndChips";
 import FormModal from "../../components/admin/FormModal";
 import CategoryFormLayer from "./CategoryFormLayer";
 
-const CategoryListLayer = () => {
+/**
+ * @param {{ variant?: 'service-roots' | 'product-roots' | 'product-subs' }} props
+ */
+const CategoryListLayer = ({ variant = "service-roots" }) => {
   const [categories, setCategories] = useState([]);
   const [services, setServices] = useState([]);
+  const [productRootsForParent, setProductRootsForParent] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
-  const [modal, setModal] = useState(null); // { mode: "add"|"edit"|"view", id? }
+  const [modal, setModal] = useState(null);
+
+  const isSubTable = variant === "product-subs";
+  const isProductRoots = variant === "product-roots";
 
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const [cRes, sRes] = await Promise.all([
-        listCategories({ purpose: "all" }),
-        listCatalogServices({ limit: 500, offset: 0 }),
-      ]);
-      setCategories(cRes.items || []);
-      setServices(sRes.items || []);
+      if (variant === "service-roots") {
+        const [cRes, sRes] = await Promise.all([
+          listServiceCategories({ purpose: "all" }),
+          listCatalogServices({ limit: 500, offset: 0 }),
+        ]);
+        setCategories((cRes.items || []).map((c) => ({ ...c, parentId: null })));
+        setServices(sRes.items || []);
+        setProductRootsForParent([]);
+      } else if (variant === "product-roots") {
+        const [rRes, sRes] = await Promise.all([
+          listProductCategories({ purpose: "all" }),
+          listProductSubcategories({ purpose: "all" }),
+        ]);
+        const roots = rRes.items || [];
+        const subs = sRes.items || [];
+        setCategories(roots.map((c) => ({ ...c, parentId: null })));
+        setServices(subs);
+        setProductRootsForParent(roots);
+      } else {
+        const [rRes, sRes] = await Promise.all([
+          listProductCategories({ purpose: "all" }),
+          listProductSubcategories({ purpose: "all" }),
+        ]);
+        const roots = rRes.items || [];
+        const subs = sRes.items || [];
+        setCategories(subs.map((s) => ({ ...s, parentId: s.productCategoryId })));
+        setServices([]);
+        setProductRootsForParent(roots);
+      }
     } catch (e) {
       setError(e instanceof ApiError ? e.message : String(e));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [variant]);
 
   useEffect(() => { load(); }, [load]);
 
+  const servicesByCategory = useMemo(() => {
+    const m = {};
+    services.forEach((s) => {
+      const cid = s.categoryId;
+      if (cid) {
+        if (!m[cid]) m[cid] = [];
+        m[cid].push(s);
+      }
+    });
+    return m;
+  }, [services]);
+
+  const subsByParent = useMemo(() => {
+    const m = {};
+    services.forEach((sub) => {
+      const pid = sub.productCategoryId;
+      if (!pid) return;
+      if (!m[pid]) m[pid] = [];
+      m[pid].push(sub);
+    });
+    return m;
+  }, [services]);
+
+  const rootCategories = useMemo(
+    () => productRootsForParent.map((c) => ({ id: c.id, name: c.name })),
+    [productRootsForParent],
+  );
+
+  const parentById = useMemo(() => {
+    const m = {};
+    productRootsForParent.forEach((c) => { m[c.id] = c; });
+    return m;
+  }, [productRootsForParent]);
+
+  const pool = useMemo(() => {
+    if (variant === "product-subs") return categories.filter((c) => Boolean(c.parentId));
+    return categories;
+  }, [categories, variant]);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return pool;
+    const q = search.toLowerCase();
+    return pool.filter((c) => {
+      const linked =
+        variant === "service-roots"
+          ? (servicesByCategory[c.id] || [])
+          : variant === "product-roots"
+            ? (subsByParent[c.id] || [])
+            : [];
+      const parentName = c.parentId ? (parentById[c.parentId]?.name || "") : "";
+      return (
+        (c.name || "").toLowerCase().includes(q) ||
+        parentName.toLowerCase().includes(q) ||
+        linked.some((x) => (x.name || "").toLowerCase().includes(q))
+      );
+    });
+  }, [pool, search, servicesByCategory, subsByParent, parentById, variant]);
+
+  const tableColSpan = isSubTable ? 9 : 8;
+
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this category?")) return;
+    const msg =
+      variant === "product-subs"
+        ? "Delete this subcategory?"
+        : variant === "product-roots"
+          ? "Delete this product category?"
+          : "Delete this service category?";
+    if (!window.confirm(msg)) return;
     try {
-      await deleteCategory(id);
+      if (variant === "service-roots") await deleteServiceCategory(id);
+      else if (variant === "product-roots") await deleteProductCategory(id);
+      else await deleteProductSubcategory(id);
       await load();
     } catch (e) {
       window.alert(e instanceof ApiError ? e.message : String(e));
     }
   };
 
-  const servicesByCategory = {};
-  services.forEach((s) => {
-    if (s.categoryId) {
-      if (!servicesByCategory[s.categoryId]) servicesByCategory[s.categoryId] = [];
-      servicesByCategory[s.categoryId].push(s);
-    }
-  });
-
-  const filtered = search.trim()
-    ? categories.filter((c) => {
-        const q = search.toLowerCase();
-        const catServices = servicesByCategory[c.id] || [];
-        return (
-          (c.name || "").toLowerCase().includes(q) ||
-          catServices.some((s) => (s.name || "").toLowerCase().includes(q))
-        );
-      })
-    : categories;
-
   const availBadge = (val) => val ? "bg-success-600 text-white" : "bg-danger-600 text-white";
+
+  const addLabel =
+    variant === "product-subs"
+      ? "Add subcategory"
+      : variant === "product-roots"
+        ? "Add product category"
+        : "Add service category";
+
+  const chipsTitle =
+    variant === "service-roots" ? "Services" : variant === "product-roots" ? "Subcategories" : null;
+
+  const chipItems = (cat) => {
+    if (variant === "service-roots") return servicesByCategory[cat.id] || [];
+    if (variant === "product-roots") return subsByParent[cat.id] || [];
+    return [];
+  };
+
+  const chipSuffix = variant === "service-roots" ? "services" : "subcategories";
 
   return (
     <div className="card h-100 p-0 radius-12">
-      <div className="card-header border-bottom bg-base py-16 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between">
-        <div className="d-flex align-items-center flex-wrap gap-3">
+      <div className="card-header border-bottom bg-base py-16 px-24 p4u-admin-filter-row align-items-center gap-3 justify-content-between">
+        <div className="p4u-admin-filter-row align-items-center gap-3">
           <button className="btn btn-primary text-sm btn-sm px-16 py-8 radius-8">Export with Excel</button>
           <button type="button" onClick={() => setModal({ mode: "add" })} className="btn btn-primary text-sm btn-sm px-12 py-8 radius-8 d-flex align-items-center gap-2">
-            <Icon icon="ic:baseline-plus" className="icon text-xl line-height-1" /> Add Category
+            <Icon icon="ic:baseline-plus" className="icon text-xl line-height-1" /> {addLabel}
           </button>
         </div>
         <input
           type="text"
           className="form-control radius-8"
           style={{ maxWidth: 320 }}
-          placeholder="Search Categories or Sub Categories"
+          placeholder={isSubTable ? "Search subcategories or parent" : "Search categories"}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -94,10 +199,10 @@ const CategoryListLayer = () => {
                   <tr>
                     <th scope="col">S.No</th>
                     <th scope="col">Name</th>
-                    <th scope="col">Image</th>
-                    <th scope="col">Sub Categories (Services)</th>
+                    {isSubTable && <th scope="col">Parent category</th>}
+                    <th scope="col">{variant === "product-subs" || variant === "product-roots" ? "Image" : "Icon"}</th>
+                    {chipsTitle && <th scope="col">{chipsTitle}</th>}
                     <th scope="col" className="text-center">Availability</th>
-                    <th scope="col" className="text-center">Emergency</th>
                     <th scope="col" className="text-center">Trending</th>
                     <th scope="col" className="text-center">Verification Status</th>
                     <th scope="col" className="text-center">Action</th>
@@ -106,31 +211,45 @@ const CategoryListLayer = () => {
                 <tbody>
                   {filtered.length > 0 ? (
                     filtered.map((cat, index) => {
-                      const catServices = servicesByCategory[cat.id] || [];
+                      const chips = chipItems(cat);
                       return (
                         <tr key={cat.id}>
                           <td>{index + 1}</td>
                           <td><span className="text-md fw-normal text-secondary-light">{cat.name || "—"}</span></td>
+                          {isSubTable && (
+                            <td>
+                              <span className="text-md fw-normal text-secondary-light">
+                                {cat.parentId ? (parentById[cat.parentId]?.name || "—") : "—"}
+                              </span>
+                            </td>
+                          )}
                           <td>
-                            {cat.thumbnailUrl ? (
+                            {variant === "service-roots" ? (
+                              (cat.iconUrl || cat.thumbnailUrl) ? (
+                                <img src={cat.iconUrl || cat.thumbnailUrl} alt="" style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 6 }} onError={(e) => { e.target.style.display = "none"; }} />
+                              ) : (
+                                <span className="text-secondary-light">—</span>
+                              )
+                            ) : cat.thumbnailUrl ? (
                               <img src={cat.thumbnailUrl} alt="" style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 6 }} onError={(e) => { e.target.style.display = "none"; }} />
-                            ) : <span className="text-secondary-light">—</span>}
+                            ) : (
+                              <span className="text-secondary-light">—</span>
+                            )}
                           </td>
-                          <td>
-                            <CountAndChips
-                              items={catServices}
-                              getLabel={(s) => s.name}
-                              getKey={(s) => s.id}
-                              countSuffix="services"
-                            />
-                          </td>
+                          {chipsTitle && (
+                            <td>
+                              <CountAndChips
+                                items={chips}
+                                getLabel={(s) => s.name}
+                                getKey={(s) => s.id}
+                                countSuffix={chipSuffix}
+                              />
+                            </td>
+                          )}
                           <td className="text-center">
                             <span className={`px-12 py-4 radius-4 fw-medium text-sm ${availBadge(cat.availability)}`}>
                               {cat.availability ? "Active" : "Deactive"}
                             </span>
-                          </td>
-                          <td className="text-center">
-                            <span className="text-secondary-light text-sm">{cat.emergency ? "Active" : "Deactive"}</span>
                           </td>
                           <td className="text-center">
                             <span className={`px-12 py-4 radius-4 fw-medium text-sm ${cat.trending ? "bg-success-600 text-white" : "bg-danger-600 text-white"}`}>
@@ -157,12 +276,12 @@ const CategoryListLayer = () => {
                       );
                     })
                   ) : (
-                    <tr><td colSpan="9" className="text-center py-4">No categories found.</td></tr>
+                    <tr><td colSpan={tableColSpan} className="text-center py-4">No categories found.</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
-            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24">
+            <div className="p4u-admin-filter-row align-items-center justify-content-between gap-2 mt-24">
               <span>{filtered.length} categor{filtered.length === 1 ? "y" : "ies"}</span>
             </div>
           </>
@@ -175,6 +294,9 @@ const CategoryListLayer = () => {
             isEdit={modal.mode === "edit"}
             isView={modal.mode === "view"}
             categoryId={modal.id}
+            variant={variant}
+            scope={isSubTable ? "subcategory" : "root"}
+            rootCategories={rootCategories}
             onSuccess={() => { setModal(null); load(); }}
             onCancel={() => setModal(null)}
           />

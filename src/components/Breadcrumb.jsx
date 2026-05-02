@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 // eslint-disable-next-line react/prop-types
 const Breadcrumb = ({ title, pagetitle, subtitle }) => {
   return (
-    <div className='d-flex flex-wrap align-items-center justify-content-between gap-3 mb-24'>
+    <div className='p4u-admin-filter-row align-items-center justify-content-between gap-3 mb-24'>
       <div>
         {subtitle && pagetitle ? (
           <>

@@ -86,7 +86,7 @@ const VendorEnquiryListLayer = () => {
 
   return (
     <div className="card h-100 p-0 radius-12">
-      <div className="card-header border-bottom bg-base py-16 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between">
+      <div className="card-header border-bottom bg-base py-16 px-24 p4u-admin-filter-row align-items-center gap-3 justify-content-between">
         <button className="btn btn-primary text-sm btn-sm px-16 py-8 radius-8">Export with Excel</button>
         <input
           type="text"
@@ -170,7 +170,7 @@ const VendorEnquiryListLayer = () => {
                 </tbody>
               </table>
             </div>
-            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24">
+            <div className="p4u-admin-filter-row align-items-center justify-content-between gap-2 mt-24">
               <span>{filtered.length} of {total} entries</span>
               <div className="d-flex gap-2 align-items-center">
                 <button type="button" className="page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px text-md" disabled={!canPrev} onClick={() => setOffset(Math.max(0, offset - limit))}>

@@ -9,7 +9,14 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       proxy: {
+        // Most specific first: admin uploads, then all other /api/admin (lists, CRUD).
+        // Sending /api/admin directly to admin-management-services (8082) avoids the gateway
+        // hitting a different Eureka instance whose MySQL never got the vendor_kind migration.
         '/api/admin/upload': {
+          target: env.VITE_ADMIN_SERVICE_URL || 'http://localhost:8082',
+          changeOrigin: true,
+        },
+        '/api/admin': {
           target: env.VITE_ADMIN_SERVICE_URL || 'http://localhost:8082',
           changeOrigin: true,
         },

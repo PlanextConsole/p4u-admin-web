@@ -1,146 +1,82 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
   createVendor,
   getVendor,
-  listCategories,
+  listCategoriesForProducts,
   listCatalogServices,
   updateVendor,
   uploadFile,
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 
-const STATUS_OPTIONS = ["not_verified", "pending", "active", "suspended", "rejected"];
-const GENDER_OPTIONS = ["Male", "Female", "Other"];
-const MEMBERSHIP_OPTIONS = ["basic", "silver", "gold", "platinum"];
-const TRENDING_OPTIONS = ["Yes", "No"];
-
-const emptyForm = () => ({
+const emptyForm = (kind = "product") => ({
+  vendorKind: kind === "service" ? "service" : "product",
   ownerName: "",
   businessName: "",
-  age: "",
-  gender: "",
-  thumbnailUrl: "",
-  bannerUrl: "",
+  vendorRef: "",
+  email: "",
+  phone: "",
+  status: "pending",
+  verificationStatus: "pending",
+  categorySlug: "",
   gst: "",
   pan: "",
-  phone: "",
-  secondaryPhone: "",
-  email: "",
-  membershipStatus: "",
-  status: "not_verified",
-  experience: "",
-  trending: "No",
-  appliedReferralCode: "",
-  aboutBusiness: "",
-  // Address
-  addrBuildingNumber: "",
-  addrAreaLocality: "",
-  addrState: "",
-  addrCity: "",
-  addrLatitude: "",
-  addrLongitude: "",
-  addrPincode: "",
-  addrLandmark: "",
-  // Commission
-  commissionRate: "",
-  // Categories & Services
-  categorySlugs: [],
-  pickCategoryId: "",
-  serviceSlugs: [],
-  pickServiceId: "",
-  // Documents
+  stateName: "",
+  stateCode: "",
+  registeredShopAddress: "",
+  thumbnailUrl: "",
   gstCertUrl: "",
   panCardUrl: "",
-  // Bank
   bankName: "",
   ifscCode: "",
   accountHolderName: "",
   accountNumber: "",
-  branch: "",
-  upiId: "",
+  commissionRate: "10",
+  maxRedemptionPercent: "",
+  paymentStatus: "unpaid",
+  transactionRef: "",
+  selectedServiceIds: [],
 });
-
-function slugify(s) {
-  return String(s)
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "");
-}
-
-function categoryKey(c) {
-  const slug = (c.slug || "").trim();
-  if (slug) return slug;
-  return slugify(c.name || "");
-}
 
 function normalizeSlugsFromJson(v) {
   if (v == null) return [];
-  if (Array.isArray(v)) {
-    return v
-      .map((x) => (typeof x === "string" ? x.trim() : x?.slug || x?.name || x?.id))
-      .filter(Boolean);
-  }
+  if (Array.isArray(v)) return v.map((x) => (typeof x === "string" ? x : x?.slug || x?.name)).filter(Boolean);
   if (typeof v === "string") {
-    const t = v.trim();
-    if (!t) return [];
     try {
-      return normalizeSlugsFromJson(JSON.parse(t));
+      return normalizeSlugsFromJson(JSON.parse(v));
     } catch {
-      return [t];
+      return v.trim() ? [v.trim()] : [];
     }
   }
   return [];
 }
 
-function parseAddressJson(j) {
-  const empty = {
-    addrBuildingNumber: "",
-    addrAreaLocality: "",
-    addrState: "",
-    addrCity: "",
-    addrLatitude: "",
-    addrLongitude: "",
-    addrPincode: "",
-    addrLandmark: "",
-  };
-  if (j == null) return empty;
-  let o = j;
-  if (typeof j === "string") {
-    try { o = JSON.parse(j); } catch { return empty; }
+function normalizeServiceIdsFromJson(v) {
+  if (v == null) return [];
+  if (Array.isArray(v)) {
+    return v
+      .map((x) => {
+        if (typeof x === "string") return x;
+        if (typeof x === "object" && x) return x.id || x.serviceId || x.slug || x.name;
+        return null;
+      })
+      .filter(Boolean)
+      .map((x) => String(x));
   }
-  if (typeof o !== "object" || !o) return empty;
-  return {
-    addrBuildingNumber: String(o.buildingNumber ?? "").trim(),
-    addrAreaLocality: String(o.areaLocality ?? "").trim(),
-    addrState: String(o.state ?? "").trim(),
-    addrCity: String(o.city ?? "").trim(),
-    addrLatitude: String(o.latitude ?? "").trim(),
-    addrLongitude: String(o.longitude ?? "").trim(),
-    addrPincode: String(o.pincode ?? "").trim(),
-    addrLandmark: String(o.landmark ?? "").trim(),
-  };
-}
-
-function buildAddressJson(form) {
-  const o = {
-    buildingNumber: form.addrBuildingNumber.trim(),
-    areaLocality: form.addrAreaLocality.trim(),
-    state: form.addrState.trim(),
-    city: form.addrCity.trim(),
-    latitude: form.addrLatitude.trim(),
-    longitude: form.addrLongitude.trim(),
-    pincode: form.addrPincode.trim(),
-    landmark: form.addrLandmark.trim(),
-  };
-  return Object.values(o).some(Boolean) ? o : null;
+  if (typeof v === "string") {
+    try {
+      return normalizeServiceIdsFromJson(JSON.parse(v));
+    } catch {
+      return v.trim() ? [v.trim()] : [];
+    }
+  }
+  return [];
 }
 
 function parseBankJson(j) {
-  const empty = { bankName: "", ifscCode: "", accountHolderName: "", accountNumber: "", branch: "", upiId: "" };
+  const empty = { bankName: "", ifscCode: "", accountHolderName: "", accountNumber: "" };
   if (j == null) return empty;
   let o = j;
   if (typeof j === "string") {
@@ -152,8 +88,6 @@ function parseBankJson(j) {
     ifscCode: String(o.ifscCode ?? "").trim(),
     accountHolderName: String(o.accountHolderName ?? "").trim(),
     accountNumber: String(o.accountNumber ?? "").trim(),
-    branch: String(o.branch ?? "").trim(),
-    upiId: String(o.upiId ?? "").trim(),
   };
 }
 
@@ -163,32 +97,27 @@ function buildBankJson(form) {
     ifscCode: form.ifscCode.trim(),
     accountHolderName: form.accountHolderName.trim(),
     accountNumber: form.accountNumber.trim(),
-    branch: form.branch.trim(),
-    upiId: form.upiId.trim(),
   };
   return Object.values(o).some(Boolean) ? o : null;
 }
 
 /**
- * @param {{ isEdit?: boolean, isView?: boolean, vendorId?: string }} props
+ * @param {{ isEdit?: boolean, isView?: boolean, vendorId?: string, vendorKind: 'product'|'service', onSuccess?: () => void, onCancel?: () => void }} props
  */
-const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, onSuccess, onCancel }) => {
-  const navigate = useNavigate();
-  const [formData, setFormData] = useState(emptyForm);
+const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind = "product", onSuccess, onCancel }) => {
+  const [formData, setFormData] = useState(() => emptyForm(vendorKind));
+  const [activeTab, setActiveTab] = useState("details");
+  const [isReadonly, setIsReadonly] = useState(Boolean(isView));
   const [entityLoading, setEntityLoading] = useState(Boolean(vendorId));
   const [loadError, setLoadError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [catalogCategories, setCatalogCategories] = useState([]);
   const [catalogServices, setCatalogServices] = useState([]);
-  // Pending file objects (not yet uploaded)
-  const [pendingFiles, setPendingFiles] = useState({ thumbnailUrl: null, bannerUrl: null, gstCertUrl: null, panCardUrl: null });
+  const [pendingFiles, setPendingFiles] = useState({ thumbnailUrl: null, gstCertUrl: null, panCardUrl: null });
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([
-      listCategories({ purpose: "all" }),
-      listCatalogServices({ limit: 200, offset: 0 }),
-    ])
+    Promise.all([listCategoriesForProducts({ purpose: "all" }), listCatalogServices({ limit: 500, offset: 0 })])
       .then(([cRes, sRes]) => {
         if (!cancelled) {
           setCatalogCategories(Array.isArray(cRes?.items) ? cRes.items : []);
@@ -205,35 +134,46 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, onSuccess, 
   }, []);
 
   const applyRow = useCallback((row) => {
-    const addr = parseAddressJson(row.addressJson);
     const bank = parseBankJson(row.bankJson);
     const docs = row.documentsJson || {};
+    const categories = normalizeSlugsFromJson(row.categoriesJson);
+    const serviceIds = normalizeServiceIdsFromJson(row.servicesJson);
+    const address = typeof row.addressJson === "object" && row.addressJson ? row.addressJson : {};
     setFormData({
+      vendorKind:
+        row.vendorKind === "service" || String(row.vendorType || "").toUpperCase() === "SERVICE"
+          ? "service"
+          : "product",
       ownerName: row.ownerName || "",
       businessName: row.businessName || "",
-      age: row.age != null ? String(row.age) : "",
-      gender: row.gender || "",
-      thumbnailUrl: row.thumbnailUrl || "",
-      bannerUrl: row.bannerUrl || "",
+      vendorRef: row.vendorRef?.trim() || "",
+      email: row.email || "",
+      phone: row.phone || "",
+      status: row.status === "not_verified" ? "pending" : (row.status || "pending"),
+      verificationStatus:
+        row.status === "rejected"
+          ? "rejected"
+          : row.status === "pending" || row.status === "not_verified"
+            ? "pending"
+            : row.status === "active"
+              ? "verified"
+              : row.status === "suspended"
+                ? "deactivated"
+                : "pending",
+      categorySlug: categories[0] || "",
       gst: row.gst || "",
       pan: row.pan || "",
-      phone: row.phone || "",
-      secondaryPhone: row.secondaryPhone || "",
-      email: row.email || "",
-      membershipStatus: row.membershipStatus || "",
-      status: row.status || "not_verified",
-      experience: row.experience || "",
-      trending: row.trending ? "Yes" : "No",
-      appliedReferralCode: row.appliedReferralCode || "",
-      aboutBusiness: row.aboutBusiness || "",
-      ...addr,
-      commissionRate: row.commissionRate != null ? String(row.commissionRate) : "",
-      categorySlugs: normalizeSlugsFromJson(row.categoriesJson),
-      pickCategoryId: "",
-      serviceSlugs: normalizeSlugsFromJson(row.servicesJson),
-      pickServiceId: "",
+      stateName: String(address.state || ""),
+      stateCode: String(address.stateCode || ""),
+      registeredShopAddress: String(address.areaLocality || address.buildingNumber || ""),
+      thumbnailUrl: row.thumbnailUrl || "",
       gstCertUrl: docs.gstCertificateUrl || "",
       panCardUrl: docs.panCardUrl || "",
+      commissionRate: row.commissionRate != null ? String(row.commissionRate) : "10",
+      maxRedemptionPercent: String(row.maxRedemptionPercent || ""),
+      paymentStatus: row.paymentStatus || "unpaid",
+      transactionRef: row.transactionRef || "",
+      selectedServiceIds: serviceIds,
       ...bank,
     });
   }, []);
@@ -260,97 +200,98 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, onSuccess, 
     return () => { cancelled = true; };
   }, [vendorId, applyRow]);
 
+  useEffect(() => {
+    setIsReadonly(Boolean(isView));
+  }, [isView]);
+
   const handleChange = (e) => {
-    if (isView) return;
+    if (isReadonly) return;
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      const next = { ...prev, [name]: value };
+      if (name === "status") {
+        next.verificationStatus =
+          value === "active"
+            ? "verified"
+            : value === "pending"
+              ? "pending"
+              : value === "rejected"
+                ? "rejected"
+                : value === "suspended"
+                  ? "deactivated"
+                  : "pending";
+      }
+      return next;
+    });
   };
 
-  // Category helpers
-  const addCategorySlug = (slug) => {
-    const s = String(slug || "").trim();
-    if (!s) return;
-    setFormData((prev) =>
-      prev.categorySlugs.includes(s) ? prev : { ...prev, categorySlugs: [...prev.categorySlugs, s] },
-    );
-  };
-  const removeCategorySlug = (slug) => {
-    setFormData((prev) => ({ ...prev, categorySlugs: prev.categorySlugs.filter((x) => x !== slug) }));
-  };
-  const addPickedCategory = () => {
-    const id = formData.pickCategoryId;
-    if (!id) return;
-    const c = catalogCategories.find((x) => String(x.id) === String(id));
-    if (c) addCategorySlug(categoryKey(c));
-    setFormData((prev) => ({ ...prev, pickCategoryId: "" }));
-  };
-
-  // Service helpers
-  const addServiceSlug = (slug) => {
-    const s = String(slug || "").trim();
-    if (!s) return;
-    setFormData((prev) =>
-      prev.serviceSlugs.includes(s) ? prev : { ...prev, serviceSlugs: [...prev.serviceSlugs, s] },
-    );
-  };
-  const removeServiceSlug = (slug) => {
-    setFormData((prev) => ({ ...prev, serviceSlugs: prev.serviceSlugs.filter((x) => x !== slug) }));
-  };
-  const addPickedService = () => {
-    const id = formData.pickServiceId;
-    if (!id) return;
-    const s = catalogServices.find((x) => String(x.id) === String(id));
-    if (s) addServiceSlug(s.name || s.id);
-    setFormData((prev) => ({ ...prev, pickServiceId: "" }));
+  const handleServicesChange = (e) => {
+    if (isReadonly) return;
+    const value = String(e.target.value || "").trim();
+    setFormData((prev) => ({ ...prev, selectedServiceIds: value ? [value] : [] }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isView) return;
+    if (isReadonly) return;
+    if (formData.vendorKind !== "product" && formData.vendorKind !== "service") {
+      toast.error("Please select a vendor type.");
+      return;
+    }
     setSubmitting(true);
     try {
-      // Upload any pending files first
       const uploaded = { ...formData };
-      const fileKeys = ["thumbnailUrl", "bannerUrl", "gstCertUrl", "panCardUrl"];
+      const fileKeys = ["thumbnailUrl", "gstCertUrl", "panCardUrl"];
       for (const key of fileKeys) {
         if (pendingFiles[key]) {
           const res = await uploadFile(pendingFiles[key]);
           uploaded[key] = res.url;
         }
       }
-      // Update formData with uploaded URLs so buildPayload picks them up
-      setFormData(uploaded);
 
-      const categoriesJson = uploaded.categorySlugs?.length ? [...uploaded.categorySlugs] : null;
-      const servicesJson = uploaded.serviceSlugs?.length ? [...uploaded.serviceSlugs] : null;
-      const addressJson = buildAddressJson(uploaded);
+      const categoriesJson = uploaded.categorySlug ? [uploaded.categorySlug] : null;
+      const servicesJson =
+        uploaded.vendorKind === "service" && Array.isArray(uploaded.selectedServiceIds) && uploaded.selectedServiceIds.length > 0
+          ? uploaded.selectedServiceIds
+          : null;
+      const addressJson = {
+        state: uploaded.stateName || "",
+        stateCode: uploaded.stateCode || "",
+        areaLocality: uploaded.registeredShopAddress || "",
+      };
       const bankJson = buildBankJson(uploaded);
       const documentsJson = {};
       if (uploaded.gstCertUrl?.trim()) documentsJson.gstCertificateUrl = uploaded.gstCertUrl.trim();
       if (uploaded.panCardUrl?.trim()) documentsJson.panCardUrl = uploaded.panCardUrl.trim();
 
+      const vk = uploaded.vendorKind === "service" ? "service" : "product";
+
       const payload = {
         ownerName: uploaded.ownerName?.trim() || null,
         businessName: uploaded.businessName?.trim() || null,
-        age: uploaded.age ? Number(uploaded.age) : null,
-        gender: uploaded.gender || null,
+        vendorRef: uploaded.vendorRef?.trim() || null,
+        email: uploaded.email?.trim() || null,
+        phone: uploaded.phone?.trim() || null,
+        status: uploaded.status || "pending",
+        paymentStatus: uploaded.paymentStatus || "unpaid",
+        transactionRef: uploaded.transactionRef?.trim() || null,
+        maxRedemptionPercent: uploaded.maxRedemptionPercent ? Number(uploaded.maxRedemptionPercent) : null,
         thumbnailUrl: uploaded.thumbnailUrl?.trim() || null,
-        bannerUrl: uploaded.bannerUrl?.trim() || null,
+        vendorKind: vk,
+        vendorType: vk === "service" ? "SERVICE" : "PRODUCT",
+        bannerUrl: null,
         gst: uploaded.gst?.trim() || null,
         pan: uploaded.pan?.trim() || null,
-        phone: uploaded.phone?.trim() || null,
-        secondaryPhone: uploaded.secondaryPhone?.trim() || null,
-        email: uploaded.email?.trim() || null,
-        membershipStatus: uploaded.membershipStatus || null,
-        status: uploaded.status,
-        experience: uploaded.experience?.trim() || null,
-        trending: uploaded.trending === "Yes",
-        appliedReferralCode: uploaded.appliedReferralCode?.trim() || null,
-        aboutBusiness: uploaded.aboutBusiness?.trim() || null,
+        secondaryPhone: null,
+        membershipStatus: null,
+        experience: null,
+        trending: false,
+        appliedReferralCode: null,
+        aboutBusiness: null,
         categoriesJson,
         servicesJson,
         addressJson,
-        commissionRate: uploaded.commissionRate ? uploaded.commissionRate : null,
+        commissionRate: uploaded.commissionRate ? Number(uploaded.commissionRate) : null,
         documentsJson: Object.keys(documentsJson).length > 0 ? documentsJson : null,
         bankJson,
       };
@@ -362,7 +303,7 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, onSuccess, 
         await createVendor(payload);
         toast.success("Vendor created.");
       }
-      if (onSuccess) onSuccess(); else navigate("/vendor");
+      if (onSuccess) onSuccess();
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : String(err);
       toast.error(msg);
@@ -371,313 +312,194 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, onSuccess, 
     }
   };
 
-  const handleReset = () => {
-    setFormData(emptyForm());
-    setPendingFiles({ thumbnailUrl: null, bannerUrl: null, gstCertUrl: null, panCardUrl: null });
-  };
-
-  const disabled = isView || submitting || entityLoading;
+  const disabled = isReadonly || submitting || entityLoading;
   const showSkeleton = Boolean(vendorId) && entityLoading;
 
   return (
-    <div className="card h-100 p-0 radius-12">
-      <div className="card-header border-bottom bg-base py-16 px-24">
-        <h4 className="text-lg fw-semibold mb-0">
-          {isView ? "View Vendor" : isEdit ? "Edit Vendor" : "Add Vendor"}
-        </h4>
-      </div>
-      <div className="card-body p-24">
-        {loadError && vendorId && !showSkeleton && (
-          <div className="alert alert-danger radius-12 mb-16" role="alert">
-            {loadError}
-          </div>
-        )}
+    <div className='card p-0 radius-16 border-0'>
+      <div className='card-body p-12 p-sm-20'>
+        {loadError && vendorId && !showSkeleton && <div className='alert alert-danger radius-12 mb-16'>{loadError}</div>}
         {showSkeleton ? (
-          <p className="text-secondary-light mb-0">Loading vendor...</p>
+          <p className='text-secondary-light mb-0'>Loading vendor...</p>
         ) : (
-          <form onSubmit={handleSubmit}>
-            {/* ── Basic Info ── */}
-            <div className="row">
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Name</label>
-                <input type="text" className="form-control radius-8" name="ownerName" value={formData.ownerName} onChange={handleChange} disabled={disabled} maxLength={255} />
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Business Name</label>
-                <input type="text" className="form-control radius-8" name="businessName" value={formData.businessName} onChange={handleChange} disabled={disabled} maxLength={255} />
-              </div>
-
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Age</label>
-                <input type="number" className="form-control radius-8" name="age" value={formData.age} onChange={handleChange} disabled={disabled} min={0} />
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Gender</label>
-                <select className="form-control radius-8 form-select" name="gender" value={formData.gender} onChange={handleChange} disabled={disabled}>
-                  <option value="">Select...</option>
-                  {GENDER_OPTIONS.map((g) => (<option key={g} value={g}>{g}</option>))}
-                </select>
-              </div>
-
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Thumbnail</label>
-                <input type="file" className="form-control radius-8" accept="image/*" disabled={disabled}
-                  onChange={(e) => { if (e.target.files?.[0]) setPendingFiles((p) => ({ ...p, thumbnailUrl: e.target.files[0] })); }}
-                />
-                {(pendingFiles.thumbnailUrl || formData.thumbnailUrl) && (
-                  <div className="mt-8">
-                    <img src={pendingFiles.thumbnailUrl ? URL.createObjectURL(pendingFiles.thumbnailUrl) : formData.thumbnailUrl} alt="Thumbnail" style={{ maxWidth: 120, maxHeight: 120, objectFit: "cover", borderRadius: 8 }} onError={(e) => { e.target.style.display = "none"; }} />
-                  </div>
-                )}
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Banner</label>
-                <input type="file" className="form-control radius-8" accept="image/*" disabled={disabled}
-                  onChange={(e) => { if (e.target.files?.[0]) setPendingFiles((p) => ({ ...p, bannerUrl: e.target.files[0] })); }}
-                />
-                {(pendingFiles.bannerUrl || formData.bannerUrl) && (
-                  <div className="mt-8">
-                    <img src={pendingFiles.bannerUrl ? URL.createObjectURL(pendingFiles.bannerUrl) : formData.bannerUrl} alt="Banner" style={{ maxWidth: 200, maxHeight: 100, objectFit: "cover", borderRadius: 8 }} onError={(e) => { e.target.style.display = "none"; }} />
-                  </div>
-                )}
-              </div>
-
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Goods and Services Tax (GST)</label>
-                <input type="text" className="form-control radius-8" name="gst" value={formData.gst} onChange={handleChange} disabled={disabled} maxLength={64} />
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Permanent Account Number (PAN)</label>
-                <input type="text" className="form-control radius-8" name="pan" value={formData.pan} onChange={handleChange} disabled={disabled} maxLength={64} />
-              </div>
-
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Mobile Number</label>
-                <input type="text" className="form-control radius-8" name="phone" value={formData.phone} onChange={handleChange} disabled={disabled} maxLength={32} />
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Secondary Phone Number</label>
-                <input type="text" className="form-control radius-8" name="secondaryPhone" value={formData.secondaryPhone} onChange={handleChange} disabled={disabled} maxLength={32} />
-              </div>
-
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Email</label>
-                <input type="email" className="form-control radius-8" name="email" value={formData.email} onChange={handleChange} disabled={disabled} maxLength={255} />
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Membership Status</label>
-                <select className="form-control radius-8 form-select" name="membershipStatus" value={formData.membershipStatus} onChange={handleChange} disabled={disabled}>
-                  <option value="">Select...</option>
-                  {MEMBERSHIP_OPTIONS.map((m) => (<option key={m} value={m}>{m}</option>))}
-                </select>
-              </div>
-
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Status</label>
-                <select className="form-control radius-8 form-select" name="status" value={formData.status} onChange={handleChange} disabled={disabled}>
-                  {STATUS_OPTIONS.map((s) => (<option key={s} value={s}>{s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}</option>))}
-                </select>
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Experience</label>
-                <input type="text" className="form-control radius-8" name="experience" value={formData.experience} onChange={handleChange} disabled={disabled} maxLength={255} />
-              </div>
-
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Trending</label>
-                <select className="form-control radius-8 form-select" name="trending" value={formData.trending} onChange={handleChange} disabled={disabled}>
-                  {TRENDING_OPTIONS.map((t) => (<option key={t} value={t}>{t}</option>))}
-                </select>
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Applied ReferralCode</label>
-                <input type="text" className="form-control radius-8" name="appliedReferralCode" value={formData.appliedReferralCode} onChange={handleChange} disabled={disabled} maxLength={64} />
-              </div>
-
-              <div className="col-md-12 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">About Business</label>
-                <textarea className="form-control radius-8" name="aboutBusiness" rows={4} value={formData.aboutBusiness} onChange={handleChange} disabled={disabled} />
-              </div>
-            </div>
-
-            {/* ── Service Provider Address Information ── */}
-            <h5 className="text-md fw-semibold mb-16 mt-8">Service Provider Address Information</h5>
-            <div className="row bg-neutral-50 radius-12 p-16 mb-20">
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Building Number</label>
-                <input type="text" className="form-control radius-8" name="addrBuildingNumber" value={formData.addrBuildingNumber} onChange={handleChange} disabled={disabled} />
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Area/Locality</label>
-                <input type="text" className="form-control radius-8" name="addrAreaLocality" value={formData.addrAreaLocality} onChange={handleChange} disabled={disabled} />
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">State</label>
-                <input type="text" className="form-control radius-8" name="addrState" value={formData.addrState} onChange={handleChange} disabled={disabled} />
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">City</label>
-                <input type="text" className="form-control radius-8" name="addrCity" value={formData.addrCity} onChange={handleChange} disabled={disabled} />
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Latitude</label>
-                <input type="text" className="form-control radius-8" name="addrLatitude" value={formData.addrLatitude} onChange={handleChange} disabled={disabled} />
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Longitude</label>
-                <input type="text" className="form-control radius-8" name="addrLongitude" value={formData.addrLongitude} onChange={handleChange} disabled={disabled} />
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Pincode</label>
-                <input type="text" className="form-control radius-8" name="addrPincode" value={formData.addrPincode} onChange={handleChange} disabled={disabled} />
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Landmark</label>
-                <input type="text" className="form-control radius-8" name="addrLandmark" value={formData.addrLandmark} onChange={handleChange} disabled={disabled} />
-              </div>
-            </div>
-
-            {/* ── Service Provider Commission Rate ── */}
-            <h5 className="text-md fw-semibold mb-16 mt-8">Service Provider Commission Rate</h5>
-            <div className="row bg-neutral-50 radius-12 p-16 mb-20">
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Commission Rate (%)</label>
-                <input type="number" className="form-control radius-8" name="commissionRate" value={formData.commissionRate} onChange={handleChange} disabled={disabled} min={0} step="0.01" />
-              </div>
-            </div>
-
-            {/* ── Service Provider Category/Service Information ── */}
-            <h5 className="text-md fw-semibold mb-16 mt-8">Service Provider Category/Service Information</h5>
-            <div className="row bg-neutral-50 radius-12 p-16 mb-20">
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Categories</label>
-                <div className="d-flex gap-2 mb-8">
-                  <select className="form-control radius-8 form-select" value={formData.pickCategoryId}
-                    onChange={(e) => setFormData((p) => ({ ...p, pickCategoryId: e.target.value }))} disabled={disabled}>
-                    <option value="">Select...</option>
-                    {catalogCategories.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
-                  </select>
-                  <button type="button" className="btn btn-outline-primary btn-sm radius-8" disabled={disabled || !formData.pickCategoryId} onClick={addPickedCategory}>Add</button>
+          <form onSubmit={handleSubmit} className={isReadonly ? "vendor-form-readonly" : undefined}>
+            <div className='d-flex align-items-start gap-3 mb-16'>
+              <div className='d-flex align-items-center gap-12 min-w-0 flex-grow-1'>
+                <span className='w-56-px h-56-px rounded-3 bg-primary-100 text-primary-600 d-flex align-items-center justify-content-center flex-shrink-0'>
+                  {formData.thumbnailUrl ? (
+                    <img src={formData.thumbnailUrl} alt='logo' className='w-100 h-100 rounded-3 object-fit-cover' />
+                  ) : (
+                    <Icon icon='mdi:storefront-outline' className='text-2xl' />
+                  )}
+                </span>
+                <div className='min-w-0'>
+                  <h4 className='mb-0 fw-bold text-primary-light'>
+                    {formData.businessName || (formData.vendorKind === "service" ? "Service vendor" : "Product vendor")}
+                  </h4>
+                  <p className='mb-0 text-neutral-600 text-md mt-4'>
+                    {formData.ownerName || "—"}
+                    {formData.vendorRef && !/^VEND[a-f0-9]{6}$/i.test(String(formData.vendorRef).trim())
+                      ? ` · ${formData.vendorRef.trim()}`
+                      : ""}
+                  </p>
                 </div>
-                {formData.categorySlugs.length > 0 && (
-                  <div className="d-flex flex-wrap gap-2">
-                    {formData.categorySlugs.map((slug) => (
-                      <span key={slug} className="d-inline-flex align-items-center gap-1 px-12 py-4 radius-8 bg-neutral-200 text-sm">
-                        {slug}
-                        {!disabled && (<button type="button" className="border-0 bg-transparent p-0 lh-1 text-danger-600" onClick={() => removeCategorySlug(slug)}>&times;</button>)}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Services</label>
-                <div className="d-flex gap-2 mb-8">
-                  <select className="form-control radius-8 form-select" value={formData.pickServiceId}
-                    onChange={(e) => setFormData((p) => ({ ...p, pickServiceId: e.target.value }))} disabled={disabled}>
-                    <option value="">Select a category first...</option>
-                    {catalogServices.map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}
-                  </select>
-                  <button type="button" className="btn btn-outline-primary btn-sm radius-8" disabled={disabled || !formData.pickServiceId} onClick={addPickedService}>Add</button>
-                </div>
-                {formData.serviceSlugs.length > 0 && (
-                  <div className="d-flex flex-wrap gap-2">
-                    {formData.serviceSlugs.map((slug) => (
-                      <span key={slug} className="d-inline-flex align-items-center gap-1 px-12 py-4 radius-8 bg-neutral-200 text-sm">
-                        {slug}
-                        {!disabled && (<button type="button" className="border-0 bg-transparent p-0 lh-1 text-danger-600" onClick={() => removeServiceSlug(slug)}>&times;</button>)}
-                      </span>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
 
-            {/* ── Service Provider Business Documents ── */}
-            <h5 className="text-md fw-semibold mb-16 mt-8">Service Provider Business Documents</h5>
-            <div className="row bg-neutral-50 radius-12 p-16 mb-20">
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Goods and Services Tax (GST) Certificate</label>
-                <input type="file" className="form-control radius-8" accept="image/*,.pdf" disabled={disabled}
-                  onChange={(e) => { if (e.target.files?.[0]) setPendingFiles((p) => ({ ...p, gstCertUrl: e.target.files[0] })); }}
-                />
-                {(pendingFiles.gstCertUrl || formData.gstCertUrl) && (
-                  <div className="mt-8">
-                    {pendingFiles.gstCertUrl ? (
-                      <span className="text-success-600 text-sm d-flex align-items-center gap-1">
-                        <Icon icon="mdi:check-circle-outline" className="text-xl" /> {pendingFiles.gstCertUrl.name} (ready to upload)
-                      </span>
+            <div className='d-flex flex-wrap align-items-center gap-8 mb-16'>
+              <span className='px-12 py-4 rounded-pill bg-success-focus text-success-main fw-semibold text-sm'>{formData.verificationStatus}</span>
+              <span className={`px-12 py-4 rounded-pill fw-semibold text-sm ${formData.paymentStatus === "paid" ? "bg-success-focus text-success-main" : "bg-warning-focus text-neutral-800"}`}>{formData.paymentStatus}</span>
+            </div>
+
+            <div className='bg-primary-50 radius-12 p-6 d-flex gap-6 mb-16'>
+              <TabButton active={activeTab === "details"} label='Details' onClick={() => setActiveTab("details")} />
+              <TabButton active={activeTab === "kyc"} label='KYC & Documents' onClick={() => setActiveTab("kyc")} />
+              <TabButton active={activeTab === "plan"} label='Plan & Payment' onClick={() => setActiveTab("plan")} />
+            </div>
+
+            {activeTab === "details" && (
+              <section className='d-flex flex-column gap-16'>
+                <div className='row g-12'>
+                  <Field col='col-md-6' label='Owner Name *'><input className='form-control radius-10' name='ownerName' value={formData.ownerName} onChange={handleChange} disabled={disabled} /></Field>
+                  <Field col='col-md-6' label='Business Name *'><input className='form-control radius-10' name='businessName' value={formData.businessName} onChange={handleChange} disabled={disabled} /></Field>
+                  <Field col='col-md-6' label='Email'><input className='form-control radius-10' name='email' value={formData.email} onChange={handleChange} disabled={disabled} /></Field>
+                  <Field col='col-md-6' label='Mobile'><input className='form-control radius-10' name='phone' value={formData.phone} onChange={handleChange} disabled={disabled} /></Field>
+                  {formData.vendorKind !== "service" && (
+                    <Field col='col-md-6' label='Vendor Category'>
+                      <select className='form-select radius-10' name='categorySlug' value={formData.categorySlug} onChange={handleChange} disabled={disabled}>
+                        <option value=''>Select...</option>
+                        {catalogCategories
+                          .filter((c) => !c.parentId)
+                          .map((c) => <option key={c.id} value={c.slug || c.name}>{c.name}</option>)}
+                      </select>
+                    </Field>
+                  )}
+                  {formData.vendorKind === "service" && (
+                    <Field col='col-md-6' label='Services'>
+                      <select
+                        className='form-select radius-10'
+                        name='selectedServiceIds'
+                        value={formData.selectedServiceIds?.[0] || ""}
+                        onChange={handleServicesChange}
+                        disabled={disabled}
+                      >
+                        <option value=''>Select service...</option>
+                        {catalogServices.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                  )}
+                  <Field col='col-md-6' label='Status'>
+                    <select className='form-select radius-10' name='status' value={formData.status} onChange={handleChange} disabled={disabled}>
+                      <option value='active'>Verified</option>
+                      <option value='pending'>Pending</option>
+                      <option value='rejected'>Rejected</option>
+                      <option value='suspended'>Deactivated</option>
+                    </select>
+                  </Field>
+                  <Field col='col-md-6' label='Vendor Type *'>
+                    <select
+                      className='form-select radius-10'
+                      name='vendorKind'
+                      value={formData.vendorKind}
+                      onChange={handleChange}
+                      disabled={disabled || isView}
+                      required
+                    >
+                      <option value='product'>Product Vendor</option>
+                      <option value='service'>Service Vendor</option>
+                    </select>
+                  </Field>
+                </div>
+
+                <div className='bg-primary-25 radius-12 p-14'>
+                  <div className='d-flex flex-wrap align-items-start justify-content-between gap-10 mb-10'>
+                    <div className='d-flex align-items-center gap-8 flex-wrap min-w-0'>
+                      <Icon icon='mdi:file-document-outline' className='text-primary-600 text-xl flex-shrink-0' />
+                      <h5 className='mb-0 fw-bold text-primary-light'>GST & TAX COMPLIANCE</h5>
+                    </div>
+                    <span
+                      className='px-12 py-6 rounded-pill bg-warning-focus text-neutral-800 text-xs fw-semibold text-start'
+                      style={{ maxWidth: "100%", lineHeight: 1.4, whiteSpace: "normal", wordBreak: "break-word" }}
+                    >
+                      Required for tax invoices
+                    </span>
+                  </div>
+                  <p className='text-neutral-600 text-sm mb-0'>These details appear on customer tax invoice issued under vendor name.</p>
+                  <div className='row g-12'>
+                    <Field col='col-md-6' label='GSTIN (15 chars)'><input className='form-control radius-10' name='gst' value={formData.gst} onChange={handleChange} disabled={disabled} /></Field>
+                    <Field col='col-md-6' label='PAN (10 chars)'><input className='form-control radius-10' name='pan' value={formData.pan} onChange={handleChange} disabled={disabled} /></Field>
+                    <Field col='col-md-6' label='State Name (place of supply)'><input className='form-control radius-10' name='stateName' value={formData.stateName} onChange={handleChange} disabled={disabled} /></Field>
+                    <Field col='col-md-6' label='State Code (2 digits)'><input className='form-control radius-10' name='stateCode' value={formData.stateCode} onChange={handleChange} disabled={disabled} /></Field>
+                    <Field col='col-md-12' label='Registered Shop Address (printed on invoice)'><input className='form-control radius-10' name='registeredShopAddress' value={formData.registeredShopAddress} onChange={handleChange} disabled={disabled} /></Field>
+                  </div>
+                </div>
+
+                <div className='bg-primary-25 radius-12 p-14'>
+                  <h5 className='mb-12 fw-bold'>Shop Photo</h5>
+                  {!isReadonly && <input type='file' className='form-control radius-10 mb-12' accept='image/*' disabled={disabled} onChange={(e) => { if (e.target.files?.[0]) setPendingFiles((p) => ({ ...p, thumbnailUrl: e.target.files[0] })); }} />}
+                  <div className='border border-dashed radius-12 py-24 text-center text-secondary-light'>
+                    {pendingFiles.thumbnailUrl || formData.thumbnailUrl ? (
+                      <img src={pendingFiles.thumbnailUrl ? URL.createObjectURL(pendingFiles.thumbnailUrl) : formData.thumbnailUrl} alt='Shop' style={{ maxHeight: 140, objectFit: "cover", borderRadius: 10 }} />
                     ) : (
-                      <a href={formData.gstCertUrl} target="_blank" rel="noopener noreferrer" className="text-primary-600 text-sm d-flex align-items-center gap-1">
-                        <Icon icon="mdi:file-document-outline" className="text-xl" /> View GST Certificate
-                      </a>
+                      <><Icon icon='mdi:image-off-outline' className='text-2xl mb-4' /><div>No shop photo uploaded</div></>
                     )}
                   </div>
-                )}
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Permanent Account Number (PAN) Card</label>
-                <input type="file" className="form-control radius-8" accept="image/*,.pdf" disabled={disabled}
-                  onChange={(e) => { if (e.target.files?.[0]) setPendingFiles((p) => ({ ...p, panCardUrl: e.target.files[0] })); }}
-                />
-                {(pendingFiles.panCardUrl || formData.panCardUrl) && (
-                  <div className="mt-8">
-                    {pendingFiles.panCardUrl ? (
-                      <span className="text-success-600 text-sm d-flex align-items-center gap-1">
-                        <Icon icon="mdi:check-circle-outline" className="text-xl" /> {pendingFiles.panCardUrl.name} (ready to upload)
-                      </span>
-                    ) : (
-                      <a href={formData.panCardUrl} target="_blank" rel="noopener noreferrer" className="text-primary-600 text-sm d-flex align-items-center gap-1">
-                        <Icon icon="mdi:file-document-outline" className="text-xl" /> View PAN Card
-                      </a>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
+                </div>
+              </section>
+            )}
 
-            {/* ── Service Provider Bank Information ── */}
-            <h5 className="text-md fw-semibold mb-16 mt-8">Service Provider Bank Information</h5>
-            <div className="row bg-neutral-50 radius-12 p-16 mb-20">
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Bank Name</label>
-                <input type="text" className="form-control radius-8" name="bankName" value={formData.bankName} onChange={handleChange} disabled={disabled} />
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">IFSC Code</label>
-                <input type="text" className="form-control radius-8" name="ifscCode" value={formData.ifscCode} onChange={handleChange} disabled={disabled} />
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Account Holder Name</label>
-                <input type="text" className="form-control radius-8" name="accountHolderName" value={formData.accountHolderName} onChange={handleChange} disabled={disabled} />
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Account Number</label>
-                <input type="text" className="form-control radius-8" name="accountNumber" value={formData.accountNumber} onChange={handleChange} disabled={disabled} />
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Branch</label>
-                <input type="text" className="form-control radius-8" name="branch" value={formData.branch} onChange={handleChange} disabled={disabled} />
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">UPI ID</label>
-                <input type="text" className="form-control radius-8" name="upiId" value={formData.upiId} onChange={handleChange} disabled={disabled} />
-              </div>
-            </div>
+            {activeTab === "kyc" && (
+              <section className='bg-primary-25 radius-12 p-14'>
+                <div className='row g-12'>
+                  <Field col='col-md-6' label='GST Certificate'>
+                    {!isReadonly && <input type='file' className='form-control radius-10' accept='image/*,.pdf' disabled={disabled} onChange={(e) => { if (e.target.files?.[0]) setPendingFiles((p) => ({ ...p, gstCertUrl: e.target.files[0] })); }} />}
+                    {formData.gstCertUrl ? (
+                      <a className='text-primary-600 text-sm d-inline-block mt-8 fw-medium' href={formData.gstCertUrl} target='_blank' rel='noreferrer'>View GST document</a>
+                    ) : isReadonly ? (
+                      <p className='text-neutral-600 text-sm mb-0 mt-8'>No file uploaded</p>
+                    ) : null}
+                  </Field>
+                  <Field col='col-md-6' label='PAN Card'>
+                    {!isReadonly && <input type='file' className='form-control radius-10' accept='image/*,.pdf' disabled={disabled} onChange={(e) => { if (e.target.files?.[0]) setPendingFiles((p) => ({ ...p, panCardUrl: e.target.files[0] })); }} />}
+                    {formData.panCardUrl ? (
+                      <a className='text-primary-600 text-sm d-inline-block mt-8 fw-medium' href={formData.panCardUrl} target='_blank' rel='noreferrer'>View PAN document</a>
+                    ) : isReadonly ? (
+                      <p className='text-neutral-600 text-sm mb-0 mt-8'>No file uploaded</p>
+                    ) : null}
+                  </Field>
+                  <Field col='col-md-6' label='Bank Name'><input className='form-control radius-10' name='bankName' value={formData.bankName} onChange={handleChange} disabled={disabled} /></Field>
+                  <Field col='col-md-6' label='IFSC'><input className='form-control radius-10' name='ifscCode' value={formData.ifscCode} onChange={handleChange} disabled={disabled} /></Field>
+                  <Field col='col-md-6' label='Account Holder'><input className='form-control radius-10' name='accountHolderName' value={formData.accountHolderName} onChange={handleChange} disabled={disabled} /></Field>
+                  <Field col='col-md-6' label='Account Number'><input className='form-control radius-10' name='accountNumber' value={formData.accountNumber} onChange={handleChange} disabled={disabled} /></Field>
+                </div>
+              </section>
+            )}
 
-            {/* ── Action Buttons ── */}
-            <div className="d-flex align-items-center justify-content-between mt-24">
-              <button type="button" onClick={isView ? (onCancel || (() => navigate(-1))) : handleReset}
-                className="btn border border-danger-600 text-danger-600 bg-hover-danger-200 text-md px-56 py-12 radius-8 d-flex align-items-center gap-2">
-                <Icon icon="mdi:close-circle-outline" className="text-xl" /> {isView ? "Back" : "Reset"}
-              </button>
-              {!isView && (
-                <button type="submit" disabled={disabled}
-                  className="btn btn-primary text-md px-56 py-12 radius-8 d-flex align-items-center gap-2">
-                  <Icon icon="lucide:save" className="text-xl" />{" "}
-                  {submitting ? "Saving..." : isEdit ? "Update" : "Save"}
-                </button>
-              )}
+            {activeTab === "plan" && (
+              <section className='bg-primary-25 radius-12 p-14 d-flex flex-column gap-12'>
+                <div className='row g-12'>
+                  <Field col='col-md-6' label='Commission %'><input className='form-control radius-10' name='commissionRate' value={formData.commissionRate} onChange={handleChange} disabled={disabled} /></Field>
+                  <Field col='col-md-6' label='Max User Redemption %'><input className='form-control radius-10' name='maxRedemptionPercent' value={formData.maxRedemptionPercent} onChange={handleChange} disabled={disabled} /></Field>
+                  <Field col='col-md-6' label='Payment Status'>
+                    <select className='form-select radius-10' name='paymentStatus' value={formData.paymentStatus} onChange={handleChange} disabled={disabled}>
+                      <option value='unpaid'>Unpaid</option>
+                      <option value='paid'>Paid</option>
+                      <option value='partial'>Partial</option>
+                    </select>
+                  </Field>
+                  <Field col='col-md-6' label='Transaction Reference ID'><input className='form-control radius-10' name='transactionRef' value={formData.transactionRef} onChange={handleChange} disabled={disabled} /></Field>
+                </div>
+              </section>
+            )}
+
+            <div className='d-flex justify-content-end gap-10 mt-20'>
+              <button type='button' onClick={onCancel} className='btn btn-light border radius-10 px-20'>Close</button>
+              {isView && isReadonly && <button type='button' onClick={() => setIsReadonly(false)} className='btn btn-primary radius-10 px-20'>Edit</button>}
+              {!isReadonly && <button type='submit' disabled={submitting} className='btn btn-primary radius-10 px-20'>{submitting ? "Saving..." : "Save"}</button>}
             </div>
           </form>
         )}
@@ -685,5 +507,18 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, onSuccess, 
     </div>
   );
 };
+
+const TabButton = ({ active, label, onClick }) => (
+  <button type='button' onClick={onClick} className={`btn border-0 radius-10 px-20 py-8 ${active ? "bg-white text-primary-600 fw-semibold" : "bg-transparent text-neutral-600"}`}>
+    {label}
+  </button>
+);
+
+const Field = ({ col, label, children }) => (
+  <div className={col}>
+    <label className='form-label fw-semibold text-neutral-700 text-sm mb-8'>{label}</label>
+    {children}
+  </div>
+);
 
 export default VendorFormLayer;

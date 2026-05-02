@@ -1,14 +1,14 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { deleteCatalogService, listCatalogServices, listCategories } from "../../lib/api/adminApi";
+import { deleteCatalogService, listCatalogServices, listServiceCategories } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
-import CountAndChips from "../../components/admin/CountAndChips";
 import FormModal from "../../components/admin/FormModal";
 import ServiceFormLayer from "./ServiceFormLayer";
 
 const ServiceListLayer = () => {
   const [services, setServices] = useState([]);
   const [categoryMap, setCategoryMap] = useState({});
+  const [categoryRows, setCategoryRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
@@ -20,11 +20,13 @@ const ServiceListLayer = () => {
     try {
       const [sRes, cRes] = await Promise.all([
         listCatalogServices({ limit: 500, offset: 0 }),
-        listCategories({ purpose: "all" }),
+        listServiceCategories({ purpose: "all" }),
       ]);
       setServices(sRes.items || []);
+      const rows = cRes.items || [];
+      setCategoryRows(rows);
       const cm = {};
-      (cRes.items || []).forEach((c) => { cm[c.id] = c.name; });
+      rows.forEach((c) => { cm[c.id] = c.name; });
       setCategoryMap(cm);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : String(e));
@@ -45,22 +47,40 @@ const ServiceListLayer = () => {
     }
   };
 
+  const formatCategoryLabel = (categoryId) => {
+    if (!categoryId) return "—";
+    const c = categoryRows.find((x) => x.id === categoryId);
+    if (!c) return categoryMap[categoryId] || "—";
+    if (c.parentId) {
+      const p = categoryRows.find((x) => x.id === c.parentId);
+      return p ? p.name : c.name;
+    }
+    return c.name;
+  };
+
   const filtered = search.trim()
     ? services.filter((s) => {
         const q = search.toLowerCase();
         return (
           (s.name || "").toLowerCase().includes(q) ||
-          (categoryMap[s.categoryId] || "").toLowerCase().includes(q)
+          formatCategoryLabel(s.categoryId).toLowerCase().includes(q)
         );
       })
     : services;
 
   const availBadge = (val) => val ? "bg-success-600 text-white" : "bg-danger-600 text-white";
 
+  const formatPriceType = (pt) => {
+    if (pt === "starting_from") return "Starting from";
+    if (pt === "hourly") return "Hourly";
+    if (pt === "fixed") return "Fixed";
+    return "—";
+  };
+
   return (
     <div className="card h-100 p-0 radius-12">
-      <div className="card-header border-bottom bg-base py-16 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between">
-        <div className="d-flex align-items-center flex-wrap gap-3">
+      <div className="card-header border-bottom bg-base py-16 px-24 p4u-admin-filter-row align-items-center gap-3 justify-content-between">
+        <div className="p4u-admin-filter-row align-items-center gap-3">
           <button className="btn btn-primary text-sm btn-sm px-16 py-8 radius-8">Export with Excel</button>
           <button type="button" onClick={() => setModal({ mode: "add" })} className="btn btn-primary text-sm btn-sm px-12 py-8 radius-8 d-flex align-items-center gap-2">
             <Icon icon="ic:baseline-plus" className="icon text-xl line-height-1" /> Add Service
@@ -87,8 +107,12 @@ const ServiceListLayer = () => {
                   <tr>
                     <th scope="col">S.No</th>
                     <th scope="col">Name</th>
-                    <th scope="col">Categories</th>
-                    <th scope="col">Image</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Icon</th>
+                    <th scope="col" className="text-end">Base price</th>
+                    <th scope="col">Price type</th>
+                    <th scope="col">Duration</th>
+                    <th scope="col" className="text-center">Emergency</th>
                     <th scope="col" className="text-center">Availability</th>
                     <th scope="col" className="text-center">Trending</th>
                     <th scope="col" className="text-center">Verification Status</th>
@@ -101,16 +125,21 @@ const ServiceListLayer = () => {
                       <tr key={srv.id}>
                         <td>{index + 1}</td>
                         <td><span className="text-md fw-normal text-secondary-light">{(srv.name || "—").substring(0, 20)}{(srv.name || "").length > 20 ? "..." : ""}</span></td>
-                        <td>
-                          <CountAndChips
-                            strings={categoryMap[srv.categoryId] ? [categoryMap[srv.categoryId]] : []}
-                            countSuffix="categories"
-                          />
-                        </td>
+                        <td><span className="text-sm text-secondary-light">{formatCategoryLabel(srv.categoryId)}</span></td>
                         <td>
                           {srv.iconUrl ? (
                             <img src={srv.iconUrl} alt="" style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 6 }} onError={(e) => { e.target.style.display = "none"; }} />
                           ) : <span className="text-secondary-light">—</span>}
+                        </td>
+                        <td className="text-end text-sm text-secondary-light">
+                          {srv.basePrice != null && String(srv.basePrice).trim() !== "" ? String(srv.basePrice) : "—"}
+                        </td>
+                        <td><span className="text-sm text-secondary-light">{formatPriceType(srv.priceType)}</span></td>
+                        <td><span className="text-sm text-secondary-light">{srv.duration || "—"}</span></td>
+                        <td className="text-center">
+                          <span className={`px-12 py-4 radius-4 fw-medium text-sm ${srv.emergency ? "bg-warning-600 text-white" : "bg-neutral-200 text-secondary-light"}`}>
+                            {srv.emergency ? "Yes" : "No"}
+                          </span>
                         </td>
                         <td className="text-center">
                           <span className={`px-12 py-4 radius-4 fw-medium text-sm ${availBadge(srv.availability || srv.isActive)}`}>
@@ -143,12 +172,12 @@ const ServiceListLayer = () => {
                       </tr>
                     ))
                   ) : (
-                    <tr><td colSpan="8" className="text-center py-4">No services found.</td></tr>
+                    <tr><td colSpan="12" className="text-center py-4">No services found.</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
-            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24">
+            <div className="p4u-admin-filter-row align-items-center justify-content-between gap-2 mt-24">
               <span>{filtered.length} service{filtered.length === 1 ? "" : "s"}</span>
             </div>
           </>

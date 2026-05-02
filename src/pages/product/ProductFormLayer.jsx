@@ -1,12 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
   createProduct,
   getProduct,
-  listCategories,
-  listCatalogServices,
+  listCategoriesForProducts,
   listTaxConfigurations,
   listVendors,
   updateProduct,
@@ -15,115 +13,95 @@ import {
 import { ApiError } from "../../lib/api/client";
 import { buildApiUrl } from "../../lib/api/config";
 
-/** Resolve stored paths to a usable <img src> (absolute URLs unchanged; relative paths use API base). */
 function resolveMediaUrl(url) {
-  if (url == null || typeof url !== "string") return "";
-  const u = url.trim();
-  if (!u) return "";
-  if (/^https?:\/\//i.test(u)) return u;
-  const path = u.startsWith("/") ? u : `/${u}`;
-  return buildApiUrl(path);
+  if (!url || typeof url !== "string") return "";
+  if (/^https?:\/\//i.test(url)) return url;
+  const p = url.startsWith("/") ? url : `/${url}`;
+  return buildApiUrl(p);
 }
 
-const YES_NO = ["Yes", "No"];
-const HOURS = Array.from({ length: 13 }, (_, i) => i);
-const MINUTES = Array.from({ length: 60 }, (_, i) => i);
+function parseMeta(v) {
+  if (!v) return {};
+  if (typeof v === "string") {
+    try { return JSON.parse(v) || {}; } catch { return {}; }
+  }
+  return typeof v === "object" && !Array.isArray(v) ? v : {};
+}
 
 const emptyForm = () => ({
   name: "",
-  availability: "No",
+  productRef: "",
+  sku: "",
+  availability: "Yes",
   vendorId: "",
+  parentCategoryId: "",
   categoryId: "",
-  serviceId: "",
+  productType: "simple",
   sellPrice: "",
   discountAmount: "",
   finalPrice: "",
   taxConfigurationId: "",
-  durationHours: 0,
-  durationMinutes: 0,
+  hsnCode: "",
+  taxAmount: "",
+  discountType: "Fixed",
+  quantity: "",
+  maxPointsRedeemable: "",
+  maxUserRedemptionPercent: "",
+  vendorCommissionLabel: "Vendor default",
   shortDescription: "",
   longDescription: "",
-  promiseP4u: "",
-  helpLineNumber: "",
+  statusLabel: "Active",
+  dealOfDay: "No",
+  specVolume: "",
+  specPackSize: "",
+  seoTitle: "",
+  seoDescription: "",
   thumbnailUrl: "",
-  bannerUrls: [],
 });
 
-const VENDOR_PAGE_SIZE = 100;
-
-/**
- * @param {{ isEdit?: boolean, isView?: boolean, productId?: string }} props
- */
 const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess, onCancel }) => {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState(emptyForm);
+  const [activeTab, setActiveTab] = useState("general");
+  const [isReadonly, setIsReadonly] = useState(Boolean(isView));
   const [vendors, setVendors] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [services, setServices] = useState([]);
   const [taxItems, setTaxItems] = useState([]);
   const [refsLoading, setRefsLoading] = useState(true);
   const [entityLoading, setEntityLoading] = useState(Boolean(productId));
   const [loadError, setLoadError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [pendingThumbnail, setPendingThumbnail] = useState(null);
-  const [pendingBanners, setPendingBanners] = useState([]);
   const pendingThumbnailRef = useRef(null);
-  const pendingBannersRef = useRef([]);
-  const [thumbnailLoadError, setThumbnailLoadError] = useState(false);
-  const [bannerLoadError, setBannerLoadError] = useState({});
 
-  const pendingThumbPreviewUrl = useMemo(
+  const pendingPreviewUrl = useMemo(
     () => (pendingThumbnail ? URL.createObjectURL(pendingThumbnail) : null),
     [pendingThumbnail],
   );
-  const pendingBannerPreviewUrls = useMemo(
-    () => pendingBanners.map((f) => URL.createObjectURL(f)),
-    [pendingBanners],
-  );
 
   useEffect(() => {
     return () => {
-      if (pendingThumbPreviewUrl) URL.revokeObjectURL(pendingThumbPreviewUrl);
+      if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
     };
-  }, [pendingThumbPreviewUrl]);
-
-  useEffect(() => {
-    const urls = pendingBannerPreviewUrls;
-    return () => {
-      urls.forEach((u) => URL.revokeObjectURL(u));
-    };
-  }, [pendingBannerPreviewUrls]);
-
-  useEffect(() => {
-    setThumbnailLoadError(false);
-  }, [formData.thumbnailUrl, pendingThumbnail]);
-
-  useEffect(() => {
-    setBannerLoadError({});
-  }, [formData.bannerUrls, pendingBanners]);
+  }, [pendingPreviewUrl]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setRefsLoading(true);
       try {
-        const [vRes, cRes, sRes, tRes] = await Promise.all([
-          listVendors({ limit: VENDOR_PAGE_SIZE, offset: 0 }),
-          listCategories({ purpose: "all" }),
-          listCatalogServices({ limit: 200, offset: 0 }),
+        const [vRes, cRes, tRes] = await Promise.all([
+          listVendors({ limit: 300, offset: 0, vendorKind: "product" }),
+          listCategoriesForProducts({ purpose: "all" }),
           listTaxConfigurations({ purpose: "all" }),
         ]);
         if (!cancelled) {
           setVendors(vRes.items || []);
           setCategories(cRes.items || []);
-          setServices(sRes.items || []);
           setTaxItems(tRes.items || []);
         }
       } catch (e) {
         if (!cancelled) {
-          const msg = e instanceof ApiError ? e.message : String(e);
-          setLoadError((prev) => prev || msg);
-          toast.error(`Reference data: ${msg}`);
+          setLoadError(e instanceof ApiError ? e.message : String(e));
         }
       } finally {
         if (!cancelled) setRefsLoading(false);
@@ -133,29 +111,63 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
   }, []);
 
   const applyRow = useCallback((row) => {
+    const meta = parseMeta(row.metadata || row.metaJson || row.extraJson);
     setFormData({
       name: row.name || "",
-      availability: row.availability ? "Yes" : "No",
+      productRef: row.productRef || `PRD-${String(row.id || "").slice(-6)}`,
+      sku: meta.sku || row.sku || "",
+      availability: row.availability || row.isActive ? "Yes" : "No",
       vendorId: row.vendorId || "",
       categoryId: row.categoryId || "",
-      serviceId: row.serviceId || "",
-      sellPrice: row.sellPrice != null ? String(row.sellPrice) : "",
+      productType: meta.productType || "simple",
+      sellPrice: row.sellPrice != null ? String(row.sellPrice) : String(row.price || ""),
       discountAmount: row.discountAmount != null ? String(row.discountAmount) : "",
       finalPrice: row.finalPrice != null ? String(row.finalPrice) : "",
       taxConfigurationId: row.taxConfigurationId || "",
-      durationHours: row.durationHours ?? 0,
-      durationMinutes: row.durationMinutes ?? 0,
+      hsnCode: meta.hsnCode || "",
+      taxAmount: meta.taxAmount != null ? String(meta.taxAmount) : "",
+      discountType: meta.discountType || "Fixed",
+      quantity: meta.quantity != null ? String(meta.quantity) : "",
+      maxPointsRedeemable: meta.maxPointsRedeemable != null ? String(meta.maxPointsRedeemable) : "",
+      maxUserRedemptionPercent: meta.maxUserRedemptionPercent != null ? String(meta.maxUserRedemptionPercent) : "",
+      vendorCommissionLabel: meta.vendorCommissionLabel || "Vendor default",
       shortDescription: row.shortDescription || "",
       longDescription: row.longDescription || "",
-      promiseP4u: row.promiseP4u || "",
-      helpLineNumber: row.helpLineNumber || "",
+      statusLabel: row.availability || row.isActive ? "Active" : "Inactive",
+      dealOfDay: meta.dealOfDay || "No",
+      specVolume: meta.specVolume || "",
+      specPackSize: meta.specPackSize || "",
+      seoTitle: meta.seoTitle || "",
+      seoDescription: meta.seoDescription || "",
       thumbnailUrl: row.thumbnailUrl || "",
-      bannerUrls: Array.isArray(row.bannerUrls) ? row.bannerUrls : [],
     });
   }, []);
 
+  const rootCategories = useMemo(
+    () => categories.filter((c) => !c.parentId),
+    [categories],
+  );
+
+  const subcategories = useMemo(() => {
+    if (!formData.parentCategoryId) return [];
+    return categories.filter((c) => c.parentId === formData.parentCategoryId);
+  }, [categories, formData.parentCategoryId]);
+
   useEffect(() => {
-    if (!productId) { setEntityLoading(false); return; }
+    if (!formData.categoryId || !categories.length) return;
+    const chosen = categories.find((c) => c.id === formData.categoryId);
+    if (chosen?.parentId) {
+      setFormData((prev) =>
+        prev.parentCategoryId === chosen.parentId ? prev : { ...prev, parentCategoryId: chosen.parentId || "" },
+      );
+    }
+  }, [formData.categoryId, categories]);
+
+  useEffect(() => {
+    if (!productId) {
+      setEntityLoading(false);
+      return;
+    }
     let cancelled = false;
     (async () => {
       setEntityLoading(true);
@@ -164,11 +176,7 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
         const row = await getProduct(productId);
         if (!cancelled) applyRow(row);
       } catch (e) {
-        if (!cancelled) {
-          const msg = e instanceof ApiError ? e.message : String(e);
-          setLoadError(msg);
-          toast.error(msg);
-        }
+        if (!cancelled) setLoadError(e instanceof ApiError ? e.message : String(e));
       } finally {
         if (!cancelled) setEntityLoading(false);
       }
@@ -176,58 +184,43 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
     return () => { cancelled = true; };
   }, [productId, applyRow]);
 
+  useEffect(() => {
+    setIsReadonly(Boolean(isView));
+  }, [isView]);
+
   const handleChange = (e) => {
-    if (isView) return;
+    if (isReadonly) return;
     const { name, value } = e.target;
-    if (name === "durationHours" || name === "durationMinutes") {
-      setFormData((prev) => ({ ...prev, [name]: Number(value) }));
-      return;
-    }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const removeBannerUrl = (index) => {
-    setFormData((prev) => ({ ...prev, bannerUrls: prev.bannerUrls.filter((_, i) => i !== index) }));
-  };
-
-  const removePendingBannerAt = (index) => {
-    setPendingBanners((prev) => {
-      const next = prev.filter((_, i) => i !== index);
-      pendingBannersRef.current = next;
-      return next;
-    });
-  };
-
-  const thumbnailSrc = pendingThumbPreviewUrl || resolveMediaUrl(formData.thumbnailUrl);
-  const hasThumbnailPreview = Boolean(thumbnailSrc) && !thumbnailLoadError;
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isView) return;
+    if (isReadonly) return;
 
-    // Upload files BEFORE setSubmitting to avoid re-render clearing file refs
     let thumbnailUrl = formData.thumbnailUrl;
-    let bannerUrls = [...formData.bannerUrls];
-
     const thumbFile = pendingThumbnailRef.current || pendingThumbnail;
     if (thumbFile) {
       try {
         const res = await uploadFile(thumbFile);
         thumbnailUrl = res.url;
-      } catch (err) {
+      } catch {
         toast.error("Thumbnail upload failed");
         return;
       }
     }
-    const bannerFiles = pendingBannersRef.current.length > 0 ? pendingBannersRef.current : pendingBanners;
-    for (const file of bannerFiles) {
-      try {
-        const res = await uploadFile(file);
-        bannerUrls.push(res.url);
-      } catch (err) {
-        toast.error("Banner upload failed");
-        return;
-      }
+
+    if (!formData.vendorId?.trim()) {
+      toast.error("Select product vendor.");
+      return;
+    }
+    if (!formData.parentCategoryId?.trim()) {
+      toast.error("Select category.");
+      return;
+    }
+    if (!formData.categoryId?.trim()) {
+      toast.error("Select subcategory.");
+      return;
     }
 
     setSubmitting(true);
@@ -237,19 +230,30 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
         availability: formData.availability === "Yes",
         vendorId: formData.vendorId || null,
         categoryId: formData.categoryId || null,
-        serviceId: formData.serviceId || null,
+        serviceId: null,
         sellPrice: formData.sellPrice || null,
         discountAmount: formData.discountAmount || null,
         finalPrice: formData.finalPrice || null,
         taxConfigurationId: formData.taxConfigurationId || null,
-        durationHours: formData.durationHours,
-        durationMinutes: formData.durationMinutes,
         shortDescription: formData.shortDescription.trim() || null,
         longDescription: formData.longDescription.trim() || null,
-        promiseP4u: formData.promiseP4u.trim() || null,
-        helpLineNumber: formData.helpLineNumber.trim() || null,
         thumbnailUrl: thumbnailUrl || null,
-        bannerUrls: bannerUrls.length > 0 ? bannerUrls : null,
+        metadata: {
+          sku: formData.sku || null,
+          productType: formData.productType || "simple",
+          hsnCode: formData.hsnCode || null,
+          taxAmount: formData.taxAmount || null,
+          discountType: formData.discountType || null,
+          quantity: formData.quantity !== "" ? Number(formData.quantity) : null,
+          maxPointsRedeemable: formData.maxPointsRedeemable || null,
+          maxUserRedemptionPercent: formData.maxUserRedemptionPercent || null,
+          vendorCommissionLabel: formData.vendorCommissionLabel || null,
+          dealOfDay: formData.dealOfDay || "No",
+          specVolume: formData.specVolume || null,
+          specPackSize: formData.specPackSize || null,
+          seoTitle: formData.seoTitle || null,
+          seoDescription: formData.seoDescription || null,
+        },
       };
 
       if (isEdit && productId) {
@@ -259,312 +263,208 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
         await createProduct(payload);
         toast.success("Product created.");
       }
-      if (onSuccess) onSuccess(); else navigate("/product");
+      if (onSuccess) onSuccess();
     } catch (err) {
-      const msg = err instanceof ApiError ? err.message : String(err);
-      toast.error(msg);
+      toast.error(err instanceof ApiError ? err.message : String(err));
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleReset = () => {
-    setFormData(emptyForm());
-    setPendingThumbnail(null);
-    setPendingBanners([]);
-    pendingThumbnailRef.current = null;
-    pendingBannersRef.current = [];
-  };
-
-  const disabled = isView || submitting || entityLoading || refsLoading;
+  const disabled = isReadonly || submitting || refsLoading || entityLoading;
   const showSkeleton = Boolean(productId) && entityLoading;
+  const thumbnailSrc = pendingPreviewUrl || resolveMediaUrl(formData.thumbnailUrl);
+  const vendorName = vendors.find((v) => v.id === formData.vendorId)?.businessName || "—";
+  const categoryName = categories.find((c) => c.id === formData.categoryId)?.name || "—";
 
   return (
-    <div className="card h-100 p-0 radius-12">
-      <div className="card-header border-bottom bg-base py-16 px-24">
-        <h4 className="text-lg fw-semibold mb-0">
-          {isView ? "View Product" : isEdit ? "Edit Product" : "Add Product"}
-        </h4>
-      </div>
-      <div className="card-body p-24">
-        {loadError && productId && !showSkeleton && (
-          <div className="alert alert-danger radius-12 mb-16" role="alert">{loadError}</div>
-        )}
+    <div className='card h-100 p-0 radius-16 border-0'>
+      <div className='card-body p-20'>
+        {loadError && <div className='alert alert-danger radius-12 mb-16'>{loadError}</div>}
         {showSkeleton ? (
-          <p className="text-secondary-light mb-0">Loading product...</p>
+          <p className='text-secondary-light mb-0'>Loading product...</p>
         ) : (
           <form onSubmit={handleSubmit}>
-            <div className="row">
-              {/* ── Left: Product Name section ── */}
-              <div className="col-md-6">
-                <h5 className="text-md fw-semibold mb-16">Product Name</h5>
-                <div className="bg-neutral-50 radius-12 p-16 mb-20">
-                  <div className="mb-20">
-                    <label className="form-label fw-semibold text-primary-light text-sm mb-8">Name</label>
-                    <input type="text" className="form-control radius-8" name="name" value={formData.name} onChange={handleChange} disabled={disabled} maxLength={255} />
+            <div className='d-flex align-items-center gap-12 mb-16'>
+              <span className='w-48-px h-48-px rounded-3 bg-warning-100 text-warning-700 d-flex align-items-center justify-content-center'>
+                <Icon icon='mdi:package-variant-closed' className='text-xl' />
+              </span>
+              <div>
+                <h4 className='mb-0 fw-bold'>{formData.name || "Product"}</h4>
+                <p className='mb-0 text-secondary-light'>{formData.productRef || "—"}</p>
+              </div>
+            </div>
+
+            <div className='d-flex flex-wrap align-items-center gap-8 mb-16'>
+              <span className='px-12 py-4 rounded-pill bg-success-focus text-success-main fw-semibold text-sm'>{formData.statusLabel}</span>
+              <span className='px-12 py-4 rounded-pill bg-neutral-200 text-secondary-light fw-semibold text-sm'>{formData.productType}</span>
+              <span className='text-secondary-light'><Icon icon='mdi:tag-outline' className='me-4' />{categoryName}</span>
+              <span className='text-secondary-light'><Icon icon='mdi:store-outline' className='me-4' />{vendorName}</span>
+            </div>
+
+            <div className='bg-primary-50 radius-12 p-6 d-flex gap-6 mb-16'>
+              <Tab active={activeTab === "general"} label='General' onClick={() => setActiveTab("general")} />
+              <Tab active={activeTab === "pricing"} label='Pricing' onClick={() => setActiveTab("pricing")} />
+              <Tab active={activeTab === "attributes"} label='Attributes' onClick={() => setActiveTab("attributes")} />
+              <Tab active={activeTab === "seo"} label='SEO' onClick={() => setActiveTab("seo")} />
+            </div>
+
+            {activeTab === "general" && (
+              <section className='d-flex flex-column gap-14'>
+                <div className='bg-primary-25 radius-12 p-14'>
+                  <div className='row g-12'>
+                    <Field col='col-md-6' label='Title *'><input className='form-control radius-10' name='name' value={formData.name} onChange={handleChange} disabled={disabled} /></Field>
+                    <Field col='col-md-6' label='SKU'><input className='form-control radius-10' name='sku' value={formData.sku} onChange={handleChange} disabled={disabled} /></Field>
+                    <Field col='col-md-4' label='Vendor'>
+                      <select className='form-select radius-10' name='vendorId' value={formData.vendorId} onChange={handleChange} disabled={disabled}>
+                        <option value=''>Select vendor</option>
+                        {vendors.map((v) => <option key={v.id} value={v.id}>{v.businessName || v.ownerName}</option>)}
+                      </select>
+                    </Field>
+                    <Field col='col-md-4' label='Category'>
+                      <select
+                        className='form-select radius-10'
+                        name='parentCategoryId'
+                        value={formData.parentCategoryId}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setFormData((prev) => ({ ...prev, parentCategoryId: value, categoryId: "" }));
+                        }}
+                        disabled={disabled}
+                      >
+                        <option value=''>Select category</option>
+                        {rootCategories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </Field>
+                    <Field col='col-md-4' label='Subcategory'>
+                      <select className='form-select radius-10' name='categoryId' value={formData.categoryId} onChange={handleChange} disabled={disabled || !formData.parentCategoryId}>
+                        <option value=''>{formData.parentCategoryId ? "Select subcategory" : "Select category first"}</option>
+                        {subcategories.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                      </select>
+                    </Field>
+                    <Field col='col-md-4' label='Quantity'>
+                      <input
+                        type='number'
+                        min='0'
+                        className='form-control radius-10'
+                        name='quantity'
+                        value={formData.quantity}
+                        onChange={handleChange}
+                        disabled={disabled}
+                        placeholder='Available stock'
+                      />
+                    </Field>
                   </div>
-                  <div className="mb-20">
-                    <label className="form-label fw-semibold text-primary-light text-sm mb-8">Availability</label>
-                    <select className="form-control radius-8 form-select" name="availability" value={formData.availability} onChange={handleChange} disabled={disabled}>
-                      {YES_NO.map((o) => (<option key={o} value={o}>{o}</option>))}
-                    </select>
-                  </div>
-                  <div className="mb-20">
-                    <label className="form-label fw-semibold text-primary-light text-sm mb-8">Vendor</label>
-                    <select className="form-control radius-8 form-select" name="vendorId" value={formData.vendorId} onChange={handleChange} disabled={disabled}>
-                      <option value="">Select...</option>
-                      {vendors.map((v) => (<option key={v.id} value={v.id}>{v.businessName || v.ownerName || "Vendor"}</option>))}
-                    </select>
-                  </div>
-                  <div className="mb-20">
-                    <label className="form-label fw-semibold text-primary-light text-sm mb-8">Category</label>
-                    <select className="form-control radius-8 form-select" name="categoryId" value={formData.categoryId} onChange={handleChange} disabled={disabled}>
-                      <option value="">Select...</option>
-                      {categories.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
-                    </select>
-                  </div>
-                  <div className="mb-20">
-                    <label className="form-label fw-semibold text-primary-light text-sm mb-8">Services</label>
-                    <select className="form-control radius-8 form-select" name="serviceId" value={formData.serviceId} onChange={handleChange} disabled={disabled}>
-                      <option value="">Select...</option>
-                      {services.map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}
-                    </select>
-                  </div>
-                  {(formData.categoryId || formData.serviceId) && (
-                    <div className="bg-base radius-8 p-12 border border-neutral-200">
-                      <span className="text-xs fw-bold text-secondary-light d-block mb-8">CURRENTLY SELECTED</span>
-                      <div className="d-flex gap-8">
-                        <div>
-                          <span className="text-xs text-secondary-light">Category</span>
-                          {formData.categoryId && (
-                            <div><span className="px-12 py-4 radius-16 border border-primary-600 text-primary-600 text-xs fw-medium">{categories.find((c) => c.id === formData.categoryId)?.name || "—"}</span></div>
-                          )}
-                        </div>
-                        <div>
-                          <span className="text-xs text-secondary-light">Service</span>
-                          {formData.serviceId && (
-                            <div><span className="px-12 py-4 radius-16 border border-success-600 text-success-600 text-xs fw-medium">{services.find((s) => s.id === formData.serviceId)?.name || "—"}</span></div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                </div>
+
+                <div className='bg-primary-25 radius-12 p-14'>
+                  <h6 className='mb-10 fw-semibold'>Product Images</h6>
+                  {!isReadonly && (
+                    <input
+                      type='file'
+                      className='form-control radius-10 mb-10'
+                      accept='image/*'
+                      disabled={disabled}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) {
+                          setPendingThumbnail(f);
+                          pendingThumbnailRef.current = f;
+                        }
+                      }}
+                    />
                   )}
-                </div>
-              </div>
-
-              {/* ── Right: Price section ── */}
-              <div className="col-md-6">
-                <h5 className="text-md fw-semibold mb-16">Price</h5>
-                <div className="bg-neutral-50 radius-12 p-16 mb-20">
-                  <div className="mb-20">
-                    <label className="form-label fw-semibold text-primary-light text-sm mb-8">Sell Price</label>
-                    <input type="number" className="form-control radius-8" name="sellPrice" value={formData.sellPrice} onChange={handleChange} disabled={disabled} min={0} step="0.01" />
-                  </div>
-                  <div className="mb-20">
-                    <label className="form-label fw-semibold text-primary-light text-sm mb-8">Discount Amount (&#8377;)</label>
-                    <input type="number" className="form-control radius-8" name="discountAmount" value={formData.discountAmount} onChange={handleChange} disabled={disabled} min={0} step="0.01" />
-                  </div>
-                  <div className="mb-20">
-                    <label className="form-label fw-semibold text-primary-light text-sm mb-8">Final Price (after Discount) Including Tax</label>
-                    <input type="number" className="form-control radius-8 bg-neutral-100" name="finalPrice" value={formData.finalPrice} onChange={handleChange} disabled={disabled} min={0} step="0.01" />
-                  </div>
-                  <div className="mb-20">
-                    <label className="form-label fw-semibold text-primary-light text-sm mb-8">Tax</label>
-                    <select className="form-control radius-8 form-select" name="taxConfigurationId" value={formData.taxConfigurationId} onChange={handleChange} disabled={disabled}>
-                      <option value="">Select The Tax...</option>
-                      {taxItems.map((t) => (<option key={t.id} value={t.id}>{t.title || t.code} ({t.percentage}%)</option>))}
-                    </select>
-                  </div>
-                  <div className="mb-20">
-                    <label className="form-label fw-semibold text-primary-light text-sm mb-8">Duration Minute</label>
-                    <div className="d-flex gap-12 align-items-end">
-                      <div>
-                        <span className="text-xs text-secondary-light">Hours</span>
-                        <select className="form-control radius-8 form-select" name="durationHours" value={formData.durationHours} onChange={handleChange} disabled={disabled}>
-                          {HOURS.map((h) => (<option key={h} value={h}>{h} hr</option>))}
-                        </select>
-                      </div>
-                      <div>
-                        <span className="text-xs text-secondary-light">Minutes</span>
-                        <select className="form-control radius-8 form-select" name="durationMinutes" value={formData.durationMinutes} onChange={handleChange} disabled={disabled}>
-                          {MINUTES.map((m) => (<option key={m} value={m}>{m} min</option>))}
-                        </select>
-                      </div>
-                      {(formData.durationHours > 0 || formData.durationMinutes > 0) && (
-                        <div>
-                          <span className="text-xs text-secondary-light">Summary</span>
-                          <div className="px-12 py-6 radius-8 border border-primary-600 text-primary-600 text-sm fw-medium d-flex align-items-center gap-1">
-                            <Icon icon="mdi:clock-outline" className="text-md" />
-                            {formData.durationHours > 0 ? `${formData.durationHours}hr ` : ""}{formData.durationMinutes > 0 ? `${formData.durationMinutes}min` : ""}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                  <div className='d-flex align-items-center gap-10'>
+                    {thumbnailSrc ? (
+                      <img src={thumbnailSrc} alt='Product' style={{ width: 96, height: 96, borderRadius: 10, objectFit: "cover" }} />
+                    ) : (
+                      <span className='text-secondary-light'>No image selected</span>
+                    )}
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* ── Description section ── */}
-            <h5 className="text-md fw-semibold mb-16">Description</h5>
-            <div className="row bg-neutral-50 radius-12 p-16 mb-20">
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Short Description</label>
-                <textarea className="form-control radius-8" name="shortDescription" rows={4} value={formData.shortDescription} onChange={handleChange} disabled={disabled} />
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Long Description</label>
-                <textarea className="form-control radius-8" name="longDescription" rows={4} value={formData.longDescription} onChange={handleChange} disabled={disabled} />
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Promise P4u</label>
-                <textarea className="form-control radius-8" name="promiseP4u" rows={4} value={formData.promiseP4u} onChange={handleChange} disabled={disabled} />
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Help Line Number</label>
-                <textarea className="form-control radius-8" name="helpLineNumber" rows={4} value={formData.helpLineNumber} onChange={handleChange} disabled={disabled} />
-              </div>
-            </div>
-
-            {/* ── Image section ── */}
-            <h5 className="text-md fw-semibold mb-16">Image</h5>
-            <div className="row bg-neutral-50 radius-12 p-16 mb-20">
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Thumbnail</label>
-                {!isView && (
-                  <input
-                    type="file"
-                    className="form-control radius-8 mb-10"
-                    accept="image/*"
-                    disabled={disabled}
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) {
-                        setPendingThumbnail(f);
-                        pendingThumbnailRef.current = f;
-                      }
-                    }}
-                  />
-                )}
-                <div className="border border-neutral-200 bg-base radius-12 p-12 d-flex flex-column align-items-start gap-10" style={{ minHeight: 140 }}>
-                  {hasThumbnailPreview ? (
-                    <>
-                      <a href={thumbnailSrc} target="_blank" rel="noopener noreferrer" className="d-inline-block">
-                        <img
-                          src={thumbnailSrc}
-                          alt="Product thumbnail"
-                          className="radius-8 border border-neutral-100"
-                          style={{ maxWidth: "100%", width: 220, height: 220, objectFit: "cover", display: "block" }}
-                          loading="lazy"
-                          onError={() => setThumbnailLoadError(true)}
-                        />
-                      </a>
-                      <span className="text-xs text-secondary-light">Click image to open full size</span>
-                    </>
-                  ) : thumbnailSrc && thumbnailLoadError ? (
-                    <span className="text-sm text-secondary-light">Could not load thumbnail.{" "}
-                      <a href={thumbnailSrc} target="_blank" rel="noopener noreferrer" className="text-primary-600">Open URL</a>
-                    </span>
-                  ) : (
-                    <span className="text-sm text-secondary-light mb-0">No thumbnail</span>
-                  )}
+                <div className='row g-12'>
+                  <Field col='col-md-6' label='Short Description'><textarea className='form-control radius-10' name='shortDescription' rows={3} value={formData.shortDescription} onChange={handleChange} disabled={disabled} /></Field>
+                  <Field col='col-md-6' label='Long Description'><textarea className='form-control radius-10' name='longDescription' rows={3} value={formData.longDescription} onChange={handleChange} disabled={disabled} /></Field>
                 </div>
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Banner</label>
-                {!isView && (
-                  <input
-                    type="file"
-                    className="form-control radius-8 mb-10"
-                    accept="image/*"
-                    multiple
-                    disabled={disabled}
-                    onChange={(e) => {
-                      if (e.target.files?.length) {
-                        const files = [...e.target.files];
-                        setPendingBanners(files);
-                        pendingBannersRef.current = files;
-                      }
-                    }}
-                  />
-                )}
-                {(formData.bannerUrls.length > 0 || pendingBannerPreviewUrls.length > 0) ? (
-                  <div className="d-flex flex-wrap gap-10 mt-0">
-                    {formData.bannerUrls.map((url, i) => {
-                      const src = resolveMediaUrl(url);
-                      const err = bannerLoadError[`saved-${i}`];
-                      return (
-                        <div key={`saved-${i}`} className="position-relative">
-                          {!err ? (
-                            <a href={src} target="_blank" rel="noopener noreferrer" className="d-block">
-                              <img
-                                src={src}
-                                alt={`Banner ${i + 1}`}
-                                className="border border-neutral-200 radius-8"
-                                style={{ width: 140, height: 88, objectFit: "cover", display: "block" }}
-                                loading="lazy"
-                                onError={() => setBannerLoadError((prev) => ({ ...prev, [`saved-${i}`]: true }))}
-                              />
-                            </a>
-                          ) : (
-                            <span className="text-xs text-secondary-light d-inline-block" style={{ width: 140 }}>
-                              Failed to load.{" "}
-                              <a href={src} target="_blank" rel="noopener noreferrer" className="text-primary-600">Open</a>
-                            </span>
-                          )}
-                          {!disabled && !isView && (
-                            <button
-                              type="button"
-                              className="position-absolute top-0 end-0 border-0 bg-danger-600 text-white rounded-circle d-flex align-items-center justify-content-center"
-                              style={{ width: 22, height: 22, fontSize: 12, transform: "translate(4px,-4px)" }}
-                              onClick={() => removeBannerUrl(i)}
-                              aria-label="Remove banner"
-                            >
-                              &times;
-                            </button>
-                          )}
-                        </div>
-                      );
-                    })}
-                    {pendingBannerPreviewUrls.map((src, i) => (
-                      <div key={`pending-${i}`} className="position-relative">
-                        <img
-                          src={src}
-                          alt={`New banner ${i + 1}`}
-                          className="border border-primary-200 radius-8"
-                          style={{ width: 140, height: 88, objectFit: "cover", display: "block" }}
-                        />
-                        {!disabled && !isView && (
-                          <button
-                            type="button"
-                            className="position-absolute top-0 end-0 border-0 bg-danger-600 text-white rounded-circle d-flex align-items-center justify-content-center"
-                            style={{ width: 22, height: 22, fontSize: 12, transform: "translate(4px,-4px)" }}
-                            onClick={() => removePendingBannerAt(i)}
-                            aria-label="Remove new banner"
-                          >
-                            &times;
-                          </button>
-                        )}
-                      </div>
-                    ))}
+                <div className='bg-warning-50 radius-12 p-14 d-flex align-items-center justify-content-between'>
+                  <div>
+                    <h6 className='mb-4 fw-semibold'>Deal of the Day</h6>
+                    <p className='mb-0 text-secondary-light text-sm'>Featured in homepage "Deals of the Day"</p>
                   </div>
-                ) : (
-                  <p className="text-sm text-secondary-light mb-0">No banner images</p>
-                )}
-              </div>
-            </div>
+                  <select className='form-select radius-10' style={{ width: 140 }} name='dealOfDay' value={formData.dealOfDay} onChange={handleChange} disabled={disabled}>
+                    <option value='No'>No</option>
+                    <option value='Yes'>Yes</option>
+                  </select>
+                </div>
+              </section>
+            )}
 
-            {/* ── Action Buttons ── */}
-            <div className="d-flex align-items-center justify-content-between mt-24">
-              <button type="button" onClick={isView ? (onCancel || (() => navigate(-1))) : handleReset}
-                className="btn border border-danger-600 text-danger-600 bg-hover-danger-200 text-md px-56 py-12 radius-8 d-flex align-items-center gap-2">
-                <Icon icon="mdi:close-circle-outline" className="text-xl" /> {isView ? "Back" : "Reset"}
-              </button>
-              {!isView && (
-                <button type="submit" disabled={disabled}
-                  className="btn btn-primary text-md px-56 py-12 radius-8 d-flex align-items-center gap-2">
-                  <Icon icon="lucide:save" className="text-xl" />{" "}
-                  {submitting ? "Saving..." : isEdit ? "Update" : "Save"}
+            {activeTab === "pricing" && (
+              <section className='d-flex flex-column gap-14'>
+                <div className='bg-primary-25 radius-12 p-14'>
+                  <h5 className='fw-bold mb-12'><Icon icon='mdi:currency-usd' className='me-6' />Pricing</h5>
+                  <div className='row g-12'>
+                    <Field col='col-md-6' label='MRP (₹)'><input className='form-control radius-10' name='sellPrice' value={formData.sellPrice} onChange={handleChange} disabled={disabled} /></Field>
+                    <Field col='col-md-6' label='Tax Slab'>
+                      <select className='form-select radius-10' name='taxConfigurationId' value={formData.taxConfigurationId} onChange={handleChange} disabled={disabled}>
+                        <option value=''>Select tax</option>
+                        {taxItems.map((t) => <option key={t.id} value={t.id}>{t.title || t.code} ({t.percentage}%)</option>)}
+                      </select>
+                    </Field>
+                    <Field col='col-md-6' label='HSN Code'><input className='form-control radius-10' name='hsnCode' value={formData.hsnCode} onChange={handleChange} disabled={disabled} /></Field>
+                    <Field col='col-md-6' label='Tax Amount (auto)'><input className='form-control radius-10' name='taxAmount' value={formData.taxAmount} onChange={handleChange} disabled={disabled} /></Field>
+                    <Field col='col-md-6' label='Discount Type'>
+                      <select className='form-select radius-10' name='discountType' value={formData.discountType} onChange={handleChange} disabled={disabled}>
+                        <option value='Fixed'>Fixed</option>
+                        <option value='Percent'>Percent</option>
+                      </select>
+                    </Field>
+                    <Field col='col-md-6' label='Discount (₹)'><input className='form-control radius-10' name='discountAmount' value={formData.discountAmount} onChange={handleChange} disabled={disabled} /></Field>
+                  </div>
+                  <div className='border-top mt-14 pt-12 d-flex justify-content-between align-items-center'>
+                    <h5 className='mb-0 fw-bold'>Selling Price</h5>
+                    <h3 className='mb-0 fw-bold'>₹{formData.finalPrice || formData.sellPrice || 0}</h3>
+                  </div>
+                </div>
+
+                <div className='bg-warning-50 radius-12 p-14'>
+                  <div className='row g-12'>
+                    <Field col='col-md-4' label='Max Points Redeemable'><input className='form-control radius-10' name='maxPointsRedeemable' value={formData.maxPointsRedeemable} onChange={handleChange} disabled={disabled} /></Field>
+                    <Field col='col-md-4' label='Max User Redemption %'><input className='form-control radius-10' name='maxUserRedemptionPercent' value={formData.maxUserRedemptionPercent} onChange={handleChange} disabled={disabled} /></Field>
+                    <Field col='col-md-4' label='Vendor to P4U Commission'><input className='form-control radius-10' name='vendorCommissionLabel' value={formData.vendorCommissionLabel} onChange={handleChange} disabled={disabled} /></Field>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {activeTab === "attributes" && (
+              <section className='bg-primary-25 radius-12 p-14'>
+                <h5 className='fw-bold mb-12'>Specifications</h5>
+                <div className='row g-12'>
+                  <Field col='col-md-6' label='Volume'><input className='form-control radius-10' name='specVolume' value={formData.specVolume} onChange={handleChange} disabled={disabled} /></Field>
+                  <Field col='col-md-6' label='Pack Size'><input className='form-control radius-10' name='specPackSize' value={formData.specPackSize} onChange={handleChange} disabled={disabled} /></Field>
+                </div>
+              </section>
+            )}
+
+            {activeTab === "seo" && (
+              <section className='bg-primary-25 radius-12 p-14'>
+                <div className='row g-12'>
+                  <Field col='col-md-12' label='SEO Title'><input className='form-control radius-10' name='seoTitle' value={formData.seoTitle} onChange={handleChange} disabled={disabled} /></Field>
+                  <Field col='col-md-12' label='SEO Description'><textarea className='form-control radius-10' rows={4} name='seoDescription' value={formData.seoDescription} onChange={handleChange} disabled={disabled} /></Field>
+                </div>
+              </section>
+            )}
+
+            <div className='d-flex justify-content-end gap-10 mt-20'>
+              <button type='button' onClick={onCancel} className='btn btn-light border radius-10 px-20'>Close</button>
+              {isView && isReadonly && (
+                <button type='button' onClick={() => setIsReadonly(false)} className='btn btn-primary radius-10 px-20'>Edit</button>
+              )}
+              {!isReadonly && (
+                <button type='submit' disabled={submitting || refsLoading} className='btn btn-primary radius-10 px-20'>
+                  {submitting ? "Saving..." : "Save"}
                 </button>
               )}
             </div>
@@ -574,5 +474,18 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
     </div>
   );
 };
+
+const Tab = ({ active, label, onClick }) => (
+  <button type='button' onClick={onClick} className={`btn border-0 radius-10 px-20 py-8 ${active ? "bg-white text-primary-600 fw-semibold" : "bg-transparent text-secondary-light"}`}>
+    {label}
+  </button>
+);
+
+const Field = ({ col, label, children }) => (
+  <div className={col}>
+    <label className='form-label fw-semibold text-primary-light text-sm mb-8'>{label}</label>
+    {children}
+  </div>
+);
 
 export default ProductFormLayer;

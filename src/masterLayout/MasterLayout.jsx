@@ -4,10 +4,6 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import ThemeToggleButton from "../helper/ThemeToggleButton";
 import { getAccessToken } from "../lib/api/tokenStorage";
-import logo from '../assets/image/logo.png' 
-import logodark from '../assets/image/logo-lg.jpg'
-import logolIight from '../assets/image/logo-light.png'
-
 /** e.g. "Admin User" → "AU", "admin" → "AD", "John Doe" → "JD" */
 function displayNameToInitials(name) {
   const s = String(name || "").trim();
@@ -20,6 +16,11 @@ function displayNameToInitials(name) {
   }
   const w = parts[0] || s;
   return w.slice(0, 2).toUpperCase();
+}
+
+/** Active class pairs with `extra.css` sidebar (flat teal rail + active/hover tokens). */
+function sidebarNavClass({ isActive }) {
+  return isActive ? "active-page" : "";
 }
 
 function readProfileLabelFromToken() {
@@ -143,10 +144,15 @@ const MasterLayout = ({ children }) => {
           <Icon icon='radix-icons:cross-2' />
         </button>
         <div>
-          <Link to='/dashboard' className='sidebar-logo d-flex align-items-center gap-2 text-decoration-none'>
-            <img src={logolIight} alt='site logo' className='light-logo' />
-            <img src={logodark} alt='site logo' className='dark-logo' />
-            <img src={logo} alt='site logo' className='logo-icon' /> 
+          <Link
+            to='/dashboard'
+            className='sidebar-logo d-flex align-items-center text-decoration-none'
+            aria-label='Planext4u — dashboard home'
+          >
+            <div className='sidebar-logo-copy'>
+              <span className='sidebar-logo-title'>Planext4u</span>
+              <span className='sidebar-logo-tagline'>ALL SOLUTIONS INDIA Pvt Ltd</span>
+            </div>
           </Link>
         </div>
 
@@ -156,71 +162,88 @@ const MasterLayout = ({ children }) => {
             {/* ─── MAIN ─── */}
             <li className='sidebar-menu-group-title'>Main</li>
             <li>
-              <NavLink to='/dashboard' className={(navData) => navData.isActive ? "active-page" : ""} end>
+              <NavLink to='/dashboard' className={sidebarNavClass} end>
                 <Icon icon='mdi:view-dashboard-outline' className='menu-icon' />
                 <span>Dashboard</span>
               </NavLink>
             </li>
 
-            {/* ─── STANDARD MANAGEMENT ─── */}
-            <li className='sidebar-menu-group-title'>Standard Management</li>
-            <li className='dropdown'>
-              <Link to='#'>
+            {/* ─── PRODUCT MANAGEMENT ─── */}
+            <li className='sidebar-menu-group-title'>Product Management</li>
+            <li>
+              <NavLink to='/product-vendors' className={sidebarNavClass}>
                 <Icon icon='mdi:store-outline' className='menu-icon' />
-                <span>Vendor</span>
-              </Link>
-              <ul className='sidebar-submenu'>
-                <li><NavLink to='/vendor'>List Vendor</NavLink></li>
-                <li><NavLink to='/vendor-enquiry'>Vendor Enquiry</NavLink></li>
-              </ul>
+                <span title='Vendors selling products in the Shop tab'>Product vendors</span>
+              </NavLink>
             </li>
             <li>
-              <NavLink to='/category'>
+              <NavLink to='/product-categories' className={sidebarNavClass}>
                 <Icon icon='mdi:shape-outline' className='menu-icon' />
-                <span>Category</span>
+                <span title='Shop / catalog product taxonomy'>Product categories</span>
               </NavLink>
             </li>
             <li>
-              <NavLink to='/product'>
+              <NavLink to='/subcategories' className={sidebarNavClass}>
+                <Icon icon='mdi:shape-plus-outline' className='menu-icon' />
+                <span>Subcategories</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to='/product' className={sidebarNavClass}>
                 <Icon icon='mdi:package-variant-closed' className='menu-icon' />
-                <span>Product</span>
+                <span>Products</span>
+              </NavLink>
+            </li>
+
+            {/* ─── SERVICE MANAGEMENT ─── */}
+            <li className='sidebar-menu-group-title'>Service Management</li>
+            <li>
+              <NavLink to='/service-vendors' className={sidebarNavClass}>
+                <Icon icon='mdi:room-service-outline' className='menu-icon' />
+                <span title='Vendors offering bookable services in the Services tab'>Service vendors</span>
               </NavLink>
             </li>
             <li>
-              <NavLink to='/service'>
+              <NavLink to='/service-categories' className={sidebarNavClass}>
+                <Icon icon='mdi:shape-outline' className='menu-icon' />
+                <span title='Services tab booking taxonomy'>Service categories</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to='/service' className={sidebarNavClass}>
                 <Icon icon='mdi:tools' className='menu-icon' />
-                <span>Service</span>
+                <span>Services</span>
               </NavLink>
             </li>
 
             {/* ─── CLASSIFIED (CF) MANAGEMENT ─── */}
             <li className='sidebar-menu-group-title'>Classified (CF) Management</li>
             <li>
-              <NavLink to='/cf-vendors'>
+              <NavLink to='/cf-vendors' className={sidebarNavClass}>
                 <Icon icon='mdi:store-check-outline' className='menu-icon' />
-                <span>CF Vendors</span>
+                <span title='Classified listings — separate from catalog marketplace vendors'>CF vendors (classified)</span>
               </NavLink>
             </li>
             <li>
-              <NavLink to='/cf-categories'>
+              <NavLink to='/cf-categories' className={sidebarNavClass}>
                 <Icon icon='mdi:shape-plus-outline' className='menu-icon' />
                 <span>CF Categories</span>
               </NavLink>
             </li>
             <li>
-              <NavLink to='/cf-products'>
+              <NavLink to='/cf-products' className={sidebarNavClass}>
                 <Icon icon='mdi:package-variant' className='menu-icon' />
                 <span>CF Products</span>
               </NavLink>
             </li>
             <li>
-              <NavLink to='/cf-services'>
+              <NavLink to='/cf-services' className={sidebarNavClass}>
                 <Icon icon='mdi:toolbox-outline' className='menu-icon' />
                 <span>CF Services</span>
               </NavLink>
             </li>
             <li>
-              <NavLink to='/cf-cities'>
+              <NavLink to='/cf-cities' className={sidebarNavClass}>
                 <Icon icon='mdi:city-variant-outline' className='menu-icon' />
                 <span>CF City Locations</span>
               </NavLink>
@@ -229,40 +252,52 @@ const MasterLayout = ({ children }) => {
             {/* ─── SALES & FINANCIALS ─── */}
             <li className='sidebar-menu-group-title'>Sales & Financials</li>
             <li>
-              <NavLink to='/orders'>
+              <NavLink to='/orders' className={sidebarNavClass}>
                 <Icon icon='mdi:clipboard-list-outline' className='menu-icon' />
                 <span>Orders</span>
               </NavLink>
             </li>
             <li>
-              <NavLink to='/settlements'>
+              <NavLink to='/service-bookings' className={sidebarNavClass}>
+                <Icon icon='mdi:calendar-check-outline' className='menu-icon' />
+                <span>Service bookings</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to='/settlements' className={sidebarNavClass}>
                 <Icon icon='fluent:wallet-credit-card-16-regular' className='menu-icon' />
                 <span>Settlements</span>
               </NavLink>
             </li>
             <li>
-              <NavLink to='/points'>
+              <NavLink to='/points' className={sidebarNavClass}>
                 <Icon icon='mdi:star-circle-outline' className='menu-icon' />
                 <span>Points System</span>
               </NavLink>
             </li>
             <li>
-              <NavLink to='/tax'>
+              <NavLink to='/tax' className={sidebarNavClass}>
                 <Icon icon='mdi:calculator-variant-outline' className='menu-icon' />
                 <span>Tax Management</span>
               </NavLink>
             </li>
+            <li>
+              <NavLink to='/vendor-plans' className={sidebarNavClass}>
+                <Icon icon='mdi:wallet-membership' className='menu-icon' />
+                <span>Vendor Plans</span>
+              </NavLink>
+            </li>
 
-            {/* ─── CUSTOMERS & OCCUPATIONS ─── */}
+            {/* ─── CUSTOMERS ─── */}
             <li className='sidebar-menu-group-title'>Users</li>
             <li>
-              <NavLink to='/customer'>
+              <NavLink to='/customers' className={sidebarNavClass}>
                 <Icon icon='mdi:account-group-outline' className='menu-icon' />
                 <span>Customers</span>
               </NavLink>
             </li>
             <li>
-              <NavLink to='/occupations'>
+              <NavLink to='/occupations' className={sidebarNavClass}>
                 <Icon icon='mdi:briefcase-outline' className='menu-icon' />
                 <span>Occupations</span>
               </NavLink>
@@ -271,19 +306,43 @@ const MasterLayout = ({ children }) => {
             {/* ─── MARKETING & CONTENT ─── */}
             <li className='sidebar-menu-group-title'>Marketing & Content</li>
             <li>
-              <NavLink to='/banners'>
+              <NavLink to='/homepage-cms' className={sidebarNavClass}>
+                <Icon icon='mdi:home-edit-outline' className='menu-icon' />
+                <span>Homepage CMS</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to='/notifications' className={sidebarNavClass}>
+                <Icon icon='mdi:bullhorn-outline' className='menu-icon' />
+                <span>Push Notifications</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to='/media-library' className={sidebarNavClass}>
+                <Icon icon='mdi:folder-multiple-image' className='menu-icon' />
+                <span>Media Library</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to='/file-uploads' className={sidebarNavClass}>
+                <Icon icon='mdi:file-upload-outline' className='menu-icon' />
+                <span>File Uploads</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to='/banners' className={sidebarNavClass}>
                 <Icon icon='mdi:view-carousel-outline' className='menu-icon' />
                 <span>Banners</span>
               </NavLink>
             </li>
             <li>
-              <NavLink to='/popup-banners'>
+              <NavLink to='/popup-banners' className={sidebarNavClass}>
                 <Icon icon='mdi:message-image-outline' className='menu-icon' />
                 <span>Popup Banners</span>
               </NavLink>
             </li>
             <li>
-              <NavLink to='/advertisements'>
+              <NavLink to='/advertisements' className={sidebarNavClass}>
                 <Icon icon='mdi:bullhorn-outline' className='menu-icon' />
                 <span>Advertisements</span>
               </NavLink>
@@ -292,13 +351,13 @@ const MasterLayout = ({ children }) => {
             {/* ─── SYSTEM & REPORTS ─── */}
             <li className='sidebar-menu-group-title'>System & Reports</li>
             <li>
-              <NavLink to='/platform-variables'>
+              <NavLink to='/platform-variables' className={sidebarNavClass}>
                 <Icon icon='mdi:cogs' className='menu-icon' />
                 <span>Platform Variables</span>
               </NavLink>
             </li>
             <li>
-              <NavLink to='/report-log'>
+              <NavLink to='/report-log' className={sidebarNavClass}>
                 <Icon icon='mdi:file-document-alert-outline' className='menu-icon' />
                 <span>Report Log</span>
               </NavLink>

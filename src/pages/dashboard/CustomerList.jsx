@@ -60,7 +60,7 @@ const CustomerList = () => {
     <div className='col-12'>
       <div className='card border-0 shadow-sm radius-16 h-100 bg-base'>
         <div className='card-body p-24'>
-          <div className='d-flex flex-wrap align-items-center gap-1 justify-content-between mb-16'>
+          <div className='p4u-admin-filter-row align-items-center gap-1 justify-content-between mb-16'>
             <ul
               className='nav border-gradient-tab nav-pills mb-0'
               id='pills-tab'
@@ -102,16 +102,16 @@ const CustomerList = () => {
                 </button>
               </li>
             </ul>
-            <div className='d-flex flex-wrap align-items-center gap-3'>
+            <div className='p4u-admin-filter-row align-items-center gap-3'>
               <Link
-                to='/customer'
+                to='/customers'
                 className='text-primary-600 hover-text-primary d-flex align-items-center gap-1 text-sm'
               >
                 All customers
                 <Icon icon='solar:alt-arrow-right-linear' className='icon' />
               </Link>
               <Link
-                to='/vendor'
+                to='/product-vendors'
                 className='text-primary-600 hover-text-primary d-flex align-items-center gap-1 text-sm'
               >
                 All vendors

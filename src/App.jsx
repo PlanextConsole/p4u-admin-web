@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import ProtectedRouteLayout from "./components/ProtectedRouteLayout";
 import Dashboard from "./pages/dashboard/DashoardLayout";
 import HomePageTwo from "./pages/HomePageTwo";
@@ -102,8 +102,9 @@ import BlankPagePage from "./pages/BlankPagePage";
 
 //  VENDOR
 
-import Vendorpage from './pages/vendor/VendorPage'
-import VendorEnquiryPage from './pages/vendor/VendorEnquiryPage';
+import EditVendorPage from './pages/vendor/EditVendorPage';
+import ProductVendorsPage from './pages/vendor/ProductVendorsPage';
+import ServiceVendorsPage from './pages/vendor/ServiceVendorsPage';
 
 
 // PRODUCT
@@ -111,6 +112,8 @@ import ProductListPage from './pages/product/ProductListPage';
 
 // CATEGORY
 import CategoryListPage from './pages/category/CategoryListPage';
+import ProductCategoryListPage from './pages/category/ProductCategoryListPage';
+import SubcategoryListPage from './pages/subcategory/SubcategoryListPage';
 
 // SERVICE
 import ServiceListPage from './pages/service/ServiceListPage';
@@ -134,6 +137,7 @@ import Login from './pages/auth/Login';
 
 // ORDER IMPORTS
 import OrderListPage from './pages/orders/OrderListPage';
+import ServiceBookingListPage from './pages/bookings/ServiceBookingListPage';
 
 // CF MODULES
 import CFVendorsListPage from './pages/cf-vendor/CFVendorsListPage';
@@ -146,8 +150,17 @@ import CFCityListPage from './pages/cf-city/CFCityListPage';
 import SettlementsPage from './pages/settlement/SettlementsPage';
 import TaxListPage from './pages/tax/TaxListPage';
 import BannerListPage from './pages/banner/BannerListPage';
+import HomepageCmsPage from './pages/homepage-cms/HomepageCmsPage';
+import PushNotificationsPage from './pages/push-notifications/PushNotificationsPage';
+import MediaLibraryPage from './pages/media-library/MediaLibraryPage';
+import FileUploadsPage from './pages/file-uploads/FileUploadsPage';
 import PopupBannersListPage from './pages/popupbanner/PopupBannersListPage';
 import AdvertisementsListPage from './pages/advertisement/AdvertisementsListPage';
+import VendorPlansPage from './pages/vendor-plan/VendorPlansPage';
+
+// REPORT
+import ReportLogPage from './pages/report/ReportLogPage';
+import SocialDashboardPage from './pages/social/SocialDashboardPage';
 
 
 
@@ -162,22 +175,28 @@ function App() {
   <Route element={<ProtectedRouteLayout />}>
   <Route exact path='/dashboard' element={<Dashboard />} /> 
         {/* VENDOR */}
-        <Route exact path='/vendor' element={<Vendorpage />} />
-        <Route exact path='/vendor-enquiry' element={<VendorEnquiryPage />} />
+        <Route exact path='/vendor' element={<Navigate to='/product-vendors' replace />} />
+        <Route exact path='/product-vendors' element={<ProductVendorsPage />} />
+        <Route exact path='/service-vendors' element={<ServiceVendorsPage />} />
+        <Route exact path='/edit-vendor/:id' element={<EditVendorPage />} />
 
 
 
         {/* PRODUCT */}
         <Route exact path='/product' element={<ProductListPage />} />
 
-{/* CATEGORY */}
-<Route exact path='/category' element={<CategoryListPage />} />
+{/* CATEGORY — product vs service use separate tables */}
+<Route exact path='/service-categories' element={<CategoryListPage />} />
+<Route exact path='/product-categories' element={<ProductCategoryListPage />} />
+<Route exact path='/category' element={<Navigate to='/service-categories' replace />} />
+<Route exact path='/subcategories' element={<SubcategoryListPage />} />
 
 {/* SERVICE */}
 <Route exact path='/service' element={<ServiceListPage />} />
 
 {/* CUSTOMER */}
 <Route exact path='/customer' element={<CustomerListPage />} />
+<Route exact path='/customers' element={<CustomerListPage />} />
 
 {/* PLATFORM VARIABLES */}
 <Route exact path='/platform-variables' element={<PlatformVariablesListPage />} />
@@ -195,6 +214,7 @@ function App() {
 
 {/* ORDERS */}
 <Route exact path='/orders' element={<OrderListPage />} />
+<Route exact path='/service-bookings' element={<ServiceBookingListPage />} />
 
 {/* CF MODULES */}
 <Route exact path='/cf-vendors' element={<CFVendorsListPage />} />
@@ -208,11 +228,20 @@ function App() {
 
 {/* TAX */}
 <Route exact path='/tax' element={<TaxListPage />} />
+<Route exact path='/vendor-plans' element={<VendorPlansPage />} />
 
 {/* MARKETING */}
+<Route exact path='/homepage-cms' element={<HomepageCmsPage />} />
+<Route exact path='/notifications' element={<PushNotificationsPage />} />
+<Route exact path='/media-library' element={<MediaLibraryPage />} />
+<Route exact path='/file-uploads' element={<FileUploadsPage />} />
 <Route exact path='/banners' element={<BannerListPage />} />
 <Route exact path='/popup-banners' element={<PopupBannersListPage />} />
 <Route exact path='/advertisements' element={<AdvertisementsListPage />} />
+
+{/* REPORTS */}
+<Route exact path='/report-log' element={<ReportLogPage />} />
+<Route exact path='/admin/social' element={<SocialDashboardPage />} />
 
     
 

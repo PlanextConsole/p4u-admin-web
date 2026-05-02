@@ -1,23 +1,28 @@
-import React, { useState } from "react";
+import React, { useMemo } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 
-const SettlementFormLayer = ({ isView = false, initialData = null, onCancel }) => {
-  const [formData, setFormData] = useState(
-    initialData || {
-      vendorName: "Sai Muruga Traders",
-      vendorMobile: "+916381725188",
-      paymentMode: "UPI",
-      transactionId: "pay_SY70v9ABFapkXU",
-      picture: null,
-      settlementType: "Vendors",
-      amount: "105",
-    }
-  );
+const SettlementFormLayer = ({ isView = true, initialData = null, vendors = [], onCancel }) => {
+  const vendorById = useMemo(() => {
+    const m = new Map();
+    vendors.forEach((v) => m.set(v.id, v));
+    return m;
+  }, [vendors]);
 
-  const handleChange = (e) => {
-    if (isView) return;
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const meta = (initialData && initialData.metadata) || {};
+  const v = initialData?.vendorId ? vendorById.get(initialData.vendorId) : null;
+  const vendorName = meta.vendorName || v?.name || v?.businessName || "";
+  const vendorMobile = meta.vendorMobile || v?.phone || "";
+
+  const display = {
+    vendorName,
+    vendorMobile,
+    paymentMode: meta.paymentMode || "",
+    transactionId: meta.transactionId || "",
+    settlementType: meta.settlementOwnerType || "Vendors",
+    amount: initialData?.amount ?? "",
+    documentUrl: initialData?.documentUrl || "",
+    status: initialData?.status || "",
+    settlementKind: initialData?.settlementType || "",
   };
 
   return (
@@ -30,76 +35,75 @@ const SettlementFormLayer = ({ isView = false, initialData = null, onCancel }) =
       <div className='card-body p-24'>
         <form>
           <div className='row'>
-            
-            {/* Vendor Name */}
             <div className='col-md-6 mb-20'>
               <label className='form-label fw-semibold text-primary-light text-sm mb-8'>Vendor</label>
-              <input type='text' className='form-control radius-8 bg-neutral-100' name='vendorName' value={formData.vendorName} readOnly disabled={isView} />
+              <input type='text' className='form-control radius-8 bg-neutral-100' value={display.vendorName || "—"} readOnly disabled />
             </div>
 
-            {/* Vendor Mobile */}
             <div className='col-md-6 mb-20'>
               <label className='form-label fw-semibold text-primary-light text-sm mb-8'>Vendor Mobile</label>
-              <input type='text' className='form-control radius-8 bg-neutral-100' name='vendorMobile' value={formData.vendorMobile} readOnly disabled={isView} />
+              <input type='text' className='form-control radius-8 bg-neutral-100' value={display.vendorMobile || "—"} readOnly disabled />
             </div>
 
-            {/* Payment Mode */}
             <div className='col-md-6 mb-20'>
-              <label className='form-label fw-semibold text-primary-light text-sm mb-8'>Select Payment Mode <span className='text-danger-600'>*</span></label>
-              <select className='form-control radius-8 form-select' name='paymentMode' value={formData.paymentMode} onChange={handleChange} required disabled={isView}>
-                <option value=''>Select...</option>
-                <option value='UPI'>UPI</option>
-                <option value='Net Banking'>Net Banking</option>
-                <option value='Cash'>Cash</option>
-                <option value='Debit Card'>Debit Card</option>
-                <option value='Credit Card'>Credit Card</option>
-              </select>
+              <label className='form-label fw-semibold text-primary-light text-sm mb-8'>Payment Mode</label>
+              <input type='text' className='form-control radius-8 bg-neutral-100' value={display.paymentMode || "—"} readOnly disabled />
             </div>
 
-            {/* Transaction ID */}
             <div className='col-md-6 mb-20'>
-              <label className='form-label fw-semibold text-primary-light text-sm mb-8'>Transaction ID <span className='text-danger-600'>*</span></label>
-              <input type='text' className='form-control radius-8' name='transactionId' value={formData.transactionId} onChange={handleChange} required disabled={isView} />
+              <label className='form-label fw-semibold text-primary-light text-sm mb-8'>Transaction ID</label>
+              <input type='text' className='form-control radius-8 bg-neutral-100' value={display.transactionId || "—"} readOnly disabled />
             </div>
 
-            {/* Settlement Type */}
             <div className='col-md-6 mb-20'>
-              <label className='form-label fw-semibold text-primary-light text-sm mb-8'>Settlement Type <span className='text-danger-600'>*</span></label>
-              <select className='form-control radius-8 form-select' name='settlementType' value={formData.settlementType} onChange={handleChange} required disabled={isView}>
-                <option value=''>Select...</option>
-                <option value='Vendors'>Vendors</option>
-                <option value='Customers'>Customers</option>
-              </select>
+              <label className='form-label fw-semibold text-primary-light text-sm mb-8'>Settlement Type</label>
+              <input type='text' className='form-control radius-8 bg-neutral-100' value={display.settlementType} readOnly disabled />
             </div>
 
-            {/* Amount */}
             <div className='col-md-6 mb-20'>
-              <label className='form-label fw-semibold text-primary-light text-sm mb-8'>Amount <span className='text-danger-600'>*</span></label>
-              <input type='number' className='form-control radius-8' name='amount' value={formData.amount} onChange={handleChange} required disabled={isView} />
+              <label className='form-label fw-semibold text-primary-light text-sm mb-8'>Amount</label>
+              <input
+                type='text'
+                className='form-control radius-8 bg-neutral-100'
+                value={
+                  display.settlementKind === "points"
+                    ? `${display.amount} Pts`
+                    : `₹${display.amount}`
+                }
+                readOnly
+                disabled
+              />
             </div>
 
-            {/* Picture */}
             <div className='col-md-6 mb-20'>
-              <label className='form-label fw-semibold text-primary-light text-sm mb-8'>Picture <span className='text-danger-600'>*</span></label>
-              <input type='file' className='form-control radius-8' name='picture' disabled={isView} />
-              {isView && (
-                  <div className="mt-12">
-                      <span className="text-sm text-primary-600 fw-medium cursor-pointer d-flex align-items-center gap-2">
-                          <Icon icon="mdi:image-outline" className="text-xl" /> View Attached Receipt
-                      </span>
-                  </div>
+              <label className='form-label fw-semibold text-primary-light text-sm mb-8'>Status</label>
+              <input type='text' className='form-control radius-8 bg-neutral-100' value={display.status || "—"} readOnly disabled />
+            </div>
+
+            <div className='col-md-6 mb-20'>
+              <label className='form-label fw-semibold text-primary-light text-sm mb-8'>Receipt</label>
+              {display.documentUrl ? (
+                <div>
+                  <a
+                    href={display.documentUrl}
+                    target='_blank'
+                    rel='noreferrer'
+                    className='text-sm text-primary-600 fw-medium d-flex align-items-center gap-2'
+                  >
+                    <Icon icon='mdi:image-outline' className='text-xl' /> View Attached Receipt
+                  </a>
+                </div>
+              ) : (
+                <input type='text' className='form-control radius-8 bg-neutral-100' value='—' readOnly disabled />
               )}
             </div>
-
           </div>
 
-          {/* Action Buttons */}
           <div className='d-flex align-items-center justify-content-end mt-24'>
             <button type='button' onClick={() => (onCancel ? onCancel() : window.history.back())} className='btn border border-danger-600 text-danger-600 bg-hover-danger-200 text-md px-56 py-12 radius-8 d-flex align-items-center gap-2'>
               <Icon icon='mdi:arrow-left-circle-outline' className='text-xl' /> Back
             </button>
           </div>
-
         </form>
       </div>
     </div>

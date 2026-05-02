@@ -12,11 +12,11 @@ const LoginPage = () => {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
-  const { isAuthenticated, login } = useAuth();
+  const { isInitializing, isAuthenticated, login } = useAuth();
 
   useEffect(() => {
-    if (isAuthenticated) navigate("/dashboard", { replace: true });
-  }, [isAuthenticated, navigate]);
+    if (!isInitializing && isAuthenticated) navigate("/dashboard", { replace: true });
+  }, [isInitializing, isAuthenticated, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();

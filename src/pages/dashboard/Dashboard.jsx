@@ -1,15 +1,13 @@
 import DashboardSummary from "./DashboardSummary";
 import DashboardCharts from "./DashboardCharts";
-import CustomerList from "./CustomerList";
+import DashboardInsights from "./DashboardInsights";
 
 const DashBoardLayerOne = () => {
   return (
     <>
       <DashboardSummary />
       <DashboardCharts />
-      <section className='row gy-4 mt-1'>
-        <CustomerList />
-      </section>
+      <DashboardInsights />
     </>
   );
 };

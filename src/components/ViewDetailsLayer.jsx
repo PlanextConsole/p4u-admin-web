@@ -175,7 +175,7 @@ const ViewDetailsLayer = () => {
       <div className='col-xxl-9'>
         <div className='card h-100 p-0 email-card overflow-x-auto d-block'>
           <div className='min-w-450-px d-flex flex-column justify-content-between h-100'>
-            <div className='card-header border-bottom bg-base py-16 px-24 d-flex align-items-center gap-3 justify-content-between flex-wrap'>
+            <div className='card-header border-bottom bg-base py-16 px-24 p4u-admin-filter-row align-items-center gap-3 justify-content-between'>
               <div className='d-flex align-items-center gap-2'>
                 <button className='text-secondary-light d-flex me-8'>
                   <Icon

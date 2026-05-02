@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import ReactApexChart from "react-apexcharts";
-import { listCategories, listOrders, listProducts } from "../../lib/api/adminApi";
+import { listCategoriesForProducts, listOrders, listProducts } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 
 const DONUT_COLORS = ["#8b5cf6", "#db2777", "#38bdf8", "#22c55e", "#f97316", "#6366f1", "#14b8a6"];
@@ -49,7 +49,7 @@ async function aggregateRevenueByDay() {
 }
 
 async function aggregateProductsByCategory() {
-  const catRes = await listCategories({ purpose: "all" });
+  const catRes = await listCategoriesForProducts({ purpose: "all" });
   const catItems = catRes?.items || [];
   const idToName = new Map(catItems.map((c) => [c.id, c.name || c.title || "Category"]));
 
@@ -88,6 +88,15 @@ export default function DashboardCharts() {
   const [error, setError] = useState("");
   const [revenue, setRevenue] = useState({ categories: [], data: [] });
   const [categoryRows, setCategoryRows] = useState([]);
+  const [updatedAt, setUpdatedAt] = useState("");
+  const [isCompact, setIsCompact] = useState(false);
+
+  useEffect(() => {
+    const sync = () => setIsCompact(window.innerWidth < 768);
+    sync();
+    window.addEventListener("resize", sync);
+    return () => window.removeEventListener("resize", sync);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -99,6 +108,7 @@ export default function DashboardCharts() {
         if (!cancelled) {
           setRevenue(rev);
           setCategoryRows(cats);
+          setUpdatedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
         }
       } catch (e) {
         if (!cancelled) {
@@ -208,16 +218,19 @@ export default function DashboardCharts() {
         <div className='card border-0 shadow-sm radius-16 h-100 bg-base'>
           <div className='card-body p-24'>
             <h5 className='fw-bold text-primary-light mb-16'>Revenue Trend</h5>
+            <p className='text-secondary-light text-sm mb-12'>Last 7 days · updated {updatedAt || "—"}</p>
             {error && (
               <div className='alert alert-warning radius-12 py-12 px-16 mb-0' role='status'>
                 {error}
               </div>
             )}
             {!error && loading && (
-              <div className='text-secondary-light py-5 text-center'>Loading chart…</div>
+              <div className='placeholder-glow py-5'>
+                <span className='placeholder col-12' style={{ height: 220 }} />
+              </div>
             )}
             {!error && !loading && (
-              <ReactApexChart options={lineOptions} series={lineSeries} type='area' height={300} />
+              <ReactApexChart options={lineOptions} series={lineSeries} type='area' height={isCompact ? 240 : 300} />
             )}
           </div>
         </div>
@@ -226,16 +239,19 @@ export default function DashboardCharts() {
         <div className='card border-0 shadow-sm radius-16 h-100 bg-base'>
           <div className='card-body p-24'>
             <h5 className='fw-bold text-primary-light mb-16'>Categories</h5>
+            <p className='text-secondary-light text-sm mb-12'>Product distribution snapshot</p>
             {error && (
               <div className='alert alert-warning radius-12 py-12 px-16 mb-0' role='status'>
                 {error}
               </div>
             )}
             {!error && loading && (
-              <div className='text-secondary-light py-5 text-center'>Loading chart…</div>
+              <div className='placeholder-glow py-5'>
+                <span className='placeholder col-12' style={{ height: 220 }} />
+              </div>
             )}
             {!error && !loading && hasCategoryData && (
-              <ReactApexChart options={donutOptions} series={donutSeries} type='donut' height={320} />
+              <ReactApexChart options={donutOptions} series={donutSeries} type='donut' height={isCompact ? 260 : 320} />
             )}
             {!error && !loading && !hasCategoryData && (
               <div className='text-secondary-light py-5 text-center'>No product category distribution yet.</div>

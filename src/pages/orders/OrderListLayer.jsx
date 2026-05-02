@@ -195,23 +195,17 @@ const OrderListLayer = () => {
 
       <div className="card radius-12 p-0">
         <div className="card-body p-24">
-          <div className="d-flex flex-wrap gap-12 align-items-center mb-20">
-            <div className="input-group radius-8 flex-grow-1" style={{ maxWidth: 360 }}>
+          <div className="p4u-admin-filter-row gap-12 mb-20">
+            <div className="input-group radius-8 p4u-filter-search" style={{ minWidth: 160, maxWidth: 300 }}>
               <span className="input-group-text bg-white border-end-0"><Icon icon="mdi:magnify" /></span>
-              <input type="text" className="form-control border-start-0" placeholder="Search orders..." value={search} onChange={(e) => setSearch(e.target.value)} />
+              <input type="text" className="form-control border-start-0 h-40-px" placeholder="Search orders..." value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
-            <select className="form-select radius-8" style={{ maxWidth: 180 }} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <select className="form-select radius-8 h-40-px" style={{ minWidth: 130, maxWidth: 200 }} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               {STATUS_OPTIONS.map((s) => (<option key={s.value} value={s.value}>{s.label}</option>))}
             </select>
-            <div className="ms-auto d-flex gap-8">
-              <div className="input-group radius-8" style={{ width: 170 }}>
-                <span className="input-group-text bg-white border-end-0"><Icon icon="mdi:calendar-outline" /></span>
-                <input type="date" className="form-control border-start-0" value={fromDate} onChange={(e) => setFromDate(e.target.value)} placeholder="From Date" />
-              </div>
-              <div className="input-group radius-8" style={{ width: 170 }}>
-                <span className="input-group-text bg-white border-end-0"><Icon icon="mdi:calendar-outline" /></span>
-                <input type="date" className="form-control border-start-0" value={toDate} onChange={(e) => setToDate(e.target.value)} placeholder="To Date" />
-              </div>
+            <input type="date" className="form-control radius-8 h-40-px" value={fromDate} onChange={(e) => setFromDate(e.target.value)} title="From date" />
+            <input type="date" className="form-control radius-8 h-40-px" value={toDate} onChange={(e) => setToDate(e.target.value)} title="To date" />
+            <div className="p4u-admin-filter-row__end gap-8">
               <button type="button" className="btn btn-outline-secondary radius-8 d-flex align-items-center gap-8" onClick={exportCsv}>
                 <Icon icon="mdi:download-outline" /> Export CSV
               </button>
@@ -224,11 +218,10 @@ const OrderListLayer = () => {
             <p className="text-secondary-light mb-0">Loading orders...</p>
           ) : (
             <>
-              <div className="table-responsive scroll-sm">
-                <table className="table bordered-table sm-table mb-0 text-nowrap">
+              <div className="table-responsive scroll-sm" style={{ overflowX: "auto" }}>
+                <table className="table bordered-table sm-table mb-0 text-nowrap" style={{ minWidth: 1040 }}>
                   <thead>
                     <tr>
-                      <th><input type="checkbox" /></th>
                       <th>ORDER ID</th>
                       <th>CUSTOMER</th>
                       <th>VENDOR</th>
@@ -242,7 +235,7 @@ const OrderListLayer = () => {
                   </thead>
                   <tbody>
                     {filtered.length === 0 ? (
-                      <tr><td colSpan="10" className="text-center py-4">No orders found.</td></tr>
+                      <tr><td colSpan="9" className="text-center py-4">No orders found.</td></tr>
                     ) : (
                       filtered.map((o) => {
                         const m = parseMeta(o.metadata);
@@ -257,7 +250,6 @@ const OrderListLayer = () => {
                         const isCancelled = (o.status || "").toLowerCase() === "cancelled";
                         return (
                           <tr key={o.id}>
-                            <td><input type="checkbox" /></td>
                             <td className="fw-semibold">{o.orderRef || "—"}</td>
                             <td>{custName}</td>
                             <td>{vendorName}</td>
@@ -268,14 +260,14 @@ const OrderListLayer = () => {
                             <td><span className={`px-12 py-4 radius-pill text-xs fw-medium ${sb.cls}`}>{sb.label}</span></td>
                             <td>
                               <div className="d-flex align-items-center gap-12">
-                                <button type="button" className="btn btn-link p-0 text-secondary-light" title="View" onClick={() => setModal({ orderId: o.id, mode: "view", customerName: custName, vendorName })}>
+                                <button type="button" className="btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-secondary-light" style={{ width: 36, height: 36 }} title="View" onClick={() => setModal({ orderId: o.id, mode: "view", customerName: custName, vendorName })}>
                                   <Icon icon="mdi:eye-outline" className="text-xl" />
                                 </button>
-                                <button type="button" className="btn btn-link p-0 text-secondary-light" title="Edit" onClick={() => setModal({ orderId: o.id, mode: "edit", customerName: custName, vendorName })}>
+                                <button type="button" className="btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-secondary-light" style={{ width: 36, height: 36 }} title="Edit" onClick={() => setModal({ orderId: o.id, mode: "edit", customerName: custName, vendorName })}>
                                   <Icon icon="mdi:pencil-outline" className="text-xl" />
                                 </button>
                                 {!isCancelled && (
-                                  <button type="button" className="btn btn-link p-0 text-danger-600" title="Cancel" onClick={() => cancel(o)}>
+                                  <button type="button" className="btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-danger-600" style={{ width: 36, height: 36 }} title="Cancel" onClick={() => cancel(o)}>
                                     <Icon icon="mdi:cancel" className="text-xl" />
                                   </button>
                                 )}
@@ -289,7 +281,7 @@ const OrderListLayer = () => {
                 </table>
               </div>
 
-              <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24">
+              <div className="p4u-admin-filter-row align-items-center justify-content-between gap-2 mt-24">
                 <span>Showing {pageFrom} to {pageTo} of {total} entries</span>
                 <div className="d-flex gap-2 align-items-center">
                   <button type="button" className="page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 h-32-px text-md d-flex align-items-center justify-content-center" disabled={!canPrev} onClick={() => setOffset(Math.max(0, offset - limit))}><Icon icon="ep:d-arrow-left" /></button>

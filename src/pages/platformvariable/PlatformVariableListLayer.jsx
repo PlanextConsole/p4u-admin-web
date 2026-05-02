@@ -66,7 +66,7 @@ const PlatformVariableListLayer = () => {
 
   return (
     <div className="card h-100 p-0 radius-12">
-      <div className="card-header border-bottom bg-base py-16 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between">
+      <div className="card-header border-bottom bg-base py-16 px-24 p4u-admin-filter-row align-items-center gap-3 justify-content-between">
         <button type="button" onClick={() => setModal({ mode: "add" })} className="btn btn-primary text-sm btn-sm px-12 py-8 radius-8 d-flex align-items-center gap-2">
           <Icon icon="ic:baseline-plus" className="icon text-xl line-height-1" /> Add Variable
         </button>
@@ -127,7 +127,7 @@ const PlatformVariableListLayer = () => {
                 </tbody>
               </table>
             </div>
-            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24">
+            <div className="p4u-admin-filter-row align-items-center justify-content-between gap-2 mt-24">
               <span>{page} of {totalPages}</span>
               <div className="d-flex gap-2">
                 <button type="button" className="btn btn-sm btn-outline-secondary radius-8" disabled={!canPrev} onClick={() => setOffset(Math.max(0, offset - limit))}>Prev</button>

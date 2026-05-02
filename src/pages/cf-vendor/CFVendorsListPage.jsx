@@ -6,7 +6,7 @@ import CFVendorListLayer from "./CFVendorListLayer";
 export default function CFVendorsListPage() {
   return (
     <MasterLayout>
-      <Breadcrumb title='List CF Vendors' pagetitle='CF Vendors' />
+      <Breadcrumb title='CF vendors (classified)' pagetitle='CF vendors (classified)' />
       <CFVendorListLayer />
     </MasterLayout>
   );

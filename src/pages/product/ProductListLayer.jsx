@@ -1,39 +1,46 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { deleteProduct, listProducts, listVendors, listCategories, listCatalogServices, listTaxConfigurations } from "../../lib/api/adminApi";
+import { toast } from "react-toastify";
+import { deleteProduct, listProducts, listVendors, listCategoriesForProducts, listCatalogServices, listTaxConfigurations } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
-import CountAndChips from "../../components/admin/CountAndChips";
+import { formatDateTime } from "../../lib/formatters";
+import { resolveAdminProductUnitPrice } from "../../lib/resolveProductPrice";
 import FormModal from "../../components/admin/FormModal";
 import ProductFormLayer from "./ProductFormLayer";
 
+function toCsv(rows) {
+  const esc = (v) => {
+    const s = v == null ? "" : String(v);
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  return rows.map((r) => r.map(esc).join(",")).join("\n");
+}
+
 const ProductListLayer = () => {
   const [products, setProducts] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [limit, setLimit] = useState(20);
-  const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [tab, setTab] = useState("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const [vendorMap, setVendorMap] = useState({});
   const [categoryMap, setCategoryMap] = useState({});
-  const [serviceMap, setServiceMap] = useState({});
   const [taxMap, setTaxMap] = useState({});
   const [modal, setModal] = useState(null);
 
   useEffect(() => {
     Promise.all([
       listVendors({ limit: 200, offset: 0 }),
-      listCategories({ purpose: "all" }),
+      listCategoriesForProducts({ purpose: "all" }),
       listCatalogServices({ limit: 500, offset: 0 }),
       listTaxConfigurations({ purpose: "all" }),
     ]).then(([vRes, cRes, sRes, tRes]) => {
       const vm = {}; (vRes.items || []).forEach((v) => { vm[v.id] = v.businessName || v.ownerName || "Vendor"; });
       const cm = {}; (cRes.items || []).forEach((c) => { cm[c.id] = c.name; });
-      const sm = {}; (sRes.items || []).forEach((s) => { sm[s.id] = s.name; });
       const tm = {}; (tRes.items || []).forEach((t) => { tm[t.id] = { title: t.title || t.code, percentage: t.percentage }; });
       setVendorMap(vm);
       setCategoryMap(cm);
-      setServiceMap(sm);
       setTaxMap(tm);
     }).catch(() => {});
   }, []);
@@ -42,15 +49,14 @@ const ProductListLayer = () => {
     setLoading(true);
     setError("");
     try {
-      const res = await listProducts({ limit, offset });
+      const res = await listProducts({ limit: 500, offset: 0 });
       setProducts(res.items || []);
-      setTotal(typeof res.total === "number" ? res.total : 0);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : String(e));
     } finally {
       setLoading(false);
     }
-  }, [limit, offset]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 
@@ -58,28 +64,47 @@ const ProductListLayer = () => {
     if (!window.confirm("Delete this product?")) return;
     try {
       await deleteProduct(id);
+      toast.success("Product deleted.");
       await load();
     } catch (e) {
-      window.alert(e instanceof ApiError ? e.message : String(e));
+      toast.error(e instanceof ApiError ? e.message : String(e));
     }
   };
 
-  const filtered = search.trim()
-    ? products.filter((p) => {
-        const q = search.toLowerCase();
-        return (
-          (p.name || "").toLowerCase().includes(q) ||
-          (categoryMap[p.categoryId] || "").toLowerCase().includes(q) ||
-          (serviceMap[p.serviceId] || "").toLowerCase().includes(q) ||
-          (vendorMap[p.vendorId] || "").toLowerCase().includes(q)
-        );
-      })
-    : products;
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return products.filter((p) => {
+      const status = (p.availability || p.isActive) ? "active" : "pending";
+      if (tab === "pending" && status !== "pending") return false;
+      if (fromDate) {
+        const d = new Date(p.createdAt);
+        if (Number.isNaN(d.getTime()) || d < new Date(fromDate)) return false;
+      }
+      if (toDate) {
+        const d = new Date(p.createdAt);
+        const end = new Date(toDate);
+        end.setHours(23, 59, 59, 999);
+        if (Number.isNaN(d.getTime()) || d > end) return false;
+      }
+      if (!q) return true;
+      return (
+        (p.name || "").toLowerCase().includes(q) ||
+        (categoryMap[p.categoryId] || "").toLowerCase().includes(q) ||
+        (vendorMap[p.vendorId] || "").toLowerCase().includes(q)
+      );
+    });
+  }, [products, search, categoryMap, vendorMap, tab, fromDate, toDate]);
 
-  const pageFrom = total === 0 ? 0 : offset + 1;
-  const pageTo = offset + products.length;
-  const canPrev = offset > 0;
-  const canNext = offset + limit < total;
+  const stats = useMemo(() => {
+    const totalProducts = products.length;
+    const activeCount = products.filter((p) => p.availability || p.isActive).length;
+    const avgPrice = totalProducts
+      ? Math.round(
+          products.reduce((sum, p) => sum + resolveAdminProductUnitPrice(p), 0) / totalProducts,
+        )
+      : 0;
+    return { totalProducts, activeCount, avgPrice };
+  }, [products]);
 
   const calcTax = (price, taxId) => {
     const tax = taxMap[taxId];
@@ -90,87 +115,131 @@ const ProductListLayer = () => {
     return { cgst: half, sgst: half, title: tax.title };
   };
 
+  const exportCsv = () => {
+    const csvRows = [
+      ["ID", "Product", "Vendor", "Price", "Discount", "Status", "Created"],
+      ...filtered.map((p) => [
+        p.productRef || p.id || "",
+        p.name || "",
+        vendorMap[p.vendorId] || "",
+        resolveAdminProductUnitPrice(p),
+        p.discountAmount || "",
+        (p.availability || p.isActive) ? "active" : "pending",
+        p.createdAt || "",
+      ]),
+    ];
+    const csv = toCsv(csvRows);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `products-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
-    <div className="card h-100 p-0 radius-12">
-      <div className="card-header border-bottom bg-base py-16 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between">
-        <div className="d-flex align-items-center flex-wrap gap-3">
-          <button className="btn btn-primary text-sm btn-sm px-16 py-8 radius-8">Export with Excel</button>
-          <button type="button" onClick={() => setModal({ mode: "add" })} className="btn btn-primary text-sm btn-sm px-12 py-8 radius-8 d-flex align-items-center gap-2">
-            <Icon icon="ic:baseline-plus" className="icon text-xl line-height-1" /> Add Product
+    <div className='card h-100 p-0 radius-16 border-0 shadow-sm'>
+      <div className='card-body p-24'>
+        <div className='mb-20'>
+          <h3 className='fw-bold mb-4'>Products</h3>
+          <p className='text-secondary-light mb-0'>{stats.totalProducts} products across all vendors</p>
+        </div>
+
+        <div className='bg-primary-50 radius-12 p-6 d-flex gap-6 mb-16' style={{ maxWidth: 360 }}>
+          <button type='button' className={`btn border-0 radius-10 px-20 py-8 ${tab === "pending" ? "bg-white text-primary-600 fw-semibold" : "bg-transparent text-secondary-light"}`} onClick={() => setTab("pending")}>
+            Pending Approval
+          </button>
+          <button type='button' className={`btn border-0 radius-10 px-20 py-8 ${tab === "all" ? "bg-white text-primary-600 fw-semibold" : "bg-transparent text-secondary-light"}`} onClick={() => setTab("all")}>
+            All Products
           </button>
         </div>
-        <input
-          type="text"
-          className="form-control radius-8"
-          style={{ maxWidth: 340 }}
-          placeholder="Search by product name, category or service"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
-      <div className="card-body p-24">
-        {error && <div className="alert alert-danger radius-12 mb-16" role="alert">{error}</div>}
+
+        <div className='row g-12 mb-16'>
+          <MetricCard title='Total Products' value={stats.totalProducts} icon='mdi:package-variant-closed' color='info' />
+          <MetricCard title='Active' value={stats.activeCount} icon='mdi:trending-up' color='success' />
+          <MetricCard title='Avg Price' value={`₹${stats.avgPrice}`} icon='mdi:currency-inr' color='primary' />
+        </div>
+
+        <div className='card radius-12 border-0 mb-16'>
+          <div className='card-body p-16 p4u-admin-filter-row gap-10 align-items-center'>
+            <div className='input-group radius-10 p4u-filter-search' style={{ minWidth: 160, maxWidth: 300 }}>
+              <span className='input-group-text bg-white border-end-0'><Icon icon='mdi:magnify' /></span>
+              <input
+                type='text'
+                className='form-control border-start-0 h-40-px'
+                placeholder='Search products...'
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <input type='date' className='form-control radius-10 h-40-px' value={fromDate} onChange={(e) => setFromDate(e.target.value)} title='From date' />
+            <input type='date' className='form-control radius-10 h-40-px' value={toDate} onChange={(e) => setToDate(e.target.value)} title='To date' />
+            <div className='p4u-admin-filter-row__end gap-8'>
+              <button type='button' onClick={() => setModal({ mode: "add" })} className='btn btn-primary radius-10 px-20 d-flex align-items-center gap-8'>
+                <Icon icon='ic:baseline-plus' /> Add Product
+              </button>
+              <button type='button' onClick={exportCsv} className='btn btn-outline-secondary radius-10 d-flex align-items-center gap-8'>
+                <Icon icon='mdi:download-outline' /> Export CSV
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {error && <div className='alert alert-danger radius-12 mb-16' role='alert'>{error}</div>}
         {loading ? (
-          <p className="text-secondary-light mb-0">Loading products...</p>
+          <p className='text-secondary-light mb-0'>Loading products...</p>
         ) : (
-          <>
-            <div className="table-responsive scroll-sm">
-              <table className="table bordered-table sm-table mb-0">
+          <div className='table-responsive scroll-sm' style={{ overflowX: "auto" }}>
+              <table className='table bordered-table sm-table mb-0 text-nowrap' style={{ minWidth: 980 }}>
                 <thead>
                   <tr>
-                    <th scope="col">S.No</th>
-                    <th scope="col">Name</th>
-                    <th scope="col">Vendor</th>
-                    <th scope="col">Category</th>
-                    <th scope="col">Services</th>
-                    <th scope="col">Cost</th>
-                    <th scope="col">Services Type</th>
-                    <th scope="col">CGST</th>
-                    <th scope="col">SGST</th>
-                    <th scope="col" className="text-center">Available</th>
-                    <th scope="col" className="text-center">Action</th>
+                    <th></th>
+                    <th>ID</th>
+                    <th>PRODUCT</th>
+                    <th>VENDOR</th>
+                    <th>PRICE</th>
+                    <th>DISCOUNT</th>
+                    <th>STATUS</th>
+                    <th>CREATED</th>
+                    <th>ACTIONS</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.length > 0 ? (
-                    filtered.map((product, index) => {
-                      const tax = calcTax(product.sellPrice || product.price, product.taxConfigurationId);
+                    filtered.map((product) => {
+                      const price = resolveAdminProductUnitPrice(product);
+                      const tax = calcTax(price, product.taxConfigurationId);
+                      const discount = Number(product.discountAmount || 0) || 0;
+                      const active = Boolean(product.availability || product.isActive);
+                      const ref = product.productRef || `PRD-${String(product.id || "").slice(-6)}`;
                       return (
                         <tr key={product.id}>
-                          <td>{offset + index + 1}</td>
-                          <td><span className="text-md fw-normal text-secondary-light">{(product.name || "—").substring(0, 20)}{(product.name || "").length > 20 ? "..." : ""}</span></td>
-                          <td><span className="text-md fw-normal text-secondary-light">{(vendorMap[product.vendorId] || "—").substring(0, 18)}{(vendorMap[product.vendorId] || "").length > 18 ? "..." : ""}</span></td>
+                          <td><span className='w-18-px h-18-px rounded-circle border d-inline-block' /></td>
+                          <td>{ref}</td>
                           <td>
-                            <CountAndChips
-                              strings={categoryMap[product.categoryId] ? [categoryMap[product.categoryId]] : []}
-                              countSuffix="categories"
-                            />
+                            <div className='fw-semibold text-primary-light'>{product.name || "—"}</div>
+                            <div className='text-secondary-light text-sm'>{categoryMap[product.categoryId] || "—"}</div>
                           </td>
+                          <td>{vendorMap[product.vendorId] || "—"}</td>
+                          <td className='fw-bold'>₹{price}</td>
+                          <td>{discount > 0 ? `₹${discount}` : "—"}</td>
                           <td>
-                            <CountAndChips
-                              strings={serviceMap[product.serviceId] ? [serviceMap[product.serviceId]] : []}
-                              countSuffix="services"
-                            />
-                          </td>
-                          <td>&#8377; {product.sellPrice || product.price || 0}</td>
-                          <td>{tax.title || "—"}</td>
-                          <td>&#8377; {tax.cgst}</td>
-                          <td>&#8377; {tax.sgst}</td>
-                          <td className="text-center">
-                            <span className={`px-12 py-4 radius-4 fw-medium text-sm ${(product.availability || product.isActive) ? "bg-success-600 text-white" : "bg-danger-600 text-white"}`}>
-                              {(product.availability || product.isActive) ? "Active" : "Inactive"}
+                            <span className={`px-12 py-4 rounded-pill text-xs fw-semibold ${active ? "bg-success-focus text-success-main" : "bg-warning-focus text-warning-main"}`}>
+                              {active ? "Active" : "Pending"}
                             </span>
                           </td>
-                          <td className="text-center">
-                            <div className="d-flex align-items-center gap-10 justify-content-center">
-                              <button type="button" onClick={() => setModal({ mode: "view", id: product.id })} className="bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0" title="View">
-                                <Icon icon="majesticons:eye-line" className="icon text-xl" />
+                          <td>{formatDateTime(product.createdAt)}</td>
+                          <td>
+                            <div className='d-flex align-items-center gap-10'>
+                              <button type='button' onClick={() => setModal({ mode: "view", id: product.id })} className='btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-secondary-light' style={{ width: 36, height: 36 }} title='View'>
+                                <Icon icon='majesticons:eye-line' className='text-xl' />
                               </button>
-                              <button type="button" onClick={() => setModal({ mode: "edit", id: product.id })} className="bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0" title="Edit">
-                                <Icon icon="lucide:edit" className="menu-icon" />
+                              <button type='button' onClick={() => setModal({ mode: "edit", id: product.id })} className='btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-secondary-light' style={{ width: 36, height: 36 }} title='Edit'>
+                                <Icon icon='lucide:edit' className='text-xl' />
                               </button>
-                              <button type="button" onClick={() => handleDelete(product.id)} className="remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0" title="Delete">
-                                <Icon icon="fluent:delete-24-regular" className="menu-icon" />
+                              <button type='button' onClick={() => handleDelete(product.id)} className='btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-danger-600' style={{ width: 36, height: 36 }} title='Delete'>
+                                <Icon icon='fluent:delete-24-regular' className='text-xl' />
                               </button>
                             </div>
                           </td>
@@ -178,24 +247,11 @@ const ProductListLayer = () => {
                       );
                     })
                   ) : (
-                    <tr><td colSpan="11" className="text-center py-4">No products found.</td></tr>
+                    <tr><td colSpan='9' className='text-center py-4'>No products found.</td></tr>
                   )}
                 </tbody>
               </table>
-            </div>
-            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24">
-              <span>Showing {pageFrom} to {pageTo} of {total} entries</span>
-              <div className="d-flex gap-2 align-items-center">
-                <button type="button" className="page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px text-md" disabled={!canPrev} onClick={() => setOffset(Math.max(0, offset - limit))}>
-                  <Icon icon="ep:d-arrow-left" />
-                </button>
-                <span className="page-link fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px text-md bg-primary-600 text-white mb-0">{Math.floor(offset / limit) + 1}</span>
-                <button type="button" className="page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px text-md" disabled={!canNext} onClick={() => setOffset(offset + limit)}>
-                  <Icon icon="ep:d-arrow-right" />
-                </button>
-              </div>
-            </div>
-          </>
+          </div>
         )}
       </div>
 
@@ -210,6 +266,29 @@ const ProductListLayer = () => {
           />
         </FormModal>
       )}
+    </div>
+  );
+};
+
+const MetricCard = ({ title, value, icon, color }) => {
+  const colors = {
+    info: "bg-info-50 text-info-600",
+    success: "bg-success-50 text-success-600",
+    primary: "bg-primary-50 text-primary-600",
+  };
+  return (
+    <div className='col-sm-6 col-xl-4'>
+      <div className='radius-12 p-16 bg-neutral-50 border'>
+        <div className='d-flex align-items-center gap-10'>
+          <span className={`w-40-px h-40-px rounded-circle d-flex align-items-center justify-content-center ${colors[color]}`}>
+            <Icon icon={icon} className='text-xl' />
+          </span>
+          <div>
+            <div className='text-sm text-secondary-light'>{title}</div>
+            <h4 className='mb-0 fw-bold'>{value}</h4>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

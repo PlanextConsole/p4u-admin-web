@@ -5,8 +5,8 @@ const CurrenciesLayer = () => {
   return (
     <>
       <div className='card h-100 p-0 radius-12'>
-        <div className='card-header border-bottom bg-base py-16 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between'>
-          <div className='d-flex align-items-center flex-wrap gap-3'>
+        <div className='card-header border-bottom bg-base py-16 px-24 p4u-admin-filter-row align-items-center gap-3 justify-content-between'>
+          <div className='p4u-admin-filter-row align-items-center gap-3'>
             <span className='text-md fw-medium text-secondary-light mb-0'>
               Show
             </span>
@@ -412,9 +412,9 @@ const CurrenciesLayer = () => {
               </tbody>
             </table>
           </div>
-          <div className='d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24'>
+          <div className='p4u-admin-filter-row align-items-center justify-content-between gap-2 mt-24'>
             <span>Showing 1 to 10 of 12 entries</span>
-            <ul className='pagination d-flex flex-wrap align-items-center gap-2 justify-content-center'>
+            <ul className='pagination d-flex p4u-admin-filter-row align-items-center gap-2 justify-content-center'>
               <li className='page-item'>
                 <Link
                   className='page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px  text-md'

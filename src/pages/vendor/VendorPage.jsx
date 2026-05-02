@@ -8,7 +8,7 @@ const VendorListPage = () => {
       {/* MasterLayout */}
       <MasterLayout>
         {/* Breadcrumb */} 
-        <Breadcrumb title='Vendor List' pagetitle='Vendor List' />
+        <Breadcrumb title='Catalog vendors' pagetitle='Catalog vendors' />
 
         {/* VendorListLayer */}
         <VendorListLayer />

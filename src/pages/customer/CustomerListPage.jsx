@@ -6,7 +6,11 @@ import CustomerListLayer from "./CustomerListLayer";
 const CustomerListPage = () => {
   return (
     <MasterLayout>
-      <Breadcrumb title='Customer List' pagetitle='Customer List' />
+      <Breadcrumb
+        title='Customers'
+        pagetitle='Customers'
+        subtitle='Manage registered customers — add, edit, or view profiles.'
+      />
       <CustomerListLayer />
     </MasterLayout>
   );

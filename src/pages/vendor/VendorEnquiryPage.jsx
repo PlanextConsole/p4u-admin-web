@@ -6,7 +6,7 @@ import VendorEnquiryListLayer from "./VendorEnquiryListLayer";
 const VendorEnquiryPage = () => {
   return (
     <MasterLayout>
-      <Breadcrumb title="Vendor Enquiry" />
+      <Breadcrumb title="Catalog vendor enquiry" pagetitle="Catalog vendor enquiry" />
       <VendorEnquiryListLayer />
     </MasterLayout>
   );
