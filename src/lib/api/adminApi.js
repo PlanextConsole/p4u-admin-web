@@ -71,6 +71,11 @@ export function listCustomers(params) {
   return api.get("/api/admin/customers", params);
 }
 
+/** Customer-to-customer referrals (`customer_referrals`), enriched for admin reports. */
+export function listCustomerReferrals(params) {
+  return api.get("/api/admin/customerReferrals", params);
+}
+
 export function getCustomer(id) {
   return api.get(`/api/admin/customers/${encodeURIComponent(id)}`);
 }

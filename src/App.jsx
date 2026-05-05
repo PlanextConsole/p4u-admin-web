@@ -168,6 +168,11 @@ import SettlementReportPage from './pages/reports/SettlementReportPage';
 import CustomerReportPage from './pages/reports/CustomerReportPage';
 import PointsReportPage from './pages/reports/PointsReportPage';
 import ClassifiedAdsReportPage from './pages/reports/ClassifiedAdsReportPage';
+import ReferralReportPage from './pages/reports/ReferralReportPage';
+import PaymentReportPage from './pages/reports/PaymentReportPage';
+import RevenueProfitReportPage from './pages/reports/RevenueProfitReportPage';
+import TaxInvoicesReportPage from './pages/reports/TaxInvoicesReportPage';
+import TaxReportPage from './pages/reports/TaxReportPage';
 import SocialDashboardPage from './pages/social/SocialDashboardPage';
 
 
@@ -256,6 +261,11 @@ function App() {
         <Route exact path='/reports/customers' element={<CustomerReportPage />} />
         <Route exact path='/reports/points' element={<PointsReportPage />} />
         <Route exact path='/reports/classified-ads' element={<ClassifiedAdsReportPage />} />
+        <Route exact path='/reports/referrals' element={<ReferralReportPage />} />
+        <Route exact path='/reports/payments' element={<PaymentReportPage />} />
+        <Route exact path='/reports/revenue-profit' element={<RevenueProfitReportPage />} />
+        <Route exact path='/reports/tax-invoices' element={<TaxInvoicesReportPage />} />
+        <Route exact path='/reports/tax' element={<TaxReportPage />} />
 <Route exact path='/report-log' element={<ReportLogPage />} />
 <Route exact path='/admin/social' element={<SocialDashboardPage />} />
 

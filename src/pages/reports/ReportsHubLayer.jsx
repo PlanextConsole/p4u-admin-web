@@ -61,18 +61,19 @@ const OPERATIONAL = [
   { icon: "mdi:cash-multiple", title: "Settlement Report", description: "Payouts, commissions, and pending settlements", to: "/reports/settlements", gradient: GRAD.green },
   { icon: "mdi:account-group", title: "Customer Report", description: "User growth, retention, and demographics", to: "/reports/customers", gradient: GRAD.orange },
   { icon: "mdi:star-circle", title: "Points Report", description: "Points issued, redeemed, and balance overview", to: "/reports/points", gradient: GRAD.slate },
-  { icon: "mdi:gift-outline", title: "Referral Report", description: "Referral conversions and reward distribution", to: null, gradient: GRAD.violet },
+  { icon: "mdi:gift-outline", title: "Referral Report", description: "Referral conversions and reward distribution", to: "/reports/referrals", gradient: GRAD.violet },
 ];
 
 const MARKETPLACE = [
   { icon: "mdi:newspaper-variant-outline", title: "Classified Ads Report", description: "Ad listings, approvals, and engagement", to: "/reports/classified-ads", gradient: GRAD.green },
-  { icon: "mdi:credit-card-outline", title: "Payment Report", description: "Payment gateway transactions and reconciliation", to: null, gradient: GRAD.pink },
-  { icon: "mdi:finance", title: "P4U Revenue & Profit", description: "Commission revenue, vendor/product-wise profit with cascade source tracking", to: "/settlements", gradient: GRAD.indigo },
+  { icon: "mdi:credit-card-outline", title: "Payment Report", description: "Payment gateway transactions and reconciliation", to: "/reports/payments", gradient: GRAD.pink },
+  { icon: "mdi:finance", title: "P4U Revenue & Profit", description: "Commission revenue, vendor/product-wise profit with cascade source tracking", to: "/reports/revenue-profit", gradient: GRAD.indigo },
 ];
 
+/** Live cards use `to`; entries with `to: null` are defined for later — hidden until a route is added. */
 const GST = [
-  { icon: "mdi:file-document-outline", title: "Tax Invoices Issued", description: "All vendor → customer GST invoices auto-generated on order delivery (statutory register).", to: null, gradient: GRAD.teal },
-  { icon: "mdi:calculator-variant", title: "Tax Report", description: "Product tax, GST on platform fee, and tax collection summary.", to: "/tax", gradient: GRAD.orange },
+  { icon: "mdi:file-document-outline", title: "Tax Invoices Issued", description: "All vendor → customer GST invoices auto-generated on order delivery (statutory register).", to: "/reports/tax-invoices", gradient: GRAD.teal },
+  { icon: "mdi:calculator-variant", title: "Tax Report", description: "Product tax, GST on platform fee, and tax collection summary.", to: "/reports/tax", gradient: GRAD.orange },
   { icon: "mdi:file-chart-outline", title: "GSTR-1 (Outward Supplies)", description: "Invoice-wise B2C outward supplies with CGST/SGST/IGST + HSN summary for monthly GST filing.", to: null, gradient: GRAD.teal },
   { icon: "mdi:file-document-multiple", title: "GSTR-3B (Monthly Summary)", description: "Self-declaration summary of outward supplies, tax liability, and ITC for monthly return.", to: null, gradient: GRAD.blue },
   { icon: "mdi:backup-restore", title: "Credit Notes (GSTR-1 Table 9B)", description: "Refund/cancellation credit notes auto-generated with reverse tax breakup for amendment filing.", to: null, gradient: GRAD.orange },
@@ -82,6 +83,8 @@ const GST = [
   { icon: "mdi:file-cabinet", title: "GSTR-9 (Annual Return)", description: "Consolidated annual GST return — auto-aggregates monthly GSTR-1/3B data for FY filing.", to: null, gradient: GRAD.cyan },
   { icon: "mdi:book-open-page-variant", title: "Day Book (Tally / Zoho Export)", description: "Voucher-level export for accounting tools and period close.", to: null, gradient: GRAD.emerald },
 ];
+
+const GST_VISIBLE = GST.filter((c) => c.to);
 
 export default function ReportsHubLayer() {
   return (
@@ -114,7 +117,7 @@ export default function ReportsHubLayer() {
         </div>
 
         <div className='row g-16'>
-          {GST.map((c) => (
+          {GST_VISIBLE.map((c) => (
             <div key={c.title} className='col-12 col-md-6 col-xl-4'>
               <ReportCard {...c} />
             </div>
