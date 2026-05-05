@@ -12,15 +12,15 @@ function ReportCard({ icon, title, description, to, gradient }) {
       >
         <Icon icon={icon} className='text-2xl' />
       </div>
-      <div className='min-w-0'>
-        <h6 className='fw-bold text-primary-light mb-6'>{title}</h6>
+      <div className='min-w-0 d-flex flex-column justify-content-center reports-hub-card-copy'>
+        <h6 className='fw-bold text-primary-light mb-8 lh-sm'>{title}</h6>
         <p className='text-sm text-secondary-light mb-0 lh-base'>{description}</p>
       </div>
     </>
   );
 
   const cardCls =
-    "d-flex align-items-start gap-14 p-20 bg-base border radius-12 text-start h-100 text-decoration-none text-primary-light reports-hub-card";
+    "d-flex align-items-start p-20 bg-base border radius-12 text-start h-100 text-decoration-none text-primary-light reports-hub-card";
 
   if (to) {
     return (
@@ -126,6 +126,23 @@ export default function ReportsHubLayer() {
       </div>
 
       <style>{`
+        .reports-hub-card {
+          min-height: 124px;
+          column-gap: 18px;
+          row-gap: 12px;
+          padding: 20px 22px !important;
+          align-items: flex-start !important;
+        }
+        .reports-hub-card > div:first-child {
+          margin-top: 2px;
+        }
+        .reports-hub-card-copy h6 {
+          line-height: 1.25;
+          margin-bottom: 10px !important;
+        }
+        .reports-hub-card-copy p {
+          line-height: 1.5;
+        }
         .reports-hub-card:hover {
           border-color: var(--primary-300, #5eead4) !important;
           box-shadow: 0 4px 20px rgba(15, 118, 110, 0.08);

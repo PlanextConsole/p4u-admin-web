@@ -62,7 +62,7 @@ export function AuthProvider({ children }) {
           }),
         ]);
       } catch {
-        if (!cancelled) clearTokens();
+        // Keep session state on transient refresh/network failures.
       } finally {
         if (timeoutId != null) clearTimeout(timeoutId);
         if (!cancelled) setIsInitializing(false);

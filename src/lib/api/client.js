@@ -63,6 +63,13 @@ export async function ensureTokenFresh() {
   await refreshInFlight;
 }
 
+function isRefreshRejected(status, details) {
+  if (status !== 400 && status !== 401) return false;
+  const code = String(details?.error?.code || details?.code || "").toLowerCase();
+  const msg = String(details?.message || details?.error?.message || "").toLowerCase();
+  return code.includes("invalid_grant") || msg.includes("refresh token") || msg.includes("invalid token");
+}
+
 /**
  * @param {string} path - Absolute path starting with /api/...
  * @param {RequestInit & { skipAuth?: boolean, jsonBody?: unknown, _retry401?: boolean }} options
@@ -129,17 +136,19 @@ export async function apiRequest(path, options = {}) {
       await refreshAccessToken();
       return apiRequest(path, { ...options, _retry401: true });
     } catch {
-      /* redirect below */
+      /* Keep current session on transient auth/gateway failures. */
     }
   }
 
   if (res.status === 401 && !skipAuth) {
-    clearTokens();
-    const onLogin =
-      typeof window !== "undefined" &&
-      (window.location.pathname === "/login" || window.location.pathname === "/");
-    if (!onLogin && typeof window !== "undefined") {
-      window.location.assign("/login");
+    if (isRefreshRejected(res.status, data)) {
+      clearTokens();
+      const onLogin =
+        typeof window !== "undefined" &&
+        (window.location.pathname === "/login" || window.location.pathname === "/");
+      if (!onLogin && typeof window !== "undefined") {
+        window.location.assign("/login");
+      }
     }
   }
 
