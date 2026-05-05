@@ -29,30 +29,46 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     let cancelled = false;
+    const INIT_TIMEOUT_MS = 12_000;
+
+    const runInit = async () => {
+      const token = getAccessToken();
+      if (!token) {
+        if (!cancelled) {
+          setAccessTokenState(null);
+          setRolesState([]);
+        }
+        return;
+      }
+      const exp = decodeJwtExpMs(token);
+      const isExpired = exp != null && exp <= Date.now();
+      if (isExpired) {
+        try {
+          await ensureTokenFresh();
+        } catch {
+          clearTokens();
+        }
+      }
+      if (!cancelled) syncFromStorage();
+    };
+
     (async () => {
+      let timeoutId;
       try {
-        const token = getAccessToken();
-        if (!token) {
-          if (!cancelled) {
-            setAccessTokenState(null);
-            setRolesState([]);
-          }
-          return;
-        }
-        const exp = decodeJwtExpMs(token);
-        const isExpired = exp != null && exp <= Date.now();
-        if (isExpired) {
-          try {
-            await ensureTokenFresh();
-          } catch {
-            clearTokens();
-          }
-        }
-        if (!cancelled) syncFromStorage();
+        await Promise.race([
+          runInit(),
+          new Promise((_, reject) => {
+            timeoutId = setTimeout(() => reject(new Error("Session check timed out")), INIT_TIMEOUT_MS);
+          }),
+        ]);
+      } catch {
+        if (!cancelled) clearTokens();
       } finally {
+        if (timeoutId != null) clearTimeout(timeoutId);
         if (!cancelled) setIsInitializing(false);
       }
     })();
+
     return () => {
       cancelled = true;
     };

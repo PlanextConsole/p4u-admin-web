@@ -109,6 +109,7 @@ import ServiceVendorsPage from './pages/vendor/ServiceVendorsPage';
 
 // PRODUCT
 import ProductListPage from './pages/product/ProductListPage';
+import ProductAttributesListPage from './pages/product-attributes/ProductAttributesListPage';
 
 // CATEGORY
 import CategoryListPage from './pages/category/CategoryListPage';
@@ -160,6 +161,13 @@ import VendorPlansPage from './pages/vendor-plan/VendorPlansPage';
 
 // REPORT
 import ReportLogPage from './pages/report/ReportLogPage';
+import ReportsHubPage from './pages/reports/ReportsHubPage';
+import SalesReportPage from './pages/reports/SalesReportPage';
+import VendorPerformanceReportPage from './pages/reports/VendorPerformanceReportPage';
+import SettlementReportPage from './pages/reports/SettlementReportPage';
+import CustomerReportPage from './pages/reports/CustomerReportPage';
+import PointsReportPage from './pages/reports/PointsReportPage';
+import ClassifiedAdsReportPage from './pages/reports/ClassifiedAdsReportPage';
 import SocialDashboardPage from './pages/social/SocialDashboardPage';
 
 
@@ -184,6 +192,7 @@ function App() {
 
         {/* PRODUCT */}
         <Route exact path='/product' element={<ProductListPage />} />
+        <Route exact path='/product-attributes' element={<ProductAttributesListPage />} />
 
 {/* CATEGORY — product vs service use separate tables */}
 <Route exact path='/service-categories' element={<CategoryListPage />} />
@@ -240,6 +249,13 @@ function App() {
 <Route exact path='/advertisements' element={<AdvertisementsListPage />} />
 
 {/* REPORTS */}
+<Route exact path='/reports' element={<ReportsHubPage />} />
+        <Route exact path='/reports/sales' element={<SalesReportPage />} />
+        <Route exact path='/reports/vendor-performance' element={<VendorPerformanceReportPage />} />
+        <Route exact path='/reports/settlements' element={<SettlementReportPage />} />
+        <Route exact path='/reports/customers' element={<CustomerReportPage />} />
+        <Route exact path='/reports/points' element={<PointsReportPage />} />
+        <Route exact path='/reports/classified-ads' element={<ClassifiedAdsReportPage />} />
 <Route exact path='/report-log' element={<ReportLogPage />} />
 <Route exact path='/admin/social' element={<SocialDashboardPage />} />
 

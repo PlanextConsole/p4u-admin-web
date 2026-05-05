@@ -39,8 +39,11 @@ const LoginPage = () => {
   };
 
   return (
-    <section className="auth bg-neutral-50 d-flex align-items-center justify-content-center vh-100 p-24">
-      <div className="bg-base p-32 p-sm-48 radius-16 shadow-sm border border-neutral-200 w-100 max-w-464-px">
+    <section className="auth bg-neutral-50 d-flex align-items-center justify-content-center min-vh-100 p-24 position-relative">
+      <div
+        className="bg-base p-32 p-sm-48 radius-16 shadow-sm border border-neutral-200 w-100 max-w-464-px position-relative"
+        style={{ zIndex: 20 }}
+      >
         <div className="text-center mb-32">
           <Link to="/" className="d-inline-block text-decoration-none mb-24">
             <div className="d-flex align-items-center justify-content-center gap-2">
@@ -53,7 +56,7 @@ const LoginPage = () => {
           </p>
         </div>
 
-        <form onSubmit={handleLogin}>
+        <form id="p4u-admin-login-form" onSubmit={handleLogin}>
           <div className="icon-field mb-16">
             <span className="icon top-50 translate-middle-y">
               <Icon icon="mage:email" />
@@ -113,9 +116,13 @@ const LoginPage = () => {
                   Remember me
                 </label>
               </div>
-              <Link to="#" className="text-primary-600 fw-medium text-sm">
+              <button
+                type="button"
+                className="btn btn-link text-primary-600 fw-medium text-sm text-decoration-none p-0 border-0 shadow-none"
+                onClick={() => navigate("/forgot-password")}
+              >
                 Forgot Password?
-              </Link>
+              </button>
             </div>
           </div>
 
@@ -123,6 +130,7 @@ const LoginPage = () => {
             type="submit"
             disabled={submitting}
             className="btn btn-primary text-md px-12 py-16 w-100 radius-12 d-flex align-items-center justify-content-center gap-2 fw-semibold"
+            style={{ position: "relative", zIndex: 1 }}
           >
             {submitting ? "Signing in…" : "Sign In"}{" "}
             <Icon icon="mingcute:arrow-right-line" className="text-xl" />

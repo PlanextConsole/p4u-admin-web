@@ -111,6 +111,26 @@ export function deleteProduct(id) {
   return api.delete(`/api/admin/products/${encodeURIComponent(id)}`);
 }
 
+export function listProductAttributes(params) {
+  return api.get("/api/admin/product-attributes", params);
+}
+
+export function getProductAttribute(id) {
+  return api.get(`/api/admin/product-attributes/${encodeURIComponent(id)}`);
+}
+
+export function createProductAttribute(body) {
+  return api.post("/api/admin/product-attributes", body);
+}
+
+export function updateProductAttribute(id, body) {
+  return api.patch(`/api/admin/product-attributes/${encodeURIComponent(id)}`, body);
+}
+
+export function deleteProductAttribute(id) {
+  return api.delete(`/api/admin/product-attributes/${encodeURIComponent(id)}`);
+}
+
 export function listTaxConfigurations(params) {
   return api.get("/api/admin/taxconfiguration", params);
 }
@@ -267,6 +287,10 @@ export function listServiceBookings(params) {
 
 export function updateServiceBookingStatus(id, status) {
   return api.patch(`/api/v1/commerce/bookings/${encodeURIComponent(id)}/status`, { status });
+}
+
+export function deleteServiceBooking(id) {
+  return api.delete(`/api/v1/commerce/bookings/${encodeURIComponent(id)}`);
 }
 
 export function listCoupons(params) {

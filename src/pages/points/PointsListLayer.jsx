@@ -114,8 +114,8 @@ const PointsListLayer = () => {
                     />
                     <ConfigItem
                       title='Referral Reward'
-                      value='100 pts'
-                      subtitle='When referred user places first order'
+                      value='200 pts'
+                      subtitle='Credited to referrer when a new customer signs up with their code'
                     />
                     <ConfigItem
                       title='Order Reward Rate'

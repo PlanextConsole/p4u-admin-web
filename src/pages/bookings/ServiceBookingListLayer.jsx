@@ -8,6 +8,7 @@ import {
   getCustomer,
   getVendor,
   listServiceBookings,
+  deleteServiceBooking,
   updateServiceBookingStatus,
 } from "../../lib/api/adminApi";
 
@@ -130,6 +131,18 @@ export default function ServiceBookingListLayer() {
     }
   };
 
+  const removeBooking = async (row) => {
+    if (!window.confirm("Delete this booking permanently? This cannot be undone.")) return;
+    try {
+      await deleteServiceBooking(row.id);
+      setItems((prev) => prev.filter((r) => r.id !== row.id));
+      setTotal((t) => Math.max(0, t - 1));
+      toast.success("Booking deleted.");
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : String(e));
+    }
+  };
+
   const canPrev = offset > 0;
   const canNext = offset + limit < total;
 
@@ -200,26 +213,33 @@ export default function ServiceBookingListLayer() {
                             <span className={`px-12 py-4 radius-pill text-xs fw-medium ${badge(st)}`}>{st || "pending"}</span>
                           </td>
                           <td>
-                            {st === "pending" ? (
-                              <div className='d-flex align-items-center gap-8'>
-                                <button
-                                  type='button'
-                                  className='btn btn-sm btn-success'
-                                  onClick={() => void review(r, "approved")}
-                                >
-                                  Approve
-                                </button>
-                                <button
-                                  type='button'
-                                  className='btn btn-sm btn-danger'
-                                  onClick={() => void review(r, "rejected")}
-                                >
-                                  Reject
-                                </button>
-                              </div>
-                            ) : (
-                              <span className='text-secondary-light'>—</span>
-                            )}
+                            <div className='d-flex align-items-center flex-wrap gap-8'>
+                              {st === "pending" && (
+                                <>
+                                  <button
+                                    type='button'
+                                    className='btn btn-sm btn-success'
+                                    onClick={() => void review(r, "approved")}
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    type='button'
+                                    className='btn btn-sm btn-danger'
+                                    onClick={() => void review(r, "rejected")}
+                                  >
+                                    Reject
+                                  </button>
+                                </>
+                              )}
+                              <button
+                                type='button'
+                                className='btn btn-sm btn-outline-danger'
+                                onClick={() => void removeBooking(r)}
+                              >
+                                Delete
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );

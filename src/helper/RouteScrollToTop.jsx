@@ -4,8 +4,6 @@ const RouteScrollToTop = () => {
   const pathname = useLocation();
 
   useEffect(() => {
-    console.warn = () => {};
-
     window.scrollTo(0, 0);
   }, [pathname]);
 

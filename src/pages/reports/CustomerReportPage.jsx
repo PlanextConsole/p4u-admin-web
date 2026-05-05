@@ -1,15 +1,13 @@
 import React from "react";
 import MasterLayout from "../../masterLayout/MasterLayout";
 import Breadcrumb from "../../components/Breadcrumb";
-import ReportLogLayer from "./ReportLogLayer";
+import CustomerReportLayer from "./CustomerReportLayer";
 
-const ReportLogPage = () => {
+export default function CustomerReportPage() {
   return (
     <MasterLayout>
-      <Breadcrumb title='Report Log' />
-      <ReportLogLayer />
+      <Breadcrumb title='Customer Report' />
+      <CustomerReportLayer />
     </MasterLayout>
   );
-};
-
-export default ReportLogPage;
+}

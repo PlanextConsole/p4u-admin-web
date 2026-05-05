@@ -194,6 +194,12 @@ const MasterLayout = ({ children }) => {
                 <span>Products</span>
               </NavLink>
             </li>
+            <li>
+              <NavLink to='/product-attributes' className={sidebarNavClass}>
+                <Icon icon='mdi:tune-variant' className='menu-icon' />
+                <span>Product attributes</span>
+              </NavLink>
+            </li>
 
             {/* ─── SERVICE MANAGEMENT ─── */}
             <li className='sidebar-menu-group-title'>Service Management</li>
@@ -354,6 +360,12 @@ const MasterLayout = ({ children }) => {
               <NavLink to='/platform-variables' className={sidebarNavClass}>
                 <Icon icon='mdi:cogs' className='menu-icon' />
                 <span>Platform Variables</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to='/reports' className={sidebarNavClass}>
+                <Icon icon='mdi:chart-box-outline' className='menu-icon' />
+                <span>Reports</span>
               </NavLink>
             </li>
             <li>
