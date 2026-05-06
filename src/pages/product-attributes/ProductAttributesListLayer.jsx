@@ -42,6 +42,10 @@ export default function ProductAttributesListLayer() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [modal, setModal] = useState(null);
+  const [expandedId, setExpandedId] = useState(null);
+  const [draftValueById, setDraftValueById] = useState({});
+  const [draftHexById, setDraftHexById] = useState({});
+  const [savingValueId, setSavingValueId] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -74,6 +78,52 @@ export default function ProductAttributesListLayer() {
       await load();
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : String(e));
+    }
+  };
+
+  const handleAddValue = async (row) => {
+    if (row.type !== "select") return;
+    const raw = String(draftValueById[row.id] || "").trim();
+    if (!raw) {
+      toast.error("Enter a value first.");
+      return;
+    }
+    const hexRaw = String(draftHexById[row.id] || "").trim();
+    const hex = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(hexRaw) ? hexRaw.toUpperCase() : "";
+    const finalValue = hex ? `${raw} ${hex}` : raw;
+    const current = Array.isArray(row.selectValues) ? row.selectValues : [];
+    if (current.includes(finalValue)) {
+      toast.error("This value already exists.");
+      return;
+    }
+    setSavingValueId(row.id);
+    try {
+      await updateProductAttribute(row.id, {
+        selectValues: [...current, finalValue],
+      });
+      toast.success("Value added.");
+      setDraftValueById((prev) => ({ ...prev, [row.id]: "" }));
+      setDraftHexById((prev) => ({ ...prev, [row.id]: "" }));
+      await load();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : String(e));
+    } finally {
+      setSavingValueId(null);
+    }
+  };
+
+  const handleRemoveValue = async (row, value) => {
+    const current = Array.isArray(row.selectValues) ? row.selectValues : [];
+    const next = current.filter((v) => v !== value);
+    setSavingValueId(row.id);
+    try {
+      await updateProductAttribute(row.id, { selectValues: next });
+      toast.success("Value removed.");
+      await load();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : String(e));
+    } finally {
+      setSavingValueId(null);
     }
   };
 
@@ -113,51 +163,131 @@ export default function ProductAttributesListLayer() {
               {sorted.map((row) => {
                 const active = row.isActive !== false;
                 const vc = valueCount(row);
+                const expanded = expandedId === row.id;
                 return (
                   <div
                     key={row.id}
-                    className='d-flex align-items-center flex-wrap gap-12 px-20 py-16 bg-base border radius-12'
+                    className='px-20 py-16 bg-base border radius-12'
                     style={{ borderColor: "var(--neutral-200, #e5e7eb)" }}
                   >
-                    <div
-                      className='w-48-px h-48-px radius-10 d-flex align-items-center justify-content-center flex-shrink-0'
-                      style={{ background: "var(--primary-50, #ecfdf5)" }}
-                    >
-                      <Icon icon={attrIcon(row.name)} className='text-2xl text-primary-600' />
-                    </div>
-                    <div className='flex-grow-1 min-w-0'>
-                      <div className='d-flex align-items-center flex-wrap gap-8'>
-                        <span className='fw-bold text-primary-light'>{row.name}</span>
-                        <span
-                          className={`px-10 py-2 radius-pill text-xs fw-medium ${active ? "bg-success-100 text-success-700" : "bg-neutral-200 text-secondary-light"}`}
+                    <div className='d-flex align-items-center flex-wrap gap-12'>
+                      <button
+                        type='button'
+                        onClick={() => setExpandedId((prev) => (prev === row.id ? null : row.id))}
+                        className='btn p-0 border-0 bg-transparent d-flex align-items-center flex-grow-1 text-start'
+                        style={{ minWidth: 0 }}
+                      >
+                        <div
+                          className='w-48-px h-48-px radius-10 d-flex align-items-center justify-content-center flex-shrink-0'
+                          style={{ background: "var(--primary-50, #ecfdf5)" }}
                         >
-                          {active ? "Active" : "Inactive"}
-                        </span>
-                      </div>
-                      <div className='text-sm text-secondary-light mt-4'>
-                        {typeLabel(row.type)} • {vc} value{vc === 1 ? "" : "s"}
+                          <Icon icon={attrIcon(row.name)} className='text-2xl text-primary-600' />
+                        </div>
+                        <div className='flex-grow-1 min-w-0 ms-12'>
+                          <div className='d-flex align-items-center flex-wrap gap-8'>
+                            <span className='fw-bold text-primary-light'>{row.name}</span>
+                            <span
+                              className={`px-10 py-2 radius-pill text-xs fw-medium ${active ? "bg-success-100 text-success-700" : "bg-neutral-200 text-secondary-light"}`}
+                            >
+                              {active ? "Active" : "Inactive"}
+                            </span>
+                          </div>
+                          <div className='text-sm text-secondary-light mt-4'>
+                            {typeLabel(row.type)} • {vc} value{vc === 1 ? "" : "s"}
+                          </div>
+                        </div>
+                      </button>
+                      <div className='d-flex align-items-center gap-4 ms-auto'>
+                        <button
+                          type='button'
+                          className='btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-primary-light'
+                          style={{ width: 40, height: 40 }}
+                          title='Edit'
+                          onClick={() => setModal({ mode: "edit", row })}
+                        >
+                          <Icon icon='mdi:pencil-outline' className='text-xl' />
+                        </button>
+                        <button
+                          type='button'
+                          className='btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-danger-600'
+                          style={{ width: 40, height: 40 }}
+                          title='Delete'
+                          onClick={() => void handleDeleteRow(row)}
+                        >
+                          <Icon icon='mdi:trash-can-outline' className='text-xl' />
+                        </button>
                       </div>
                     </div>
-                    <div className='d-flex align-items-center gap-4 ms-auto'>
-                      <button
-                        type='button'
-                        className='btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-primary-light'
-                        style={{ width: 40, height: 40 }}
-                        title='Edit'
-                        onClick={() => setModal({ mode: "edit", row })}
-                      >
-                        <Icon icon='mdi:pencil-outline' className='text-xl' />
-                      </button>
-                      <button
-                        type='button'
-                        className='btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-danger-600'
-                        style={{ width: 40, height: 40 }}
-                        title='Delete'
-                        onClick={() => void handleDeleteRow(row)}
-                      >
-                        <Icon icon='mdi:trash-can-outline' className='text-xl' />
-                      </button>
-                    </div>
+                    {expanded && row.type === "select" && (
+                      <div className='pt-14 mt-14 border-top'>
+                        <div className='d-flex flex-wrap gap-8 mb-12'>
+                          {(row.selectValues || []).map((val) => {
+                            const str = String(val || "");
+                            const hexMatch = str.match(/#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/);
+                            const hex = hexMatch ? hexMatch[0] : null;
+                            const label = hex ? str.slice(0, -hex.length).trim() : str;
+                            return (
+                              <span
+                                key={`${row.id}-${str}`}
+                                className='d-inline-flex align-items-center gap-8 px-12 py-8 radius-pill border bg-white'
+                                style={{ borderColor: "var(--neutral-200, #e5e7eb)" }}
+                              >
+                                {hex ? (
+                                  <span
+                                    style={{
+                                      width: 16,
+                                      height: 16,
+                                      borderRadius: "50%",
+                                      border: "1px solid #d1d5db",
+                                      backgroundColor: hex,
+                                    }}
+                                  />
+                                ) : null}
+                                <span className='text-sm fw-medium'>{label || str}</span>
+                                {hex ? <span className='text-xs text-secondary-light'>{hex}</span> : null}
+                                <button
+                                  type='button'
+                                  className='btn p-0 border-0 bg-transparent text-secondary-light'
+                                  onClick={() => void handleRemoveValue(row, str)}
+                                  disabled={savingValueId === row.id}
+                                  title='Remove value'
+                                >
+                                  <Icon icon='mdi:close' />
+                                </button>
+                              </span>
+                            );
+                          })}
+                        </div>
+                        <div className='d-flex flex-wrap align-items-center gap-10'>
+                          <input
+                            className='form-control radius-10'
+                            style={{ maxWidth: 340 }}
+                            placeholder='Add new value...'
+                            value={draftValueById[row.id] || ""}
+                            onChange={(e) =>
+                              setDraftValueById((prev) => ({ ...prev, [row.id]: e.target.value }))
+                            }
+                          />
+                          <input
+                            className='form-control radius-10'
+                            style={{ width: 120 }}
+                            placeholder='#hex'
+                            value={draftHexById[row.id] || ""}
+                            onChange={(e) =>
+                              setDraftHexById((prev) => ({ ...prev, [row.id]: e.target.value }))
+                            }
+                          />
+                          <button
+                            type='button'
+                            className='btn btn-primary radius-10 px-18'
+                            onClick={() => void handleAddValue(row)}
+                            disabled={savingValueId === row.id}
+                          >
+                            {savingValueId === row.id ? "Adding..." : "Add"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}

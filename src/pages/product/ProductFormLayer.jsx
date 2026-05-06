@@ -5,6 +5,7 @@ import {
   createProduct,
   getProduct,
   listCategoriesForProducts,
+  listProductAttributes,
   listTaxConfigurations,
   listVendors,
   updateProduct,
@@ -26,6 +27,30 @@ function parseMeta(v) {
     try { return JSON.parse(v) || {}; } catch { return {}; }
   }
   return typeof v === "object" && !Array.isArray(v) ? v : {};
+}
+
+function normalizeAttrSelections(raw) {
+  if (!raw || typeof raw !== "object") return {};
+  return Object.entries(raw).reduce((acc, [k, v]) => {
+    if (Array.isArray(v)) {
+      acc[k] = v.map((x) => String(x)).filter(Boolean);
+      return acc;
+    }
+    if (v == null || v === "") {
+      acc[k] = [];
+      return acc;
+    }
+    acc[k] = [String(v)];
+    return acc;
+  }, {});
+}
+
+function splitLabelAndHex(value) {
+  const s = String(value || "").trim();
+  const m = s.match(/^(.*?)(#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}))$/);
+  if (!m) return { label: s, hex: null };
+  const label = String(m[1] || "").trim();
+  return { label: label || s, hex: m[2] };
 }
 
 const emptyForm = () => ({
@@ -66,6 +91,8 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
   const [vendors, setVendors] = useState([]);
   const [categories, setCategories] = useState([]);
   const [taxItems, setTaxItems] = useState([]);
+  const [attributeDefs, setAttributeDefs] = useState([]);
+  const [selectedAttributes, setSelectedAttributes] = useState({});
   const [refsLoading, setRefsLoading] = useState(true);
   const [entityLoading, setEntityLoading] = useState(Boolean(productId));
   const [loadError, setLoadError] = useState("");
@@ -89,15 +116,17 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
     (async () => {
       setRefsLoading(true);
       try {
-        const [vRes, cRes, tRes] = await Promise.all([
+        const [vRes, cRes, tRes, aRes] = await Promise.all([
           listVendors({ limit: 300, offset: 0, vendorKind: "product" }),
           listCategoriesForProducts({ purpose: "all" }),
           listTaxConfigurations({ purpose: "all" }),
+          listProductAttributes({ limit: 500, offset: 0 }),
         ]);
         if (!cancelled) {
           setVendors(vRes.items || []);
           setCategories(cRes.items || []);
           setTaxItems(tRes.items || []);
+          setAttributeDefs((aRes.items || []).filter((a) => a.isActive !== false));
         }
       } catch (e) {
         if (!cancelled) {
@@ -112,6 +141,8 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
 
   const applyRow = useCallback((row) => {
     const meta = parseMeta(row.metadata || row.metaJson || row.extraJson);
+    const productAttrs = normalizeAttrSelections(meta.productAttributes || meta.attributes || {});
+    setSelectedAttributes(productAttrs);
     setFormData({
       name: row.name || "",
       productRef: row.productRef || `PRD-${String(row.id || "").slice(-6)}`,
@@ -142,6 +173,23 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
       thumbnailUrl: row.thumbnailUrl || "",
     });
   }, []);
+
+  const toggleSelectAttribute = (attrName, option) => {
+    if (isReadonly) return;
+    setSelectedAttributes((prev) => {
+      const curr = Array.isArray(prev[attrName]) ? prev[attrName] : [];
+      const next = curr.includes(option) ? curr.filter((v) => v !== option) : [...curr, option];
+      return { ...prev, [attrName]: next };
+    });
+  };
+
+  const setScalarAttribute = (attrName, value) => {
+    if (isReadonly) return;
+    setSelectedAttributes((prev) => ({
+      ...prev,
+      [attrName]: value ? [String(value)] : [],
+    }));
+  };
 
   const rootCategories = useMemo(
     () => categories.filter((c) => !c.parentId),
@@ -251,6 +299,7 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
           dealOfDay: formData.dealOfDay || "No",
           specVolume: formData.specVolume || null,
           specPackSize: formData.specPackSize || null,
+            productAttributes: selectedAttributes,
           seoTitle: formData.seoTitle || null,
           seoDescription: formData.seoDescription || null,
         },
@@ -440,11 +489,61 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
 
             {activeTab === "attributes" && (
               <section className='bg-primary-25 radius-12 p-14'>
-                <h5 className='fw-bold mb-12'>Specifications</h5>
-                <div className='row g-12'>
-                  <Field col='col-md-6' label='Volume'><input className='form-control radius-10' name='specVolume' value={formData.specVolume} onChange={handleChange} disabled={disabled} /></Field>
-                  <Field col='col-md-6' label='Pack Size'><input className='form-control radius-10' name='specPackSize' value={formData.specPackSize} onChange={handleChange} disabled={disabled} /></Field>
-                </div>
+                <h5 className='fw-bold mb-12'>Attributes</h5>
+                {attributeDefs.length === 0 ? (
+                  <p className='text-secondary-light mb-0'>No active product attributes found.</p>
+                ) : (
+                  <div className='d-flex flex-column gap-16'>
+                    {attributeDefs.map((attr) => {
+                      const values = Array.isArray(attr.selectValues) ? attr.selectValues : [];
+                      const selected = Array.isArray(selectedAttributes[attr.name]) ? selectedAttributes[attr.name] : [];
+                      return (
+                        <div key={attr.id}>
+                          <label className='form-label fw-semibold text-primary-light text-md mb-8'>{attr.name}</label>
+                          {attr.type === "select" ? (
+                            <div className='d-flex flex-wrap gap-8'>
+                              {values.map((opt) => {
+                                const { label, hex } = splitLabelAndHex(opt);
+                                const active = selected.includes(opt);
+                                return (
+                                  <button
+                                    key={`${attr.id}-${opt}`}
+                                    type='button'
+                                    onClick={() => toggleSelectAttribute(attr.name, opt)}
+                                    disabled={disabled}
+                                    className={`btn radius-pill border d-inline-flex align-items-center gap-8 px-12 py-6 ${active ? "bg-primary-50 border-primary-300 text-primary-700" : "bg-white border-neutral-200 text-primary-light"}`}
+                                  >
+                                    {hex ? (
+                                      <span
+                                        style={{
+                                          width: 16,
+                                          height: 16,
+                                          borderRadius: "50%",
+                                          border: "1px solid #d1d5db",
+                                          backgroundColor: hex,
+                                        }}
+                                      />
+                                    ) : null}
+                                    <span>{label || opt}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <input
+                              className='form-control radius-10'
+                              type={attr.type === "number" ? "number" : "text"}
+                              value={selected[0] || ""}
+                              onChange={(e) => setScalarAttribute(attr.name, e.target.value)}
+                              disabled={disabled}
+                              placeholder={`Enter ${attr.name}`}
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </section>
             )}
 

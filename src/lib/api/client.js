@@ -63,11 +63,16 @@ export async function ensureTokenFresh() {
   await refreshInFlight;
 }
 
-function isRefreshRejected(status, details) {
-  if (status !== 400 && status !== 401) return false;
-  const code = String(details?.error?.code || details?.code || "").toLowerCase();
-  const msg = String(details?.message || details?.error?.message || "").toLowerCase();
-  return code.includes("invalid_grant") || msg.includes("refresh token") || msg.includes("invalid token");
+function forceLoginRedirect() {
+  clearTokens();
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("p4u-admin-token-updated"));
+    const onLogin =
+      window.location.pathname === "/login" || window.location.pathname === "/";
+    if (!onLogin) {
+      window.location.assign("/login");
+    }
+  }
 }
 
 /**
@@ -141,15 +146,9 @@ export async function apiRequest(path, options = {}) {
   }
 
   if (res.status === 401 && !skipAuth) {
-    if (isRefreshRejected(res.status, data)) {
-      clearTokens();
-      const onLogin =
-        typeof window !== "undefined" &&
-        (window.location.pathname === "/login" || window.location.pathname === "/");
-      if (!onLogin && typeof window !== "undefined") {
-        window.location.assign("/login");
-      }
-    }
+    // For admin APIs, any unauthorized response should end the session and return to login.
+    // This avoids stale-token loops where pages keep showing "Invalid or missing token".
+    forceLoginRedirect();
   }
 
   if (!res.ok) {
