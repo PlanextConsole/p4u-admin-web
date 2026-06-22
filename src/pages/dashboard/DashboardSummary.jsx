@@ -159,6 +159,15 @@ export default function DashboardSummary() {
     activeAds: activeAdsCount != null ? String(activeAdsCount) : "—",
   };
 
+  const vendorBreakdown =
+    vend.product != null && vend.service != null
+      ? `${vend.product} product · ${vend.service} service`
+      : null;
+  const vendorPendingNote =
+    typeof vend.pending === "number" && vend.pending > 0
+      ? `${vend.pending} awaiting approval`
+      : null;
+
   return (
     <div className='mb-24'>
       <div className='d-flex align-items-center justify-content-between mb-12'>
@@ -187,6 +196,11 @@ export default function DashboardSummary() {
                   <div className='min-w-0'>
                     <p className='text-secondary-light text-sm fw-medium mb-8'>{m.label}</p>
                     <h3 className='fw-bold mb-0 text-primary-light text-2xl mt-8'>{values[m.key]}</h3>
+                    {m.key === "vendors" && (vendorBreakdown || vendorPendingNote) ? (
+                      <p className='text-secondary-light text-xs mb-0 mt-6'>
+                        {[vendorBreakdown, vendorPendingNote].filter(Boolean).join(" · ")}
+                      </p>
+                    ) : null}
                   </div>
                   <span
                     className='w-48-px h-48-px radius-12 d-flex align-items-center justify-content-center flex-shrink-0'

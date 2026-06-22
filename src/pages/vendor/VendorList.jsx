@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { toast } from "react-toastify";
-import { deleteVendor, listVendors } from "../../lib/api/adminApi";
+import { deleteVendor, listVendors, listPendingVendorSignups, approveVendorRequest } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import { formatDateTime } from "../../lib/formatters";
 import FormModal from "../../components/admin/FormModal";
@@ -40,6 +40,20 @@ function toCsv(rows) {
   return rows.map((r) => r.map(esc).join(",")).join("\n");
 }
 
+function signupRequestToRow(req) {
+  const p = req?.payload && typeof req.payload === "object" ? req.payload : {};
+  return {
+    id: `signup-${req.id}`,
+    businessName: String(p.businessName || "—"),
+    ownerName: String(p.ownerName || "—"),
+    email: p.email ? String(p.email) : "—",
+    phone: p.phone ? String(p.phone) : "—",
+    createdAt: req.createdAt,
+    __status: "pending",
+    __signupRequestId: req.id,
+  };
+}
+
 /**
  * @param {{ vendorKind: 'product'|'service', pageTitle: string, pageSubtitle?: string, addButtonLabel: string, searchPlaceholder?: string, csvFilenamePrefix?: string }} props
  */
@@ -52,6 +66,7 @@ const VendorListLayer = ({
   csvFilenamePrefix,
 }) => {
   const [vendors, setVendors] = useState([]);
+  const [signupPending, setSignupPending] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
@@ -64,8 +79,12 @@ const VendorListLayer = ({
     setLoading(true);
     setError("");
     try {
-      const res = await listVendors({ limit: 500, offset: 0, vendorKind });
+      const [res, signupRes] = await Promise.all([
+        listVendors({ limit: 500, offset: 0, vendorKind }),
+        listPendingVendorSignups({ vendorKind }).catch(() => ({ items: [] })),
+      ]);
       setVendors(res.items || []);
+      setSignupPending(signupRes.items || []);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : String(e));
     } finally {
@@ -75,7 +94,11 @@ const VendorListLayer = ({
 
   useEffect(() => { load(); }, [load]);
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id, signupRequestId) => {
+    if (signupRequestId) {
+      toast.info("Use Approve to provision this signup request.");
+      return;
+    }
     if (!window.confirm("Delete this vendor?")) return;
     try {
       await deleteVendor(id);
@@ -86,10 +109,22 @@ const VendorListLayer = ({
     }
   };
 
-  const rows = useMemo(
-    () => vendors.map((v) => ({ ...v, __status: normalizeStatus(v) })),
-    [vendors],
-  );
+  const handleApproveSignup = async (signupId) => {
+    if (!window.confirm("Approve this vendor signup and create their catalog profile?")) return;
+    try {
+      await approveVendorRequest(signupId, {});
+      toast.success("Vendor signup approved.");
+      await load();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : String(e));
+    }
+  };
+
+  const rows = useMemo(() => {
+    const catalog = vendors.map((v) => ({ ...v, __status: normalizeStatus(v) }));
+    const orphans = signupPending.map(signupRequestToRow);
+    return [...catalog, ...orphans];
+  }, [vendors, signupPending]);
 
   const counts = useMemo(() => {
     const c = { total: rows.length, verified: 0, pending: 0, rejected: 0, deactivated: 0, deleted: 0 };
@@ -152,8 +187,10 @@ const VendorListLayer = ({
           <p className='text-secondary-light mb-0'>
             {pageSubtitle ?? (
               <>
-                {counts.total} {vendorKind === "service" ? "service " : "product "}
-                vendors · Approval flow · Classified listings use <strong>CF vendors</strong>
+                {vendors.length} in catalog
+                {signupPending.length > 0 ? ` · ${signupPending.length} signup${signupPending.length === 1 ? "" : "s"} awaiting catalog row` : ""}
+                {" · "}
+                Check <strong>Service vendors</strong> if a signup is missing here · Classified listings use <strong>CF vendors</strong>
               </>
             )}
           </p>
@@ -229,20 +266,35 @@ const VendorListLayer = ({
                           <td>
                             <div className='fw-semibold text-primary-light'>{vendor.businessName || "—"}</div>
                             <div className='text-neutral-600 text-sm'>{vendor.ownerName || "—"}</div>
+                            {vendor.__signupRequestId ? (
+                              <span className='badge bg-warning-100 text-warning-700 text-xs mt-1'>Signup only</span>
+                            ) : null}
                           </td>
                           <td>{vendor.email || "—"}</td>
                           <td>{vendor.phone || "—"}</td>
                           <td>
                             <div className='d-flex align-items-center gap-10'>
-                              <button type='button' onClick={() => setModal({ mode: "view", id: vendor.id })} className='btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-secondary-light' style={{ width: 36, height: 36 }}>
-                                <Icon icon='majesticons:eye-line' className='text-xl' />
-                              </button>
-                              <button type='button' onClick={() => setModal({ mode: "edit", id: vendor.id })} className='btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-secondary-light' style={{ width: 36, height: 36 }}>
-                                <Icon icon='lucide:edit' className='text-xl' />
-                              </button>
-                              <button type='button' onClick={() => handleDelete(vendor.id)} className='btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-danger-600' style={{ width: 36, height: 36 }}>
-                                <Icon icon='fluent:delete-24-regular' className='text-xl' />
-                              </button>
+                              {vendor.__signupRequestId ? (
+                                <button
+                                  type='button'
+                                  onClick={() => void handleApproveSignup(vendor.__signupRequestId)}
+                                  className='btn btn-success btn-sm radius-10 px-12'
+                                >
+                                  Approve
+                                </button>
+                              ) : (
+                                <>
+                                  <button type='button' onClick={() => setModal({ mode: "view", id: vendor.id })} className='btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-secondary-light' style={{ width: 36, height: 36 }}>
+                                    <Icon icon='majesticons:eye-line' className='text-xl' />
+                                  </button>
+                                  <button type='button' onClick={() => setModal({ mode: "edit", id: vendor.id })} className='btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-secondary-light' style={{ width: 36, height: 36 }}>
+                                    <Icon icon='lucide:edit' className='text-xl' />
+                                  </button>
+                                  <button type='button' onClick={() => void handleDelete(vendor.id)} className='btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-danger-600' style={{ width: 36, height: 36 }}>
+                                    <Icon icon='fluent:delete-24-regular' className='text-xl' />
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </td>
                         </tr>

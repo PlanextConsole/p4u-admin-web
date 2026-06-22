@@ -399,6 +399,14 @@ export function listVendorRequests(params) {
   return api.get("/api/admin/vendor-requests", params);
 }
 
+export function listPendingVendorSignups(params) {
+  return api.get("/api/admin/vendor-signup-pending", params);
+}
+
+export function approveVendorRequest(id, body = {}) {
+  return api.patch(`/api/admin/vendor-requests/${encodeURIComponent(id)}/approve`, body);
+}
+
 export function deleteVendorRequest(id) {
   return api.delete(`/api/admin/vendor-requests/${encodeURIComponent(id)}`);
 }
