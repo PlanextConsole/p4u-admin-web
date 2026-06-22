@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { loginPublic } from "../lib/api/adminApi";
-import { ensureTokenFresh, revokeRefreshToken } from "../lib/api/client";
-import { clearTokens, getAccessToken, getStoredRoles, setTokens } from "../lib/api/tokenStorage";
+import { ensureTokenFresh, revokeRefreshTokenOnServer } from "../lib/api/client";
+import { clearTokens, getAccessToken, getRefreshToken, getStoredRoles, setTokens } from "../lib/api/tokenStorage";
 
 const AuthContext = createContext(null);
 
@@ -94,11 +94,15 @@ export function AuthProvider({ children }) {
   }, []);
 
   const logout = useCallback(() => {
-    void revokeRefreshToken().finally(() => {
-      clearTokens();
-      setAccessTokenState(null);
-      setRolesState([]);
-    });
+    const access = getAccessToken();
+    const refresh = getRefreshToken();
+    clearTokens();
+    setAccessTokenState(null);
+    setRolesState([]);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("p4u-admin-token-updated"));
+    }
+    void revokeRefreshTokenOnServer(access, refresh);
   }, []);
 
   useEffect(() => {

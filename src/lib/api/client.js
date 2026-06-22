@@ -79,16 +79,29 @@ function forceLoginRedirect() {
   }
 }
 
-/** Revoke refresh token server-side before clearing local session. */
+/** Revoke refresh token on the server (direct fetch — never refresh tokens during logout). */
+export async function revokeRefreshTokenOnServer(accessToken, refreshToken) {
+  if (!refreshToken) return;
+  const url = buildApiUrl("/api/auth/logout");
+  try {
+    await fetch(url, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
+      body: JSON.stringify({ refreshToken }),
+    });
+  } catch {
+    /* local session already cleared */
+  }
+}
+
 export async function revokeRefreshToken() {
   const rt = getRefreshToken();
   const access = getAccessToken();
-  if (!rt || !access) return;
-  try {
-    await apiRequest("/api/auth/logout", { method: "POST", jsonBody: { refreshToken: rt } });
-  } catch {
-    /* still clear local session */
-  }
+  await revokeRefreshTokenOnServer(access, rt);
 }
 
 /**

@@ -1,7 +1,8 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { Link, NavLink, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import ThemeToggleButton from "../helper/ThemeToggleButton";
 import { getAccessToken } from "../lib/api/tokenStorage";
 /** e.g. "Admin User" → "AU", "admin" → "AD", "John Doe" → "JD" */
@@ -40,6 +41,8 @@ function readProfileLabelFromToken() {
 }
 
 const MasterLayout = ({ children }) => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   let [sidebarActive, seSidebarActive] = useState(false);
   let [mobileMenu, setMobileMenu] = useState(false);
   const [displayName, setDisplayName] = useState("Admin User");
@@ -425,7 +428,18 @@ const MasterLayout = ({ children }) => {
                     </div>
                     <ul className='to-top-list'>
                       <li><Link className='dropdown-item text-black px-0 py-8 hover-bg-transparent hover-text-primary d-flex align-items-center gap-3' to='/view-profile'><Icon icon='solar:user-linear' className='icon text-xl' /> My Profile</Link></li>
-                      <li><Link className='dropdown-item text-black px-0 py-8 hover-bg-transparent hover-text-danger d-flex align-items-center gap-3' to='/login'><Icon icon='lucide:power' className='icon text-xl' /> Log Out</Link></li>
+                      <li>
+                        <button
+                          type='button'
+                          className='dropdown-item text-black px-0 py-8 hover-bg-transparent hover-text-danger d-flex align-items-center gap-3 w-100 border-0 bg-transparent'
+                          onClick={() => {
+                            logout();
+                            navigate("/login", { replace: true });
+                          }}
+                        >
+                          <Icon icon='lucide:power' className='icon text-xl' /> Log Out
+                        </button>
+                      </li>
                     </ul>
                   </div>
                 </div>
