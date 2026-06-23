@@ -51,7 +51,7 @@ const LoginPage = () => {
         <div className="text-center mb-32">
           <Link to="/" className="d-inline-block text-decoration-none mb-24">
             <div className="d-flex align-items-center justify-content-center gap-2">
-              <img src={logo} alt="Logo" className="h-48-px" />
+              <img src={logo} alt="Planext4u" className="h-48-px" />
             </div>
           </Link>
           <h5 className="mb-12 fw-semibold">Admin Login</h5>

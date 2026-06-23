@@ -300,9 +300,18 @@ html[data-theme="dark"] .form-select option {
   background: rgba(0, 0, 0, 0.06) !important;
   border-inline-end-color: rgba(255, 255, 255, 0.1) !important;
   border-block-end-color: rgba(255, 255, 255, 0.1) !important;
+  padding-inline: 0.75rem !important;
 }
 
-/* Sidebar header: wordmark + tagline only (no graphic logo) */
+.sidebar-logo-mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Sidebar header: wordmark + tagline with brand mark */
 .sidebar:not(.active) .sidebar-logo {
   align-items: center !important;
 }
@@ -339,9 +348,12 @@ html[data-theme="dark"] .form-select option {
 }
 
 .sidebar.active:not(:hover) .sidebar-logo .sidebar-logo-copy {
-  display: flex !important;
-  align-items: center;
-  text-align: center;
+  display: none !important;
+}
+
+.sidebar.active:not(:hover) .sidebar-logo-mark {
+  width: 36px;
+  height: 36px;
 }
 
 .sidebar.active:not(:hover) .sidebar-logo-tagline {

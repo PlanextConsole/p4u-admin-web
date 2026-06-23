@@ -159,7 +159,7 @@ const VendorListLayer = ({
   };
 
   const catalogRows = useMemo(
-    () => vendors.map((v) => ({ ...v, __status: normalizeStatus(v) })),
+    () => vendors.map((v) => ({ ...v, __status: normalizeStatus(v), __source: "catalog" })),
     [vendors],
   );
 
@@ -241,7 +241,13 @@ const VendorListLayer = ({
     URL.revokeObjectURL(url);
   };
 
-  const openVendorId = (vendor) => vendor.__catalogVendorId || (vendor.__source === "catalog" ? vendor.id : null);
+  /** Catalog rows use `id`; signup-only pending rows use the application view instead. */
+  const openVendorId = (vendor) => {
+    if (vendor.__signupRequestId && !vendor.__catalogVendorId && vendor.__source === "signup") {
+      return null;
+    }
+    return vendor.__catalogVendorId || vendor.id || null;
+  };
 
   return (
     <div className='card h-100 p-0 radius-16 border-0 shadow-sm'>

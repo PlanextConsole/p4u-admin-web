@@ -149,9 +149,16 @@ const MasterLayout = ({ children }) => {
         <div>
           <Link
             to='/dashboard'
-            className='sidebar-logo d-flex align-items-center text-decoration-none'
+            className='sidebar-logo d-flex align-items-center text-decoration-none gap-12'
             aria-label='Planext4u — dashboard home'
           >
+            <img
+              src='/assets/images/logo-icon.png'
+              alt='Planext4u'
+              className='sidebar-logo-mark flex-shrink-0'
+              width={40}
+              height={40}
+            />
             <div className='sidebar-logo-copy'>
               <span className='sidebar-logo-title'>Planext4u</span>
               <span className='sidebar-logo-tagline'>ALL SOLUTIONS INDIA Pvt Ltd</span>
