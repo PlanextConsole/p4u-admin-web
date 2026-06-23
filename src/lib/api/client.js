@@ -23,10 +23,23 @@ function decodeJwtExpMs(token) {
 }
 
 let refreshInFlight = null;
+/** After 429 or repeated auth failures, pause refresh attempts to avoid rate-limit storms. */
+let refreshBlockedUntil = 0;
+
+export class RefreshAuthError extends Error {
+  constructor(status, message) {
+    super(message || "Refresh failed");
+    this.name = "RefreshAuthError";
+    this.status = status;
+  }
+}
 
 async function refreshAccessToken() {
+  if (Date.now() < refreshBlockedUntil) {
+    throw new RefreshAuthError(429, "Refresh paused after rate limit or auth failure");
+  }
   const rt = getRefreshToken();
-  if (!rt) throw new Error("No refresh token");
+  if (!rt) throw new RefreshAuthError(401, "No refresh token");
   const url = buildApiUrl("/api/auth/public/refresh");
   const res = await fetch(url, {
     method: "POST",
@@ -41,8 +54,15 @@ async function refreshAccessToken() {
     data = { message: text };
   }
   if (!res.ok) {
-    throw new Error((data && data.message) || "Refresh failed");
+    const message = (data && data.message) || "Refresh failed";
+    if (res.status === 429) {
+      refreshBlockedUntil = Date.now() + 120_000;
+    } else if (res.status === 401 || res.status === 403) {
+      forceLoginRedirect();
+    }
+    throw new RefreshAuthError(res.status, message);
   }
+  refreshBlockedUntil = 0;
   const access = data.accessToken ?? data.access_token;
   const nextRefresh = data.refreshToken ?? data.refresh_token;
   if (!access) throw new Error("No access token in refresh response");
@@ -67,7 +87,8 @@ export async function ensureTokenFresh() {
   await refreshInFlight;
 }
 
-function forceLoginRedirect() {
+/** Clear session and send the user to login (exported for AuthContext). */
+export function forceLoginRedirect() {
   clearTokens();
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("p4u-admin-token-updated"));
@@ -115,8 +136,13 @@ export async function apiRequest(path, options = {}) {
   if (!skipAuth) {
     try {
       await ensureTokenFresh();
-    } catch {
-      /* fall through; request may still work or we'll handle 401 */
+    } catch (e) {
+      if (!getAccessToken()) {
+        throw new ApiError(401, "Session expired");
+      }
+      if (e instanceof RefreshAuthError && e.status === 429) {
+        throw new ApiError(429, e.message);
+      }
     }
   }
 
@@ -174,15 +200,14 @@ export async function apiRequest(path, options = {}) {
       await refreshAccessToken();
       return apiRequest(path, { ...options, _retry401: true });
     } catch {
-      /* Keep current session on transient auth/gateway failures. */
+      if (getAccessToken()) forceLoginRedirect();
+      throw new ApiError(401, "Session expired");
     }
   }
 
   if (res.status === 401 && !skipAuth) {
-    // End session only when refresh cannot recover (no refresh token or retry still 401).
-    if (!getRefreshToken() || _retry401) {
-      forceLoginRedirect();
-    }
+    forceLoginRedirect();
+    throw new ApiError(401, "Session expired");
   }
 
   if ((res.status === 502 || res.status === 503) && !_retryTransient) {

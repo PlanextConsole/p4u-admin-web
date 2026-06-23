@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { loginPublic } from "../lib/api/adminApi";
-import { ensureTokenFresh, revokeRefreshTokenOnServer } from "../lib/api/client";
+import { ensureTokenFresh, forceLoginRedirect, revokeRefreshTokenOnServer } from "../lib/api/client";
 import { clearTokens, getAccessToken, getRefreshToken, getStoredRoles, setTokens } from "../lib/api/tokenStorage";
 
 const AuthContext = createContext(null);
@@ -46,7 +46,8 @@ export function AuthProvider({ children }) {
         try {
           await ensureTokenFresh();
         } catch {
-          // Keep stored session on transient refresh/network failures.
+          if (!getAccessToken()) return;
+          if (isExpired) forceLoginRedirect();
         }
       }
       if (!cancelled) syncFromStorage();
@@ -122,8 +123,8 @@ export function AuthProvider({ children }) {
       const now = Date.now();
       if (exp != null) {
         let delayMs = exp - now - 45_000;
-        if (delayMs < 5_000) delayMs = Math.max(0, exp - now - 5_000);
-        if (exp - now < 90_000) delayMs = 0;
+        if (delayMs < 5_000) delayMs = Math.max(5_000, exp - now - 5_000);
+        if (exp - now < 90_000) delayMs = Math.max(5_000, exp - now - 5_000);
         return delayMs;
       }
       return 60_000;
@@ -131,13 +132,15 @@ export function AuthProvider({ children }) {
 
     let timeoutId;
     const runRefresh = async () => {
+      let nextDelay = scheduleRefresh() ?? 60_000;
       try {
         await ensureTokenFresh();
         syncFromStorage();
       } catch {
-        /* retry on next interval */
+        if (!getAccessToken()) return;
+        nextDelay = Math.max(nextDelay, 60_000);
       }
-      timeoutId = setTimeout(runRefresh, scheduleRefresh() ?? 60_000);
+      timeoutId = setTimeout(runRefresh, nextDelay);
     };
 
     timeoutId = setTimeout(runRefresh, scheduleRefresh() ?? 60_000);
