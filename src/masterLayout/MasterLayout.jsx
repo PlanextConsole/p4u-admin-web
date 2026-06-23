@@ -226,6 +226,12 @@ const MasterLayout = ({ children }) => {
               </NavLink>
             </li>
             <li>
+              <NavLink to='/service-subcategories' className={sidebarNavClass}>
+                <Icon icon='mdi:shape-plus-outline' className='menu-icon' />
+                <span>Service subcategories</span>
+              </NavLink>
+            </li>
+            <li>
               <NavLink to='/service' className={sidebarNavClass}>
                 <Icon icon='mdi:tools' className='menu-icon' />
                 <span title='Catalog service templates and vendor listing approvals'>Services</span>

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { deleteCatalogService, listCatalogServices, listServiceCategories } from "../../lib/api/adminApi";
+import { deleteCatalogService, listCatalogServices, listCategoriesForServices } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
 import FormModal from "../../components/admin/FormModal";
@@ -33,7 +33,7 @@ const ServiceListLayer = () => {
     try {
       const [sRes, cRes] = await Promise.all([
         listCatalogServices({ limit: 500, offset: 0 }),
-        listServiceCategories({ purpose: "all" }),
+        listCategoriesForServices({ purpose: "all" }),
       ]);
       setServices(sRes.items || []);
       const rows = cRes.items || [];
@@ -66,7 +66,7 @@ const ServiceListLayer = () => {
     if (!c) return categoryMap[categoryId] || "—";
     if (c.parentId) {
       const p = categoryRows.find((x) => x.id === c.parentId);
-      return p ? p.name : c.name;
+      return p ? `${p.name} › ${c.name}` : c.name;
     }
     return c.name;
   };

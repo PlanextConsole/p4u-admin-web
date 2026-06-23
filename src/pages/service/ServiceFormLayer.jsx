@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import {
   createCatalogService,
   getCatalogService,
-  listServiceCategories,
+  listCategoriesForServices,
   updateCatalogService,
   uploadFile,
 } from "../../lib/api/adminApi";
@@ -22,6 +22,7 @@ const PRICE_TYPES = [
 
 const emptyForm = () => ({
   name: "",
+  parentCategoryId: "",
   categoryId: "",
   availability: "Yes",
   trending: "No",
@@ -49,7 +50,7 @@ const ServiceFormLayer = ({ isEdit = false, isView = false, serviceId, onSuccess
     (async () => {
       setCategoriesLoading(true);
       try {
-        const res = await listServiceCategories({ purpose: "all" });
+        const res = await listCategoriesForServices({ purpose: "all" });
         if (!cancelled) setCategories(res.items || []);
       } catch (e) {
         if (!cancelled) {
@@ -71,6 +72,7 @@ const ServiceFormLayer = ({ isEdit = false, isView = false, serviceId, onSuccess
       pt === "starting_from" || pt === "hourly" || pt === "fixed" ? pt : "fixed";
     setFormData({
       name: row.name || "",
+      parentCategoryId: "",
       categoryId: row.categoryId || "",
       availability: row.availability ? "Yes" : "No",
       trending: row.trending ? "Yes" : "No",
@@ -86,10 +88,25 @@ const ServiceFormLayer = ({ isEdit = false, isView = false, serviceId, onSuccess
     });
   }, []);
 
-  const categoryOptions = useMemo(
+  const rootCategories = useMemo(
     () => (categories || []).filter((c) => !c.parentId).sort((a, b) => (a.name || "").localeCompare(b.name || "")),
     [categories],
   );
+
+  const subcategories = useMemo(() => {
+    if (!formData.parentCategoryId) return [];
+    return categories.filter((c) => c.parentId === formData.parentCategoryId);
+  }, [categories, formData.parentCategoryId]);
+
+  useEffect(() => {
+    if (!formData.categoryId || !categories.length) return;
+    const chosen = categories.find((c) => c.id === formData.categoryId);
+    if (chosen?.parentId) {
+      setFormData((prev) =>
+        prev.parentCategoryId === chosen.parentId ? prev : { ...prev, parentCategoryId: chosen.parentId || "" },
+      );
+    }
+  }, [formData.categoryId, categories]);
 
   useEffect(() => {
     if (!serviceId) {
@@ -132,8 +149,12 @@ const ServiceFormLayer = ({ isEdit = false, isView = false, serviceId, onSuccess
       toast.error("Enter a service name.");
       return;
     }
+    if (!formData.parentCategoryId?.trim()) {
+      toast.error("Select service category.");
+      return;
+    }
     if (!formData.categoryId?.trim()) {
-      toast.error("Select a category.");
+      toast.error("Select service subcategory.");
       return;
     }
 
@@ -236,18 +257,43 @@ const ServiceFormLayer = ({ isEdit = false, isView = false, serviceId, onSuccess
               </div>
               <div className="col-md-6 mb-20">
                 <label className="form-label fw-semibold text-primary-light text-sm mb-8">
-                  Category <span className="text-danger">*</span>
+                  Service category <span className="text-danger">*</span>
+                </label>
+                <select
+                  className="form-control radius-8 form-select"
+                  name="parentCategoryId"
+                  value={formData.parentCategoryId}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData((prev) => ({ ...prev, parentCategoryId: value, categoryId: "" }));
+                  }}
+                  disabled={categorySelectDisabled}
+                  required
+                >
+                  <option value="">{categoriesLoading ? "Loading categories…" : "Select category…"}</option>
+                  {rootCategories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-md-6 mb-20">
+                <label className="form-label fw-semibold text-primary-light text-sm mb-8">
+                  Service subcategory <span className="text-danger">*</span>
                 </label>
                 <select
                   className="form-control radius-8 form-select"
                   name="categoryId"
                   value={formData.categoryId}
                   onChange={handleChange}
-                  disabled={categorySelectDisabled}
+                  disabled={categorySelectDisabled || !formData.parentCategoryId}
                   required
                 >
-                  <option value="">{categoriesLoading ? "Loading categories…" : "Select category…"}</option>
-                  {categoryOptions.map((c) => (
+                  <option value="">
+                    {formData.parentCategoryId ? (subcategories.length ? "Select subcategory…" : "No subcategories — add one in admin") : "Select category first"}
+                  </option>
+                  {subcategories.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
                     </option>

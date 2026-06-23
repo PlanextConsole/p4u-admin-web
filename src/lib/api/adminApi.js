@@ -219,6 +219,21 @@ export async function listCategoriesForProducts(params) {
   return { items };
 }
 
+/** Merged service roots + subcategories (for service forms). */
+export async function listCategoriesForServices(params) {
+  const [roots, subs] = await Promise.all([
+    api.get("/api/admin/service-categories", params),
+    api.get("/api/admin/service-subcategories", params),
+  ]);
+  const rItems = roots.items || [];
+  const sItems = subs.items || [];
+  const items = [
+    ...rItems.map((c) => ({ ...c, parentId: null })),
+    ...sItems.map((s) => ({ ...s, parentId: s.serviceCategoryId })),
+  ];
+  return { items };
+}
+
 // ─── Product categories (shop) ───
 export function listProductCategories(params) {
   return api.get("/api/admin/product-categories", params);
@@ -280,6 +295,27 @@ export function updateServiceCategory(id, body) {
 
 export function deleteServiceCategory(id) {
   return api.delete(`/api/admin/service-categories/${encodeURIComponent(id)}`);
+}
+
+// ─── Service subcategories ───
+export function listServiceSubcategories(params) {
+  return api.get("/api/admin/service-subcategories", params);
+}
+
+export function getServiceSubcategory(id) {
+  return api.get(`/api/admin/service-subcategories/${encodeURIComponent(id)}`);
+}
+
+export function createServiceSubcategory(body) {
+  return api.post("/api/admin/service-subcategories", body);
+}
+
+export function updateServiceSubcategory(id, body) {
+  return api.patch(`/api/admin/service-subcategories/${encodeURIComponent(id)}`, body);
+}
+
+export function deleteServiceSubcategory(id) {
+  return api.delete(`/api/admin/service-subcategories/${encodeURIComponent(id)}`);
 }
 
 export function listCatalogServices(params) {

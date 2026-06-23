@@ -4,10 +4,11 @@ import {
   deleteProductCategory,
   deleteProductSubcategory,
   deleteServiceCategory,
-  listCatalogServices,
+  deleteServiceSubcategory,
   listProductCategories,
   listProductSubcategories,
   listServiceCategories,
+  listServiceSubcategories,
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
@@ -16,7 +17,7 @@ import FormModal from "../../components/admin/FormModal";
 import CategoryFormLayer from "./CategoryFormLayer";
 
 /**
- * @param {{ variant?: 'service-roots' | 'product-roots' | 'product-subs' }} props
+ * @param {{ variant?: 'service-roots' | 'service-subs' | 'product-roots' | 'product-subs' }} props
  */
 const CategoryListLayer = ({ variant = "service-roots" }) => {
   const [categories, setCategories] = useState([]);
@@ -27,8 +28,10 @@ const CategoryListLayer = ({ variant = "service-roots" }) => {
   const [search, setSearch] = useState("");
   const [modal, setModal] = useState(null);
 
-  const isSubTable = variant === "product-subs";
+  const isSubTable = variant === "product-subs" || variant === "service-subs";
   const isProductRoots = variant === "product-roots";
+  const isServiceRoots = variant === "service-roots";
+  const showThumbnailImage = isSubTable || variant === "product-roots" || variant === "service-subs";
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -37,11 +40,23 @@ const CategoryListLayer = ({ variant = "service-roots" }) => {
       if (variant === "service-roots") {
         const [cRes, sRes] = await Promise.all([
           listServiceCategories({ purpose: "all" }),
-          listCatalogServices({ limit: 500, offset: 0 }),
+          listServiceSubcategories({ purpose: "all" }),
         ]);
-        setCategories((cRes.items || []).map((c) => ({ ...c, parentId: null })));
-        setServices(sRes.items || []);
-        setProductRootsForParent([]);
+        const roots = cRes.items || [];
+        const subs = sRes.items || [];
+        setCategories(roots.map((c) => ({ ...c, parentId: null })));
+        setServices(subs);
+        setProductRootsForParent(roots);
+      } else if (variant === "service-subs") {
+        const [rRes, sRes] = await Promise.all([
+          listServiceCategories({ purpose: "all" }),
+          listServiceSubcategories({ purpose: "all" }),
+        ]);
+        const roots = rRes.items || [];
+        const subs = sRes.items || [];
+        setCategories(subs.map((s) => ({ ...s, parentId: s.serviceCategoryId })));
+        setServices([]);
+        setProductRootsForParent(roots);
       } else if (variant === "product-roots") {
         const [rRes, sRes] = await Promise.all([
           listProductCategories({ purpose: "all" }),
@@ -72,22 +87,10 @@ const CategoryListLayer = ({ variant = "service-roots" }) => {
 
   useEffect(() => { load(); }, [load]);
 
-  const servicesByCategory = useMemo(() => {
-    const m = {};
-    services.forEach((s) => {
-      const cid = s.categoryId;
-      if (cid) {
-        if (!m[cid]) m[cid] = [];
-        m[cid].push(s);
-      }
-    });
-    return m;
-  }, [services]);
-
   const subsByParent = useMemo(() => {
     const m = {};
     services.forEach((sub) => {
-      const pid = sub.productCategoryId;
+      const pid = sub.productCategoryId || sub.serviceCategoryId;
       if (!pid) return;
       if (!m[pid]) m[pid] = [];
       m[pid].push(sub);
@@ -107,7 +110,7 @@ const CategoryListLayer = ({ variant = "service-roots" }) => {
   }, [productRootsForParent]);
 
   const pool = useMemo(() => {
-    if (variant === "product-subs") return categories.filter((c) => Boolean(c.parentId));
+    if (variant === "product-subs" || variant === "service-subs") return categories.filter((c) => Boolean(c.parentId));
     return categories;
   }, [categories, variant]);
 
@@ -116,11 +119,9 @@ const CategoryListLayer = ({ variant = "service-roots" }) => {
     const q = search.toLowerCase();
     return pool.filter((c) => {
       const linked =
-        variant === "service-roots"
-          ? (servicesByCategory[c.id] || [])
-          : variant === "product-roots"
-            ? (subsByParent[c.id] || [])
-            : [];
+        isServiceRoots || variant === "product-roots"
+          ? (subsByParent[c.id] || [])
+          : [];
       const parentName = c.parentId ? (parentById[c.parentId]?.name || "") : "";
       return (
         (c.name || "").toLowerCase().includes(q) ||
@@ -128,20 +129,23 @@ const CategoryListLayer = ({ variant = "service-roots" }) => {
         linked.some((x) => (x.name || "").toLowerCase().includes(q))
       );
     });
-  }, [pool, search, servicesByCategory, subsByParent, parentById, variant]);
+  }, [pool, search, subsByParent, parentById, variant, isServiceRoots]);
 
   const tableColSpan = isSubTable ? 9 : 8;
 
   const handleDelete = async (id) => {
     const msg =
       variant === "product-subs"
-        ? "Delete this subcategory?"
+        ? "Delete this product subcategory?"
+        : variant === "service-subs"
+          ? "Delete this service subcategory?"
         : variant === "product-roots"
           ? "Delete this product category?"
           : "Delete this service category?";
     if (!window.confirm(msg)) return;
     try {
       if (variant === "service-roots") await deleteServiceCategory(id);
+      else if (variant === "service-subs") await deleteServiceSubcategory(id);
       else if (variant === "product-roots") await deleteProductCategory(id);
       else await deleteProductSubcategory(id);
       await load();
@@ -154,21 +158,22 @@ const CategoryListLayer = ({ variant = "service-roots" }) => {
 
   const addLabel =
     variant === "product-subs"
-      ? "Add subcategory"
+      ? "Add product subcategory"
+      : variant === "service-subs"
+        ? "Add service subcategory"
       : variant === "product-roots"
         ? "Add product category"
         : "Add service category";
 
   const chipsTitle =
-    variant === "service-roots" ? "Services" : variant === "product-roots" ? "Subcategories" : null;
+    isServiceRoots || variant === "product-roots" ? "Subcategories" : null;
 
   const chipItems = (cat) => {
-    if (variant === "service-roots") return servicesByCategory[cat.id] || [];
-    if (variant === "product-roots") return subsByParent[cat.id] || [];
+    if (isServiceRoots || variant === "product-roots") return subsByParent[cat.id] || [];
     return [];
   };
 
-  const chipSuffix = variant === "service-roots" ? "services" : "subcategories";
+  const chipSuffix = "subcategories";
 
   return (
     <div className="card h-100 p-0 radius-12">
@@ -201,7 +206,7 @@ const CategoryListLayer = ({ variant = "service-roots" }) => {
                     <th scope="col">S.No</th>
                     <th scope="col">Name</th>
                     {isSubTable && <th scope="col">Parent category</th>}
-                    <th scope="col">{variant === "product-subs" || variant === "product-roots" ? "Image" : "Icon"}</th>
+                    <th scope="col">{showThumbnailImage ? "Image" : "Icon"}</th>
                     {chipsTitle && <th scope="col">{chipsTitle}</th>}
                     <th scope="col" className="text-center">Availability</th>
                     <th scope="col" className="text-center">Trending</th>
@@ -225,14 +230,10 @@ const CategoryListLayer = ({ variant = "service-roots" }) => {
                             </td>
                           )}
                           <td>
-                            {variant === "service-roots" ? (
-                              (cat.iconUrl || cat.thumbnailUrl) ? (
-                                <img src={resolveMediaUrl(cat.iconUrl || cat.thumbnailUrl)} alt="" style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 6 }} onError={(e) => { e.target.style.display = "none"; }} />
-                              ) : (
-                                <span className="text-secondary-light">—</span>
-                              )
-                            ) : cat.thumbnailUrl ? (
+                            {showThumbnailImage && cat.thumbnailUrl ? (
                               <img src={resolveMediaUrl(cat.thumbnailUrl)} alt="" style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 6 }} onError={(e) => { e.target.style.display = "none"; }} />
+                            ) : (cat.iconUrl || cat.thumbnailUrl) ? (
+                              <img src={resolveMediaUrl(cat.iconUrl || cat.thumbnailUrl)} alt="" style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 6 }} onError={(e) => { e.target.style.display = "none"; }} />
                             ) : (
                               <span className="text-secondary-light">—</span>
                             )}

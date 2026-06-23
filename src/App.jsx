@@ -115,6 +115,7 @@ import ProductAttributesListPage from './pages/product-attributes/ProductAttribu
 import CategoryListPage from './pages/category/CategoryListPage';
 import ProductCategoryListPage from './pages/category/ProductCategoryListPage';
 import SubcategoryListPage from './pages/subcategory/SubcategoryListPage';
+import ServiceSubcategoryListPage from './pages/service-subcategory/ServiceSubcategoryListPage';
 
 // SERVICE
 import ServiceListPage from './pages/service/ServiceListPage';
@@ -204,6 +205,7 @@ function App() {
 
 {/* CATEGORY — product vs service use separate tables */}
 <Route exact path='/service-categories' element={<CategoryListPage />} />
+<Route exact path='/service-subcategories' element={<ServiceSubcategoryListPage />} />
 <Route exact path='/product-categories' element={<ProductCategoryListPage />} />
 <Route exact path='/category' element={<Navigate to='/service-categories' replace />} />
 <Route exact path='/subcategories' element={<SubcategoryListPage />} />

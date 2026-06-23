@@ -6,18 +6,19 @@ import {
   createProductCategory,
   createProductSubcategory,
   createServiceCategory,
+  createServiceSubcategory,
   getProductCategory,
   getProductSubcategory,
   getServiceCategory,
-  listCatalogServices,
+  getServiceSubcategory,
   updateProductCategory,
   updateProductSubcategory,
   updateServiceCategory,
+  updateServiceSubcategory,
   uploadFile,
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
-import CountAndChips from "../../components/admin/CountAndChips";
 
 const YES_NO = ["Yes", "No"];
 
@@ -42,7 +43,7 @@ const emptyProductVisual = () => ({
 });
 
 /**
- * @param {{ variant?: 'service-roots' | 'product-roots' | 'product-subs', isEdit?: boolean, isView?: boolean, categoryId?: string, scope?: 'root'|'subcategory', rootCategories?: { id: string, name: string }[], onSuccess?: () => void, onCancel?: () => void }} props
+ * @param {{ variant?: 'service-roots' | 'service-subs' | 'product-roots' | 'product-subs', isEdit?: boolean, isView?: boolean, categoryId?: string, scope?: 'root'|'subcategory', rootCategories?: { id: string, name: string }[], onSuccess?: () => void, onCancel?: () => void }} props
  */
 const CategoryFormLayer = ({
   variant = "service-roots",
@@ -58,7 +59,9 @@ const CategoryFormLayer = ({
   const isRoot = scope === "root";
   const isServiceRoot = variant === "service-roots" && isRoot;
   const isProductRoot = variant === "product-roots" && isRoot;
+  const isServiceSub = variant === "service-subs";
   const isProductSub = variant === "product-subs" || (variant === "product-roots" && !isRoot);
+  const isAnySub = isProductSub || isServiceSub;
 
   const initialEmpty = () => {
     if (isServiceRoot) return emptyServiceRoot();
@@ -72,8 +75,6 @@ const CategoryFormLayer = ({
   const [pendingIcon, setPendingIcon] = useState(null);
   const [pendingThumbnail, setPendingThumbnail] = useState(null);
   const [pendingBanners, setPendingBanners] = useState([]);
-  const [linkedServices, setLinkedServices] = useState([]);
-  const [linkedServicesLoading, setLinkedServicesLoading] = useState(false);
 
   const applyRow = useCallback(
     (row) => {
@@ -99,7 +100,7 @@ const CategoryFormLayer = ({
         });
       } else {
         setFormData({
-          parentId: row.productCategoryId || row.parentId || "",
+          parentId: row.productCategoryId || row.serviceCategoryId || row.parentId || "",
           name: row.name || "",
           availability: row.availability ? "Yes" : "No",
           trending: row.trending ? "Yes" : "No",
@@ -126,6 +127,7 @@ const CategoryFormLayer = ({
         let row;
         if (isServiceRoot) row = await getServiceCategory(categoryId);
         else if (isProductRoot) row = await getProductCategory(categoryId);
+        else if (isServiceSub) row = await getServiceSubcategory(categoryId);
         else row = await getProductSubcategory(categoryId);
         if (!cancelled) applyRow(row);
       } catch (e) {
@@ -141,31 +143,7 @@ const CategoryFormLayer = ({
     return () => {
       cancelled = true;
     };
-  }, [categoryId, applyRow, isServiceRoot, isProductRoot]);
-
-  useEffect(() => {
-    if (!categoryId || !isServiceRoot) {
-      setLinkedServices([]);
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      setLinkedServicesLoading(true);
-      try {
-        const sRes = await listCatalogServices({ limit: 500, offset: 0 });
-        if (cancelled) return;
-        const all = sRes.items || [];
-        setLinkedServices(all.filter((s) => s.categoryId === categoryId));
-      } catch {
-        if (!cancelled) setLinkedServices([]);
-      } finally {
-        if (!cancelled) setLinkedServicesLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [categoryId, isServiceRoot]);
+  }, [categoryId, applyRow, isServiceRoot, isProductRoot, isServiceSub]);
 
   const handleChange = (e) => {
     if (isView) return;
@@ -263,6 +241,24 @@ const CategoryFormLayer = ({
           await createProductCategory(payload);
           toast.success("Product category created.");
         }
+      } else if (isServiceSub) {
+        const payload = {
+          name: formData.name.trim() || null,
+          parentId,
+          availability: formData.availability === "Yes",
+          emergency: false,
+          trending: formData.trending === "Yes",
+          description: formData.description.trim() || null,
+          thumbnailUrl: thumbnailUrl || null,
+          bannerUrls: bannerUrls.length > 0 ? bannerUrls : null,
+        };
+        if (isEdit && categoryId) {
+          await updateServiceSubcategory(categoryId, payload);
+          toast.success("Service subcategory updated.");
+        } else {
+          await createServiceSubcategory(payload);
+          toast.success("Service subcategory created.");
+        }
       } else {
         const payload = {
           name: formData.name.trim() || null,
@@ -287,7 +283,8 @@ const CategoryFormLayer = ({
 
       if (onSuccess) onSuccess();
       else {
-        if (variant === "service-roots") navigate("/category");
+        if (variant === "service-roots") navigate("/service-categories");
+        else if (variant === "service-subs") navigate("/service-subcategories");
         else if (variant === "product-roots") navigate("/product-categories");
         else navigate("/subcategories");
       }
@@ -319,10 +316,9 @@ const CategoryFormLayer = ({
   const titleLine = () => {
     if (isServiceRoot) return isView ? "View service category" : isEdit ? "Edit service category" : "Add service category";
     if (isProductRoot) return isView ? "View product category" : isEdit ? "Edit product category" : "Add product category";
+    if (isServiceSub) return isView ? "View service subcategory" : isEdit ? "Edit service subcategory" : "Add service subcategory";
     return isView ? "View subcategory" : isEdit ? "Edit subcategory" : "Add subcategory";
   };
-
-  const showLinkedServices = isServiceRoot && categoryId;
 
   return (
     <div className="card h-100 p-0 radius-12">
@@ -350,7 +346,7 @@ const CategoryFormLayer = ({
         ) : (
           <form onSubmit={handleSubmit}>
             <div className="row">
-              {isProductSub && (
+              {isAnySub && (
                 <div className="col-md-12 mb-20">
                   <label className="form-label fw-semibold text-primary-light text-sm mb-8">Parent category *</label>
                   <select
@@ -406,7 +402,7 @@ const CategoryFormLayer = ({
                 </select>
               </div>
 
-              {!isServiceRoot && (
+              {(isProductRoot || isProductSub) && (
                 <div className="col-md-6 mb-20">
                   <label className="form-label fw-semibold text-primary-light text-sm mb-8">Commission Override % (this category)</label>
                   <input
@@ -429,24 +425,6 @@ const CategoryFormLayer = ({
                 <textarea className="form-control radius-8" name="description" rows={4} value={formData.description} onChange={handleChange} disabled={disabled} />
               </div>
 
-              {showLinkedServices && (
-                <div className="col-md-12 mb-20">
-                  <label className="form-label fw-semibold text-primary-light text-sm mb-8">Linked services</label>
-                  <div className="radius-8 border border-neutral-200 p-16 bg-base">
-                    {linkedServicesLoading ? (
-                      <span className="text-secondary-light text-sm">Loading services...</span>
-                    ) : (
-                      <CountAndChips
-                        items={linkedServices}
-                        getLabel={(s) => s.name}
-                        getKey={(s) => s.id}
-                        countSuffix="services"
-                        emptyLabel="No services in this category yet."
-                      />
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
 
             {isServiceRoot ? (
