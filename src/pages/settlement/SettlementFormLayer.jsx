@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
+import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
 
 const SettlementFormLayer = ({ isView = true, initialData = null, vendors = [], onCancel }) => {
   const vendorById = useMemo(() => {
@@ -85,7 +86,7 @@ const SettlementFormLayer = ({ isView = true, initialData = null, vendors = [], 
               {display.documentUrl ? (
                 <div>
                   <a
-                    href={display.documentUrl}
+                    href={resolveMediaUrl(display.documentUrl) || display.documentUrl}
                     target='_blank'
                     rel='noreferrer'
                     className='text-sm text-primary-600 fw-medium d-flex align-items-center gap-2'

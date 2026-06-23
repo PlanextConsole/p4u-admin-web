@@ -576,7 +576,7 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
                   <Field col='col-md-6' label='GST Certificate'>
                     {!isReadonly && <input type='file' className='form-control radius-10' accept='image/*,.pdf' disabled={disabled} onChange={(e) => { if (e.target.files?.[0]) setPendingFiles((p) => ({ ...p, gstCertUrl: e.target.files[0] })); }} />}
                     {formData.gstCertUrl ? (
-                      <a className='text-primary-600 text-sm d-inline-block mt-8 fw-medium' href={formData.gstCertUrl} target='_blank' rel='noreferrer'>View GST document</a>
+                      <a className='text-primary-600 text-sm d-inline-block mt-8 fw-medium' href={resolveMediaUrl(formData.gstCertUrl)} target='_blank' rel='noreferrer'>View GST document</a>
                     ) : isReadonly ? (
                       <p className='text-neutral-600 text-sm mb-0 mt-8'>No file uploaded</p>
                     ) : null}
@@ -584,7 +584,7 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
                   <Field col='col-md-6' label='PAN Card'>
                     {!isReadonly && <input type='file' className='form-control radius-10' accept='image/*,.pdf' disabled={disabled} onChange={(e) => { if (e.target.files?.[0]) setPendingFiles((p) => ({ ...p, panCardUrl: e.target.files[0] })); }} />}
                     {formData.panCardUrl ? (
-                      <a className='text-primary-600 text-sm d-inline-block mt-8 fw-medium' href={formData.panCardUrl} target='_blank' rel='noreferrer'>View PAN document</a>
+                      <a className='text-primary-600 text-sm d-inline-block mt-8 fw-medium' href={resolveMediaUrl(formData.panCardUrl)} target='_blank' rel='noreferrer'>View PAN document</a>
                     ) : isReadonly ? (
                       <p className='text-neutral-600 text-sm mb-0 mt-8'>No file uploaded</p>
                     ) : null}

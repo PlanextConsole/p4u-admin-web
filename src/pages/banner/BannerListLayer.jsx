@@ -7,6 +7,7 @@ import {
 import { ApiError } from "../../lib/api/client";
 import FormModal from "../../components/admin/FormModal";
 import BannerFormLayer from "./BannerFormLayer";
+import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
 
 const BannerListLayer = () => {
   const [items, setItems] = useState([]);
@@ -119,7 +120,7 @@ const BannerListLayer = () => {
                           <div className='d-flex align-items-center'>
                             {banner.imageUrl ? (
                               <img
-                                src={banner.imageUrl}
+                                src={resolveMediaUrl(banner.imageUrl)}
                                 alt='Banner Preview'
                                 className='w-64-px h-40-px radius-8 object-fit-cover me-12'
                                 onError={(e) => { e.target.style.display = 'none'; }}

@@ -7,6 +7,7 @@ import {
 import { ApiError } from "../../lib/api/client";
 import FormModal from "../../components/admin/FormModal";
 import PopupBannerFormLayer from "./PopupBannerFormLayer";
+import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
 
 const PopupBannerListLayer = () => {
   const [items, setItems] = useState([]);
@@ -130,7 +131,7 @@ const PopupBannerListLayer = () => {
                         <td>
                           {item.imageUrl ? (
                             <img
-                              src={item.imageUrl}
+                              src={resolveMediaUrl(item.imageUrl)}
                               alt='Popup Preview'
                               className='w-40-px h-40-px radius-8 object-fit-cover border'
                               onError={(e) => { e.target.style.display = 'none'; }}

@@ -483,7 +483,7 @@ const MediaLibraryLayer = () => {
                   </div>
                   <div className='text-xs text-neutral-500'>{formatBytes(a.sizeBytes)}</div>
                   <div className='d-flex gap-4 mt-8'>
-                    <a className='btn btn-outline-primary btn-sm py-0 px-8 radius-6' href={a.fileUrl} target='_blank' rel='noreferrer'>
+                    <a className='btn btn-outline-primary btn-sm py-0 px-8 radius-6' href={resolveMediaUrl(a.fileUrl) || a.fileUrl} target='_blank' rel='noreferrer'>
                       Open
                     </a>
                     <button type='button' className='btn btn-outline-danger btn-sm py-0 px-8 radius-6' onClick={() => handleDeleteAsset(a.id)}>

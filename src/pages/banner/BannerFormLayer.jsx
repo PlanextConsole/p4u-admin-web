@@ -7,6 +7,7 @@ import {
   uploadFile,
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
+import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
 
 const empty = () => ({
   title: "",
@@ -217,7 +218,7 @@ const BannerFormLayer = ({ isEdit = false, isView = false, initialData = null, o
               {form.imageUrl && (
                 <div className='mb-12'>
                   <img
-                    src={form.imageUrl}
+                    src={resolveMediaUrl(form.imageUrl)}
                     alt='Current banner'
                     style={{ maxHeight: 120, objectFit: "cover", borderRadius: 6 }}
                     onError={(e) => { e.target.style.display = 'none'; }}

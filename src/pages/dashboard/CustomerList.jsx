@@ -8,6 +8,7 @@ import {
   formatDateTime,
   normalizeVendorCategories,
 } from "../../lib/formatters";
+import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
 
 const PREVIEW_LIMIT = 5;
 
@@ -242,7 +243,7 @@ const CustomerList = () => {
                             <div className='d-flex align-items-center'>
                               {v.logoUrl ? (
                                 <img
-                                  src={v.logoUrl}
+                                  src={resolveMediaUrl(v.logoUrl)}
                                   alt=''
                                   className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
                                   style={{ objectFit: "cover" }}
