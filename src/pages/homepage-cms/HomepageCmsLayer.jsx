@@ -12,6 +12,7 @@ import {
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
+import { IMAGE_OR_VIDEO_ACCEPT, IMAGE_ACCEPT } from "../../lib/acceptImages";
 import FormModal from "../../components/admin/FormModal";
 
 const TABS = [
@@ -564,12 +565,12 @@ const HomepageCmsLayer = () => {
                   <div className='col-md-6'>
                     <label className='form-label fw-semibold text-sm'>Desktop image *</label>
                     <input className='form-control radius-10 mb-8' name='desktopImageUrl' value={form.desktopImageUrl} onChange={handleChange} placeholder='https://...' />
-                    <input type='file' className='form-control radius-10' accept='image/*' onChange={(e) => setPendingDesktop(e.target.files?.[0] || null)} />
+                    <input type='file' className='form-control radius-10' accept={IMAGE_ACCEPT} onChange={(e) => setPendingDesktop(e.target.files?.[0] || null)} />
                   </div>
                   <div className='col-md-6'>
                     <label className='form-label fw-semibold text-sm'>Mobile image (optional)</label>
                     <input className='form-control radius-10 mb-8' name='mobileImageUrl' value={form.mobileImageUrl} onChange={handleChange} placeholder='https://...' />
-                    <input type='file' className='form-control radius-10' accept='image/*' onChange={(e) => setPendingMobile(e.target.files?.[0] || null)} />
+                    <input type='file' className='form-control radius-10' accept={IMAGE_ACCEPT} onChange={(e) => setPendingMobile(e.target.files?.[0] || null)} />
                   </div>
                 </>
               )}
@@ -577,7 +578,7 @@ const HomepageCmsLayer = () => {
                 <>
                   <div className='col-12'>
                     <label className='form-label fw-semibold text-sm'>Optimized Video *</label>
-                    <input type='file' className='form-control radius-10 mb-8' accept='video/*' onChange={(e) => setPendingVideo(e.target.files?.[0] || null)} />
+                    <input type='file' className='form-control radius-10 mb-8' accept={IMAGE_OR_VIDEO_ACCEPT} onChange={(e) => setPendingVideo(e.target.files?.[0] || null)} />
                     <small className='text-secondary-light'>Pick any video file to upload and optimize for streaming.</small>
                   </div>
                   <div className='col-md-6'>
@@ -587,7 +588,7 @@ const HomepageCmsLayer = () => {
                   <div className='col-md-6'>
                     <label className='form-label fw-semibold text-sm'>Thumbnail *</label>
                     <input className='form-control radius-10 mb-8' name='thumbnailUrl' value={form.thumbnailUrl} onChange={handleChange} placeholder='https://...' />
-                    <input type='file' className='form-control radius-10' accept='image/*' onChange={(e) => setPendingThumb(e.target.files?.[0] || null)} />
+                    <input type='file' className='form-control radius-10' accept={IMAGE_ACCEPT} onChange={(e) => setPendingThumb(e.target.files?.[0] || null)} />
                   </div>
                   <div className='col-md-6'>
                     <label className='form-label fw-semibold text-sm'>Duration (seconds)</label>

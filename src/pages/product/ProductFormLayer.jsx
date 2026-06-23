@@ -13,6 +13,7 @@ import {
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
+import { IMAGE_ACCEPT } from "../../lib/acceptImages";
 
 function parseMeta(v) {
   if (!v) return {};
@@ -199,9 +200,14 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
   useEffect(() => {
     if (!formData.categoryId || !categories.length) return;
     const chosen = categories.find((c) => c.id === formData.categoryId);
-    if (chosen?.parentId) {
+    if (!chosen) return;
+    if (chosen.parentId) {
       setFormData((prev) =>
         prev.parentCategoryId === chosen.parentId ? prev : { ...prev, parentCategoryId: chosen.parentId || "" },
+      );
+    } else {
+      setFormData((prev) =>
+        prev.parentCategoryId === chosen.id ? prev : { ...prev, parentCategoryId: chosen.id },
       );
     }
   }, [formData.categoryId, categories]);
@@ -261,10 +267,12 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
       toast.error("Select category.");
       return;
     }
-    if (!formData.categoryId?.trim()) {
+    if (subcategories.length > 0 && !formData.categoryId?.trim()) {
       toast.error("Select subcategory.");
       return;
     }
+    const effectiveCategoryId =
+      subcategories.length > 0 ? formData.categoryId : formData.parentCategoryId;
 
     setSubmitting(true);
     try {
@@ -274,7 +282,7 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
         isActive: formData.availability === "Yes",
         moderationStatus: formData.availability === "Yes" ? "approved" : "pending",
         vendorId: formData.vendorId || null,
-        categoryId: formData.categoryId || null,
+        categoryId: effectiveCategoryId || null,
         serviceId: null,
         sellPrice: formData.sellPrice || null,
         discountAmount: formData.discountAmount || null,
@@ -383,9 +391,24 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
                         {rootCategories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                       </select>
                     </Field>
-                    <Field col='col-md-4' label='Subcategory'>
-                      <select className='form-select radius-10' name='categoryId' value={formData.categoryId} onChange={handleChange} disabled={disabled || !formData.parentCategoryId}>
-                        <option value=''>{formData.parentCategoryId ? "Select subcategory" : "Select category first"}</option>
+                    <Field col='col-md-4' label={subcategories.length > 0 ? "Subcategory *" : "Subcategory"}>
+                      {subcategories.length === 0 && formData.parentCategoryId ? (
+                        <p className="text-secondary-light text-xs mb-8">No subcategories for this category — product links to the category directly.</p>
+                      ) : null}
+                      <select
+                        className='form-select radius-10'
+                        name='categoryId'
+                        value={formData.categoryId}
+                        onChange={handleChange}
+                        disabled={disabled || !formData.parentCategoryId || subcategories.length === 0}
+                      >
+                        <option value=''>
+                          {!formData.parentCategoryId
+                            ? "Select category first"
+                            : subcategories.length === 0
+                              ? "N/A"
+                              : "Select subcategory"}
+                        </option>
                         {subcategories.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                       </select>
                     </Field>
@@ -410,7 +433,7 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
                     <input
                       type='file'
                       className='form-control radius-10 mb-10'
-                      accept='image/*'
+                      accept={IMAGE_ACCEPT}
                       disabled={disabled}
                       onChange={(e) => {
                         const f = e.target.files?.[0];

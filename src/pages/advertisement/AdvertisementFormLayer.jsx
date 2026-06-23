@@ -8,6 +8,7 @@ import {
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
+import { IMAGE_OR_VIDEO_ACCEPT, IMAGE_ACCEPT } from "../../lib/acceptImages";
 
 const empty = () => ({
   title: "",
@@ -205,7 +206,7 @@ const AdvertisementFormLayer = ({ isEdit = false, isView = false, initialData = 
                 </div>
               )}
               {!isView && (
-                <input type='file' className='form-control radius-8' name='logoImage' onChange={handleLogo} accept='image/*' />
+                <input type='file' className='form-control radius-8' name='logoImage' onChange={handleLogo} accept={IMAGE_ACCEPT} />
               )}
             </div>
 
@@ -217,7 +218,7 @@ const AdvertisementFormLayer = ({ isEdit = false, isView = false, initialData = 
                 </div>
               )}
               {!isView && (
-                <input type='file' className='form-control radius-8' name='banner' onChange={handleBanner} accept='image/*,video/*' />
+                <input type='file' className='form-control radius-8' name='banner' onChange={handleBanner} accept={IMAGE_OR_VIDEO_ACCEPT} />
               )}
             </div>
           </div>

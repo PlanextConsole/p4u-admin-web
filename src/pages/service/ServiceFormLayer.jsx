@@ -11,6 +11,8 @@ import {
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
+import { IMAGE_ACCEPT } from "../../lib/acceptImages";
+import MediaLibraryPicker from "../../components/admin/MediaLibraryPicker";
 
 const YES_NO = ["Yes", "No"];
 
@@ -44,6 +46,7 @@ const ServiceFormLayer = ({ isEdit = false, isView = false, serviceId, onSuccess
   const [submitting, setSubmitting] = useState(false);
   const [pendingIcon, setPendingIcon] = useState(null);
   const pendingIconRef = useRef(null);
+  const [mediaLibraryOpen, setMediaLibraryOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -318,18 +321,31 @@ const ServiceFormLayer = ({ isEdit = false, isView = false, serviceId, onSuccess
                 <div className="bg-neutral-50 radius-12 p-16">
                   <label className="form-label fw-semibold text-primary-light text-sm mb-8">Service icon / image</label>
                   <p className="text-secondary-light text-xs mb-8">Square icon or image used in the booking journey (not a product gallery).</p>
-                  <input
-                    type="file"
-                    className="form-control radius-8"
-                    accept="image/*"
-                    disabled={disabled}
-                    onChange={(e) => {
-                      if (e.target.files?.[0]) {
-                        setPendingIcon(e.target.files[0]);
-                        pendingIconRef.current = e.target.files[0];
-                      }
-                    }}
-                  />
+                  <div className="d-flex flex-wrap gap-8 mb-8">
+                    <input
+                      type="file"
+                      className="form-control radius-8 flex-grow-1"
+                      style={{ minWidth: 200 }}
+                      accept={IMAGE_ACCEPT}
+                      disabled={disabled}
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) {
+                          setPendingIcon(e.target.files[0]);
+                          pendingIconRef.current = e.target.files[0];
+                        }
+                      }}
+                    />
+                    {!disabled && (
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary radius-8 text-nowrap"
+                        onClick={() => setMediaLibraryOpen(true)}
+                      >
+                        <Icon icon="mdi:folder-image" className="me-4" />
+                        Media Library
+                      </button>
+                    )}
+                  </div>
                   {(pendingIcon || formData.iconUrl) && (
                     <div className="mt-8">
                       <img
@@ -342,6 +358,15 @@ const ServiceFormLayer = ({ isEdit = false, isView = false, serviceId, onSuccess
                       />
                     </div>
                   )}
+                  <MediaLibraryPicker
+                    open={mediaLibraryOpen}
+                    onClose={() => setMediaLibraryOpen(false)}
+                    onSelect={(url) => {
+                      setFormData((prev) => ({ ...prev, iconUrl: url }));
+                      setPendingIcon(null);
+                      pendingIconRef.current = null;
+                    }}
+                  />
                 </div>
               </div>
 

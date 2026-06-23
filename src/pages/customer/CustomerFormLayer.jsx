@@ -94,9 +94,13 @@ const CustomerFormLayer = ({ isEdit = false, isView = false, customerId, onSucce
   const [loadError, setLoadError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [editStatus, setEditStatus] = useState("");
+  const [editFullName, setEditFullName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editOccupationId, setEditOccupationId] = useState("");
   const [editing, setEditing] = useState(Boolean(isEdit));
   const [activeTab, setActiveTab] = useState("profile");
   const [occMap, setOccMap] = useState({});
+  const [occupations, setOccupations] = useState([]);
 
   const [orders, setOrders] = useState([]);
   const [ordersTotal, setOrdersTotal] = useState(0);
@@ -117,16 +121,21 @@ const CustomerFormLayer = ({ isEdit = false, isView = false, customerId, onSucce
   const apply = useCallback((row) => {
     setCustomer(row);
     setEditStatus(row.status || "active");
+    setEditFullName(row.fullName || "");
+    setEditPhone(row.phone || "");
+    setEditOccupationId(row.occupationId || "");
   }, []);
 
   useEffect(() => {
     listOccupations({ purpose: "all" })
       .then((res) => {
+        const items = res.items || [];
         const om = {};
-        (res.items || []).forEach((o) => {
+        items.forEach((o) => {
           om[o.id] = o.name;
         });
         setOccMap(om);
+        setOccupations(items);
       })
       .catch(() => {});
   }, []);
@@ -304,7 +313,12 @@ const CustomerFormLayer = ({ isEdit = false, isView = false, customerId, onSucce
     if (!customerId || (!editing && isView)) return;
     setSubmitting(true);
     try {
-      const updated = await updateCustomer(customerId, { status: editStatus.trim() || "active" });
+      const updated = await updateCustomer(customerId, {
+        fullName: editFullName.trim() || undefined,
+        phone: editPhone.trim() || null,
+        occupationId: editOccupationId || null,
+        status: editStatus.trim() || "active",
+      });
       apply(updated);
       toast.success("Customer updated.");
       setEditing(false);
@@ -424,7 +438,19 @@ const CustomerFormLayer = ({ isEdit = false, isView = false, customerId, onSucce
               <div className="row g-16 mb-20">
                 <div className="col-md-6">
                   <label className={labelCls}>Full Name *</label>
-                  <div className={valueCls}>{customer.fullName || "—"}</div>
+                  {editing ? (
+                    <input
+                      type="text"
+                      className="form-control radius-10"
+                      value={editFullName}
+                      onChange={(e) => setEditFullName(e.target.value)}
+                      disabled={submitting}
+                      maxLength={255}
+                      required
+                    />
+                  ) : (
+                    <div className={valueCls}>{customer.fullName || "—"}</div>
+                  )}
                 </div>
                 <div className="col-md-6">
                   <label className={labelCls}>Status</label>
@@ -459,14 +485,41 @@ const CustomerFormLayer = ({ isEdit = false, isView = false, customerId, onSucce
                 </div>
                 <div className="col-md-6">
                   <label className={labelCls}>Mobile</label>
-                  <div className={`${valueCls} d-flex align-items-center gap-8`}>
-                    <Icon icon="mdi:phone-outline" className="text-secondary-light" />
-                    {customer.phone || "—"}
-                  </div>
+                  {editing ? (
+                    <input
+                      type="tel"
+                      className="form-control radius-10"
+                      value={editPhone}
+                      onChange={(e) => setEditPhone(e.target.value)}
+                      disabled={submitting}
+                      maxLength={32}
+                    />
+                  ) : (
+                    <div className={`${valueCls} d-flex align-items-center gap-8`}>
+                      <Icon icon="mdi:phone-outline" className="text-secondary-light" />
+                      {customer.phone || "—"}
+                    </div>
+                  )}
                 </div>
                 <div className="col-md-6">
                   <label className={labelCls}>Occupation</label>
-                  <div className={valueCls}>{occupationLabel}</div>
+                  {editing ? (
+                    <select
+                      className="form-select radius-10"
+                      value={editOccupationId}
+                      onChange={(e) => setEditOccupationId(e.target.value)}
+                      disabled={submitting}
+                    >
+                      <option value="">— None —</option>
+                      {occupations.map((o) => (
+                        <option key={o.id} value={o.id}>
+                          {o.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className={valueCls}>{occupationLabel}</div>
+                  )}
                 </div>
               </div>
 
@@ -763,7 +816,10 @@ const CustomerFormLayer = ({ isEdit = false, isView = false, customerId, onSucce
                     className="btn btn-light border radius-10 px-20"
                     onClick={() => {
                       if (isEdit) back();
-                      else setEditing(false);
+                      else {
+                        if (customer) apply(customer);
+                        setEditing(false);
+                      }
                     }}
                     disabled={submitting}
                   >

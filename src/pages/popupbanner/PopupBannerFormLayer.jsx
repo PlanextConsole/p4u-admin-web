@@ -8,6 +8,7 @@ import {
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
+import { IMAGE_ACCEPT } from "../../lib/acceptImages";
 
 const empty = () => ({
   title: "",
@@ -192,7 +193,7 @@ const PopupBannerFormLayer = ({ isEdit = false, isView = false, initialData = nu
                   className='form-control radius-8'
                   name='popupImage'
                   onChange={handleFileChange}
-                  accept='image/*'
+                  accept={IMAGE_ACCEPT}
                 />
               )}
             </div>

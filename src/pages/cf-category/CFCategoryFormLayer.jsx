@@ -8,6 +8,7 @@ import {
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
+import { IMAGE_ACCEPT } from "../../lib/acceptImages";
 
 const empty = () => ({
   name: "",
@@ -152,9 +153,14 @@ const CFCategoryFormLayer = ({ isEdit = false, isView = false, initialData = nul
 
             <div className='col-md-12 mb-20'>
               <label className='form-label fw-semibold text-primary-light text-sm mb-8'>Thumbnail</label>
-              {form.thumbnailUrl && (
+              {(pendingThumb || form.thumbnailUrl) && (
                 <div className='mb-12'>
-                  <img src={resolveMediaUrl(form.thumbnailUrl)} alt='Category thumbnail' style={{ maxHeight: 80, objectFit: "cover", borderRadius: 6 }} onError={(e) => { e.target.style.display = 'none'; }} />
+                  <img
+                    src={pendingThumb ? URL.createObjectURL(pendingThumb) : resolveMediaUrl(form.thumbnailUrl)}
+                    alt='Category thumbnail'
+                    style={{ maxHeight: 80, objectFit: "cover", borderRadius: 6 }}
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
                 </div>
               )}
               {!isView && (
@@ -163,7 +169,7 @@ const CFCategoryFormLayer = ({ isEdit = false, isView = false, initialData = nul
                   className='form-control radius-8'
                   name='thumbnail'
                   onChange={handleFileChange}
-                  accept='image/*'
+                  accept={IMAGE_ACCEPT}
                 />
               )}
             </div>

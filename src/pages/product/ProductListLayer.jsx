@@ -123,14 +123,19 @@ const ProductListLayer = () => {
   }, [products]);
 
   const exportCsv = () => {
+    const metaVolume = (p) => {
+      const m = p.metadata && typeof p.metadata === "object" ? p.metadata : {};
+      return m.specVolume ?? p.specVolume ?? "";
+    };
     const csvRows = [
-      ["ID", "Product", "Vendor", "Price", "Discount", "Status", "Created"],
+      ["ID", "Product", "Vendor", "Price", "Discount", "Volume", "Status", "Created"],
       ...filtered.map((p) => [
         p.productRef || p.id || "",
         p.name || "",
         vendorMap[p.vendorId] || "",
         resolveAdminProductUnitPrice(p),
         p.discountAmount || "",
+        metaVolume(p),
         isPendingModeration(p) ? "pending_approval" : (p.availability || p.isActive) ? "active" : "inactive",
         p.createdAt || "",
       ]),
