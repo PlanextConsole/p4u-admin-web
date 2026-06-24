@@ -577,28 +577,6 @@ export function deleteMediaLibraryAsset(id) {
   return api.delete(`/api/admin/media-library/assets/${encodeURIComponent(id)}`);
 }
 
-export function getMediaLibraryB2Status() {
-  return api.get("/api/admin/media-library/b2/status");
-}
-
-/** @param {{ prefix?: string }} [params] */
-export function browseMediaLibraryB2(params) {
-  return api.get("/api/admin/media-library/b2/browse", params);
-}
-
-export function importMediaLibraryFromB2(body) {
-  return api.post("/api/admin/media-library/b2/import", body);
-}
-
-/** @param {{ limit?: number, offset?: number }} [params] */
-export function listMediaMigrateCandidates(params) {
-  return api.get("/api/admin/media-library/migrate/candidates", params);
-}
-
-export function migrateMediaAssetToB2(id) {
-  return api.post(`/api/admin/media-library/assets/${encodeURIComponent(id)}/migrate-to-b2`, {});
-}
-
 /** @param {{ limit?: number, offset?: number }} [params] */
 export function listBulkUploadJobs(params) {
   return api.get("/api/admin/file-uploads/jobs", params);
