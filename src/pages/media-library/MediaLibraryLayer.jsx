@@ -13,6 +13,7 @@ import { ApiError } from "../../lib/api/client";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
 import { formatDateTime } from "../../lib/formatters";
 import FormModal from "../../components/admin/FormModal";
+import { TableActionButton } from "../../components/admin/TableActionButtons";
 
 const TABS = [
   { key: "media", label: "Media Files", icon: "mdi:folder-outline" },
@@ -338,13 +339,11 @@ const MediaLibraryLayer = () => {
                     {a.originalName}
                   </div>
                   <div className='text-xs text-neutral-500'>{formatBytes(a.sizeBytes)}</div>
-                  <div className='d-flex gap-4 mt-8'>
+                  <div className='d-flex gap-10 mt-8 align-items-center justify-content-center'>
                     <a className='btn btn-outline-primary btn-sm py-0 px-8 radius-6' href={resolveMediaUrl(a.fileUrl) || a.fileUrl} target='_blank' rel='noreferrer'>
                       Open
                     </a>
-                    <button type='button' className='btn btn-outline-danger btn-sm py-0 px-8 radius-6' onClick={() => handleDeleteAsset(a.id)}>
-                      Delete
-                    </button>
+                    <TableActionButton type='delete' onClick={() => handleDeleteAsset(a.id)} />
                   </div>
                 </div>
               </div>

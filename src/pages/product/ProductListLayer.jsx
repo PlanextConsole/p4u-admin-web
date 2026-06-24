@@ -6,6 +6,7 @@ import { ApiError } from "../../lib/api/client";
 import { formatDateTime } from "../../lib/formatters";
 import { resolveAdminProductUnitPrice } from "../../lib/resolveProductPrice";
 import FormModal from "../../components/admin/FormModal";
+import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 import ProductFormLayer from "./ProductFormLayer";
 
 function toCsv(rows) {
@@ -215,7 +216,7 @@ const ProductListLayer = () => {
                     <th>DISCOUNT</th>
                     <th>STATUS</th>
                     <th>CREATED</th>
-                    <th>ACTIONS</th>
+                    <TableActionHeader />
                   </tr>
                 </thead>
                 <tbody>
@@ -249,8 +250,8 @@ const ProductListLayer = () => {
                             </span>
                           </td>
                           <td>{formatDateTime(product.createdAt)}</td>
-                          <td>
-                            <div className='d-flex align-items-center gap-10 flex-wrap'>
+                          <TableActionCell className='text-center'>
+                            <div className='d-flex align-items-center gap-10 justify-content-center flex-wrap'>
                               {pendingMod ? (
                                 <button
                                   type='button'
@@ -261,17 +262,15 @@ const ProductListLayer = () => {
                                   Approve
                                 </button>
                               ) : null}
-                              <button type='button' onClick={() => setModal({ mode: "view", id: product.id })} className='btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-secondary-light' style={{ width: 36, height: 36 }} title='View'>
-                                <Icon icon='majesticons:eye-line' className='text-xl' />
-                              </button>
-                              <button type='button' onClick={() => setModal({ mode: "edit", id: product.id })} className='btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-secondary-light' style={{ width: 36, height: 36 }} title='Edit'>
-                                <Icon icon='lucide:edit' className='text-xl' />
-                              </button>
-                              <button type='button' onClick={() => handleDelete(product.id)} className='btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-danger-600' style={{ width: 36, height: 36 }} title='Delete'>
-                                <Icon icon='fluent:delete-24-regular' className='text-xl' />
-                              </button>
+                              <TableActionButtons
+                                actions={[
+                                  { type: "view", onClick: () => setModal({ mode: "view", id: product.id }) },
+                                  { type: "edit", onClick: () => setModal({ mode: "edit", id: product.id }) },
+                                  { type: "delete", onClick: () => handleDelete(product.id) },
+                                ]}
+                              />
                             </div>
-                          </td>
+                          </TableActionCell>
                         </tr>
                       );
                     })

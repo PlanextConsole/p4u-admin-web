@@ -3,6 +3,7 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { toast } from "react-toastify";
 import { deleteVendor, listOrders, listVendors } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
+import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 
 const STATUS_OPTIONS = [
   { value: "", label: "All" },
@@ -461,7 +462,7 @@ export default function VendorPerformanceReportLayer() {
                       <SortTh label='RATING' sortKey='rating' activeKey={sort.key} dir={sort.dir} onSort={toggleSort} />
                       <SortTh label='JOINED ON' sortKey='joined' activeKey={sort.key} dir={sort.dir} onSort={toggleSort} />
                       <SortTh label='STATUS' sortKey='status' activeKey={sort.key} dir={sort.dir} onSort={toggleSort} />
-                      <th className='text-end'>ACTIONS</th>
+                      <TableActionHeader />
                     </tr>
                   </thead>
                   <tbody>
@@ -489,17 +490,11 @@ export default function VendorPerformanceReportLayer() {
                             <td className='text-secondary-light'>—</td>
                             <td>{formatJoined(v.createdAt)}</td>
                             <td>{kycBadge(v)}</td>
-                            <td className='text-end'>
-                              <button
-                                type='button'
-                                className='btn btn-light border-0 rounded-circle d-inline-flex align-items-center justify-content-center text-danger-600'
-                                style={{ width: 36, height: 36 }}
-                                title='Delete vendor'
-                                onClick={() => void handleDelete(v.id)}
-                              >
-                                <Icon icon='mdi:trash-can-outline' className='text-xl' />
-                              </button>
-                            </td>
+                            <TableActionCell
+                              actions={[
+                                { type: "delete", onClick: () => void handleDelete(v.id), title: "Delete vendor" },
+                              ]}
+                            />
                           </tr>
                         );
                       })

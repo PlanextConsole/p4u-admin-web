@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { createCustomer, deleteCustomer, listCustomers, listOccupations } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import FormModal from "../../components/admin/FormModal";
+import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 import CustomerFormLayer from "./CustomerFormLayer";
 
 const STATUS_OPTIONS = ["All", "active", "inactive", "suspended"];
@@ -253,7 +254,7 @@ const CustomerListLayer = () => {
                     <th scope="col">Status</th>
                     <th scope="col">Created</th>
                     <th scope="col">Updated</th>
-                    <th scope="col" className="text-center">Action</th>
+                    <TableActionHeader />
                   </tr>
                 </thead>
                 <tbody>
@@ -275,19 +276,13 @@ const CustomerListLayer = () => {
                           </td>
                           <td>{formatDate(customer.createdAt)}</td>
                           <td>{formatDate(customer.updatedAt)}</td>
-                          <td className="text-center">
-                            <div className="d-flex align-items-center gap-10 justify-content-center">
-                              <button type="button" onClick={() => setModal({ mode: "view", id: customer.id })} className="btn btn-light border-0 rounded-circle d-flex justify-content-center align-items-center text-secondary-light" style={{ width: 36, height: 36 }} title="View">
-                                <Icon icon="mdi:eye-outline" className="icon text-xl" />
-                              </button>
-                              <button type="button" onClick={() => setModal({ mode: "edit", id: customer.id })} className="btn btn-light border-0 rounded-circle d-flex justify-content-center align-items-center text-success-600" style={{ width: 36, height: 36 }} title="Edit">
-                                <Icon icon="lucide:edit" className="menu-icon" />
-                              </button>
-                              <button type="button" onClick={() => handleDelete(customer.id)} className="btn btn-light border-0 rounded-circle d-flex justify-content-center align-items-center text-danger-600" style={{ width: 36, height: 36 }} title="Delete">
-                                <Icon icon="fluent:delete-24-regular" className="menu-icon" />
-                              </button>
-                            </div>
-                          </td>
+                          <TableActionCell
+                            actions={[
+                              { type: "view", onClick: () => setModal({ mode: "view", id: customer.id }) },
+                              { type: "edit", onClick: () => setModal({ mode: "edit", id: customer.id }) },
+                              { type: "delete", onClick: () => handleDelete(customer.id) },
+                            ]}
+                          />
                         </tr>
                       );
                     })

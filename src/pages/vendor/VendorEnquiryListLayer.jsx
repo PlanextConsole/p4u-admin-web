@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { Link } from "react-router-dom";
 import { listVendors, updateVendor, deleteVendor } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import { normalizeVendorCategories, categorySlugToLabel } from "../../lib/formatters";
 import CountAndChips from "../../components/admin/CountAndChips";
+import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 
 const VendorEnquiryListLayer = () => {
   const [vendors, setVendors] = useState([]);
@@ -116,7 +116,7 @@ const VendorEnquiryListLayer = () => {
                     <th scope="col">City</th>
                     <th scope="col">Pincode</th>
                     <th scope="col" className="text-center">Status</th>
-                    <th scope="col" className="text-center">Action</th>
+                    <TableActionHeader />
                   </tr>
                 </thead>
                 <tbody>
@@ -145,22 +145,15 @@ const VendorEnquiryListLayer = () => {
                           <td className="text-center">
                             <span className="px-12 py-4 radius-4 fw-medium text-sm bg-danger-600 text-white">Not Verified</span>
                           </td>
-                          <td className="text-center">
-                            <div className="d-flex align-items-center gap-10 justify-content-center">
-                              <button type="button" onClick={() => handleVerify(vendor.id)}
-                                className="bg-success-focus bg-hover-success-200 text-success-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0" title="Verify">
-                                <Icon icon="mdi:check-circle-outline" className="icon text-xl" />
-                              </button>
-                              <Link to={`/edit-vendor/${vendor.id}`}
-                                className="bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle" title="Edit">
-                                <Icon icon="lucide:edit" className="menu-icon" />
-                              </Link>
-                              <button type="button" onClick={() => handleDelete(vendor.id)}
-                                className="remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0" title="Delete">
-                                <Icon icon="fluent:delete-24-regular" className="menu-icon" />
-                              </button>
-                            </div>
-                          </td>
+                          <TableActionCell>
+                            <TableActionButtons
+                              actions={[
+                                { type: "verify", onClick: () => handleVerify(vendor.id) },
+                                { type: "edit", href: `/edit-vendor/${vendor.id}` },
+                                { type: "delete", onClick: () => handleDelete(vendor.id) },
+                              ]}
+                            />
+                          </TableActionCell>
                         </tr>
                       );
                     })

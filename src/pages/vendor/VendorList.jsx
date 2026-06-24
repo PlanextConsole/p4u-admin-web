@@ -11,6 +11,7 @@ import {
 import { ApiError } from "../../lib/api/client";
 import { formatDateTime } from "../../lib/formatters";
 import FormModal from "../../components/admin/FormModal";
+import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 import VendorFormLayer from "./VendorFormLayer";
 
 const STATUS_TABS = [
@@ -333,7 +334,7 @@ const VendorListLayer = ({
                         <th>SUBMITTED</th>
                       </>
                     ) : null}
-                    <th className='text-nowrap'>ACTIONS</th>
+                    <TableActionHeader />
                   </tr>
                 </thead>
                 <tbody>
@@ -365,8 +366,8 @@ const VendorListLayer = ({
                               <td className='text-sm text-nowrap'>{vendor.createdAt ? formatDateTime(vendor.createdAt) : "—"}</td>
                             </>
                           ) : null}
-                          <td>
-                            <div className='d-flex align-items-center gap-10'>
+                          <TableActionCell>
+                            <div className='d-flex align-items-center gap-10 justify-content-center'>
                               {vendor.__signupRequestId ? (
                                 <button
                                   type='button'
@@ -385,24 +386,22 @@ const VendorListLayer = ({
                                 </button>
                               ) : null}
                               {viewEditId ? (
-                                <>
-                                  <button type='button' onClick={() => setModal({ mode: "view", id: viewEditId })} className='btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-secondary-light' style={{ width: 36, height: 36 }}>
-                                    <Icon icon='majesticons:eye-line' className='text-xl' />
-                                  </button>
-                                  <button type='button' onClick={() => setModal({ mode: "edit", id: viewEditId })} className='btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-secondary-light' style={{ width: 36, height: 36 }}>
-                                    <Icon icon='lucide:edit' className='text-xl' />
-                                  </button>
-                                  <button type='button' onClick={() => void handleDelete(viewEditId)} className='btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-danger-600' style={{ width: 36, height: 36 }}>
-                                    <Icon icon='fluent:delete-24-regular' className='text-xl' />
-                                  </button>
-                                </>
+                                <TableActionButtons
+                                  actions={[
+                                    { type: "view", onClick: () => setModal({ mode: "view", id: viewEditId }) },
+                                    { type: "edit", onClick: () => setModal({ mode: "edit", id: viewEditId }) },
+                                    { type: "delete", onClick: () => void handleDelete(viewEditId) },
+                                  ]}
+                                />
                               ) : vendor.__signupRequestId ? (
-                                <button type='button' onClick={() => setModal({ mode: "view", signupApplication: vendor })} className='btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-secondary-light' style={{ width: 36, height: 36 }} title='View application'>
-                                  <Icon icon='majesticons:eye-line' className='text-xl' />
-                                </button>
+                                <TableActionButtons
+                                  actions={[
+                                    { type: "view", onClick: () => setModal({ mode: "view", signupApplication: vendor }), title: "View application" },
+                                  ]}
+                                />
                               ) : null}
                             </div>
-                          </td>
+                          </TableActionCell>
                         </tr>
                       );
                     })

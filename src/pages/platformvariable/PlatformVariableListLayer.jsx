@@ -3,6 +3,7 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { listPlatformVariables, deletePlatformVariable } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import FormModal from "../../components/admin/FormModal";
+import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 import PlatformVariableFormLayer from "./PlatformVariableFormLayer";
 
 const PlatformVariableListLayer = () => {
@@ -89,7 +90,7 @@ const PlatformVariableListLayer = () => {
                     <th>Value Type</th>
                     <th>Currency Type</th>
                     <th>CreatedAt</th>
-                    <th className="text-center">Action</th>
+                    <TableActionHeader />
                   </tr>
                 </thead>
                 <tbody>
@@ -105,19 +106,13 @@ const PlatformVariableListLayer = () => {
                           <td>{v.valueType || "—"}</td>
                           <td>{v.currencyType || "None"}</td>
                           <td>{formatDate(row.createdAt)}</td>
-                          <td className="text-center">
-                            <div className="d-flex align-items-center gap-10 justify-content-center">
-                              <button type="button" onClick={() => setModal({ mode: "view", id: row.id })} className="border-0 bg-transparent text-info-600 p-0" title="View">
-                                <Icon icon="mdi:information-outline" className="text-xl" />
-                              </button>
-                              <button type="button" onClick={() => setModal({ mode: "edit", id: row.id })} className="border-0 bg-transparent text-success-600 p-0" title="Edit">
-                                <Icon icon="lucide:edit" className="text-xl" />
-                              </button>
-                              <button type="button" onClick={() => handleDelete(row.id)} className="border-0 bg-transparent text-danger-600 p-0" title="Delete">
-                                <Icon icon="fluent:delete-24-regular" className="text-xl" />
-                              </button>
-                            </div>
-                          </td>
+                          <TableActionCell
+                            actions={[
+                              { type: "view", icon: "mdi:information-outline", onClick: () => setModal({ mode: "view", id: row.id }) },
+                              { type: "edit", onClick: () => setModal({ mode: "edit", id: row.id }) },
+                              { type: "delete", onClick: () => handleDelete(row.id) },
+                            ]}
+                          />
                         </tr>
                       );
                     })

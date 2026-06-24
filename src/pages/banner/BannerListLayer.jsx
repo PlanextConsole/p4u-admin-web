@@ -6,6 +6,7 @@ import {
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import FormModal from "../../components/admin/FormModal";
+import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 import BannerFormLayer from "./BannerFormLayer";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
 
@@ -102,7 +103,7 @@ const BannerListLayer = () => {
                   <th scope='col'>Type</th>
                   <th scope='col'>Application</th>
                   <th scope='col' className='text-center'>Active</th>
-                  <th scope='col' className='text-center'>Action</th>
+                  <TableActionHeader />
                 </tr>
               </thead>
               <tbody>
@@ -147,19 +148,13 @@ const BannerListLayer = () => {
                             {banner.isActive !== false ? "Yes" : "No"}
                           </span>
                         </td>
-                        <td className='text-center'>
-                          <div className='d-flex align-items-center gap-10 justify-content-center'>
-                            <button type='button' onClick={() => setModal({ mode: "view", id: banner.id })} className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0' title='View'>
-                              <Icon icon='majesticons:eye-line' className='icon text-xl' />
-                            </button>
-                            <button type='button' onClick={() => setModal({ mode: "edit", id: banner.id })} className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0' title='Edit'>
-                              <Icon icon='lucide:edit' className='menu-icon' />
-                            </button>
-                            <button type='button' onClick={() => handleDelete(banner.id)} className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle' title='Delete'>
-                              <Icon icon='fluent:delete-24-regular' className='menu-icon' />
-                            </button>
-                          </div>
-                        </td>
+                        <TableActionCell
+                          actions={[
+                            { type: "view", onClick: () => setModal({ mode: "view", id: banner.id }) },
+                            { type: "edit", onClick: () => setModal({ mode: "edit", id: banner.id }) },
+                            { type: "delete", onClick: () => handleDelete(banner.id) },
+                          ]}
+                        />
                       </tr>
                     );
                   })

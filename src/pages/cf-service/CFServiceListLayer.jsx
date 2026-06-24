@@ -8,6 +8,7 @@ import {
 import { ApiError } from "../../lib/api/client";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
 import FormModal from "../../components/admin/FormModal";
+import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 import CFServiceFormLayer from "./CFServiceFormLayer";
 
 const CFServiceListLayer = () => {
@@ -116,7 +117,7 @@ const CFServiceListLayer = () => {
                   <th scope='col'>Categories</th>
                   <th scope='col'>Description</th>
                   <th scope='col' className='text-center'>Availability</th>
-                  <th scope='col' className='text-center'>Action</th>
+                  <TableActionHeader />
                 </tr>
               </thead>
               <tbody>
@@ -154,19 +155,13 @@ const CFServiceListLayer = () => {
                             {service.isActive !== false ? "Active" : "Inactive"}
                           </span>
                         </td>
-                        <td className='text-center'>
-                          <div className='d-flex align-items-center gap-10 justify-content-center'>
-                            <button type='button' onClick={() => setModal({ mode: "view", id: service.id })} className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0' title='View'>
-                              <Icon icon='majesticons:eye-line' className='icon text-xl' />
-                            </button>
-                            <button type='button' onClick={() => setModal({ mode: "edit", id: service.id })} className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0' title='Edit'>
-                              <Icon icon='lucide:edit' className='menu-icon' />
-                            </button>
-                            <button type='button' onClick={() => handleDelete(service.id)} className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle' title='Delete'>
-                              <Icon icon='fluent:delete-24-regular' className='menu-icon' />
-                            </button>
-                          </div>
-                        </td>
+                        <TableActionCell
+                          actions={[
+                            { type: "view", onClick: () => setModal({ mode: "view", id: service.id }) },
+                            { type: "edit", onClick: () => setModal({ mode: "edit", id: service.id }) },
+                            { type: "delete", onClick: () => handleDelete(service.id) },
+                          ]}
+                        />
                       </tr>
                     );
                   })

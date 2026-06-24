@@ -6,6 +6,7 @@ import {
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import FormModal from "../../components/admin/FormModal";
+import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 import TaxFormLayer from "./TaxFormLayer";
 
 const TaxListLayer = () => {
@@ -99,7 +100,7 @@ const TaxListLayer = () => {
                   <th scope='col'>Rate</th>
                   <th scope='col' className='text-center'>Active</th>
                   <th scope='col'>Description</th>
-                  <th scope='col' className='text-center'>Action</th>
+                  <TableActionHeader />
                 </tr>
               </thead>
               <tbody>
@@ -124,16 +125,12 @@ const TaxListLayer = () => {
                           {(tax.metadata && tax.metadata.description) || "—"}
                         </span>
                       </td>
-                      <td className='text-center'>
-                        <div className='d-flex align-items-center gap-10 justify-content-center'>
-                          <button type='button' onClick={() => setModal({ mode: "edit", id: tax.id })} className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0' title='Edit'>
-                            <Icon icon='lucide:edit' className='menu-icon' />
-                          </button>
-                          <button type='button' onClick={() => handleDelete(tax.id)} className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle' title='Delete'>
-                            <Icon icon='fluent:delete-24-regular' className='menu-icon' />
-                          </button>
-                        </div>
-                      </td>
+                      <TableActionCell
+                        actions={[
+                          { type: "edit", onClick: () => setModal({ mode: "edit", id: tax.id }) },
+                          { type: "delete", onClick: () => handleDelete(tax.id) },
+                        ]}
+                      />
                     </tr>
                   ))
                 )}

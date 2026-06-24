@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import FormModal from "../../components/admin/FormModal";
+import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 import {
   deleteVendorPlan,
   listVendorPlans,
@@ -119,7 +120,7 @@ const VendorPlanListLayer = () => {
                     <th>Payment</th>
                     <th>Promotions</th>
                     <th>Status</th>
-                    <th className='text-center'>Action</th>
+                    <TableActionHeader />
                   </tr>
                 </thead>
                 <tbody>
@@ -149,12 +150,12 @@ const VendorPlanListLayer = () => {
                             {row.isActive ? "Active" : "Inactive"}
                           </span>
                         </td>
-                        <td className='text-center'>
-                          <div className='d-flex align-items-center gap-8 justify-content-center'>
-                            <button type='button' onClick={() => setModal({ mode: "edit", item: row })} className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium px-12 py-8 radius-8 border-0'>Edit</button>
-                            <button type='button' onClick={() => handleDelete(row.id)} className='bg-danger-focus text-danger-600 bg-hover-danger-200 fw-medium px-12 py-8 radius-8 border-0'>Delete</button>
-                          </div>
-                        </td>
+                        <TableActionCell
+                          actions={[
+                            { type: "edit", onClick: () => setModal({ mode: "edit", item: row }) },
+                            { type: "delete", onClick: () => handleDelete(row.id) },
+                          ]}
+                        />
                       </tr>
                     );
                   })}

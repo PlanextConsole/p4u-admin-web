@@ -11,6 +11,7 @@ import {
   deleteServiceBooking,
   updateServiceBookingStatus,
 } from "../../lib/api/adminApi";
+import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 
 const STATUS_FILTERS = [
   { value: "", label: "All status" },
@@ -188,7 +189,7 @@ export default function ServiceBookingListLayer() {
                     <th>DATE</th>
                     <th>SLOT</th>
                     <th>STATUS</th>
-                    <th>ACTIONS</th>
+                    <TableActionHeader />
                   </tr>
                 </thead>
                 <tbody>
@@ -212,8 +213,8 @@ export default function ServiceBookingListLayer() {
                           <td>
                             <span className={`px-12 py-4 radius-pill text-xs fw-medium ${badge(st)}`}>{st || "pending"}</span>
                           </td>
-                          <td>
-                            <div className='d-flex align-items-center flex-wrap gap-8'>
+                          <TableActionCell>
+                            <div className='d-flex align-items-center justify-content-center gap-10 flex-wrap'>
                               {st === "pending" && (
                                 <>
                                   <button
@@ -232,15 +233,13 @@ export default function ServiceBookingListLayer() {
                                   </button>
                                 </>
                               )}
-                              <button
-                                type='button'
-                                className='btn btn-sm btn-outline-danger'
-                                onClick={() => void removeBooking(r)}
-                              >
-                                Delete
-                              </button>
+                              <TableActionButtons
+                                actions={[
+                                  { type: "delete", onClick: () => void removeBooking(r) },
+                                ]}
+                              />
                             </div>
-                          </td>
+                          </TableActionCell>
                         </tr>
                       );
                     })

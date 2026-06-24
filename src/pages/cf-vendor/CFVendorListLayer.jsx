@@ -10,6 +10,7 @@ import {
 import { ApiError } from "../../lib/api/client";
 import { formatDateTime } from "../../lib/formatters";
 import FormModal from "../../components/admin/FormModal";
+import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 import CFVendorFormLayer from "./CFVendorFormLayer";
 
 function normalizeStatus(row) {
@@ -267,7 +268,7 @@ const CFVendorListLayer = () => {
                   <th>STATUS</th>
                   <th>CREATED</th>
                   <th>UPDATED</th>
-                  <th>ACTIONS</th>
+                  <TableActionHeader />
                 </tr>
               </thead>
               <tbody>
@@ -297,19 +298,13 @@ const CFVendorListLayer = () => {
                         </td>
                         <td>{formatDateTime(item.createdAt)}</td>
                         <td>{formatDateTime(item.updatedAt)}</td>
-                        <td>
-                          <div className='d-flex align-items-center gap-10'>
-                            <button type='button' onClick={() => setModal({ mode: "view", id: item.id })} className='btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-secondary-light' style={{ width: 36, height: 36 }} title='View'>
-                              <Icon icon='majesticons:eye-line' className='text-xl' />
-                            </button>
-                            <button type='button' onClick={() => setModal({ mode: "edit", id: item.id })} className='btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-secondary-light' style={{ width: 36, height: 36 }} title='Edit'>
-                              <Icon icon='lucide:edit' className='text-xl' />
-                            </button>
-                            <button type='button' onClick={() => handleDelete(item.id)} className='btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-danger-600' style={{ width: 36, height: 36 }} title='Delete'>
-                              <Icon icon='fluent:delete-24-regular' className='text-xl' />
-                            </button>
-                          </div>
-                        </td>
+                        <TableActionCell
+                          actions={[
+                            { type: "view", onClick: () => setModal({ mode: "view", id: item.id }) },
+                            { type: "edit", onClick: () => setModal({ mode: "edit", id: item.id }) },
+                            { type: "delete", onClick: () => handleDelete(item.id) },
+                          ]}
+                        />
                       </tr>
                     );
                   })

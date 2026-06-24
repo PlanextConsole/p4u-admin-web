@@ -7,6 +7,7 @@ import { ApiError } from "../../lib/api/client";
 import { isPlatformVariableRowAllowingAction } from "../../lib/platformVariableValue";
 import { formatDateTime } from "../../lib/formatters";
 import FormModal from "../../components/admin/FormModal";
+import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 import OccupationFormLayer from "./OccupationFormLayer";
 
 /** Display ID like OCC0000023 (7-digit suffix from 1-based index in sorted list). */
@@ -233,7 +234,7 @@ export default function OccupationListLayer() {
                   <th>Status</th>
                   <th>Created</th>
                   <th>Updated</th>
-                  <th className="text-center">Action</th>
+                  <TableActionHeader />
                 </tr>
               </thead>
               <tbody>
@@ -260,19 +261,13 @@ export default function OccupationListLayer() {
                         </td>
                         <td>{formatDateTime(row.createdAt)}</td>
                         <td>{formatDateTime(row.updatedAt)}</td>
-                        <td>
-                          <div className="d-flex gap-10 justify-content-center">
-                            <button type="button" onClick={() => setModal({ mode: "view", id: row.id })} className="bg-info-focus text-info-600 w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0" title="View">
-                              <Icon icon="majesticons:eye-line" className="icon text-xl" />
-                            </button>
-                            <button type="button" onClick={() => setModal({ mode: "edit", id: row.id })} className="bg-success-focus text-success-600 w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0" title="Edit">
-                              <Icon icon="lucide:edit" />
-                            </button>
-                            <button type="button" onClick={() => onDelete(row.id)} className="bg-danger-focus text-danger-600 w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0" title="Delete">
-                              <Icon icon="fluent:delete-24-regular" className="icon text-xl" />
-                            </button>
-                          </div>
-                        </td>
+                        <TableActionCell
+                          actions={[
+                            { type: "view", onClick: () => setModal({ mode: "view", id: row.id }) },
+                            { type: "edit", onClick: () => setModal({ mode: "edit", id: row.id }) },
+                            { type: "delete", onClick: () => onDelete(row.id) },
+                          ]}
+                        />
                       </tr>
                     );
                   })

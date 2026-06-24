@@ -14,6 +14,7 @@ import { ApiError } from "../../lib/api/client";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
 import { IMAGE_OR_VIDEO_ACCEPT, IMAGE_ACCEPT } from "../../lib/acceptImages";
 import FormModal from "../../components/admin/FormModal";
+import TableActionButtons from "../../components/admin/TableActionButtons";
 
 const TABS = [
   { key: "hero", label: "Hero Banners" },
@@ -498,12 +499,12 @@ const HomepageCmsLayer = () => {
                               onChange={(e) => patchActive(row, e.target.checked)}
                             />
                           </div>
-                          <button type='button' className='btn btn-light border radius-8 p-8' onClick={() => openEdit(row)} title='Edit'>
-                            <Icon icon='lucide:edit' />
-                          </button>
-                          <button type='button' className='btn btn-light border radius-8 p-8 text-danger-600' onClick={() => handleDelete(row.id)} title='Delete'>
-                            <Icon icon='fluent:delete-24-regular' />
-                          </button>
+                          <TableActionButtons
+                            actions={[
+                              { type: "edit", onClick: () => openEdit(row) },
+                              { type: "delete", onClick: () => handleDelete(row.id) },
+                            ]}
+                          />
                         </div>
                       </div>
                     </li>

@@ -14,6 +14,7 @@ import { ApiError } from "../../lib/api/client";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
 import CountAndChips from "../../components/admin/CountAndChips";
 import FormModal from "../../components/admin/FormModal";
+import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 import CategoryFormLayer from "./CategoryFormLayer";
 
 /**
@@ -211,7 +212,7 @@ const CategoryListLayer = ({ variant = "service-roots" }) => {
                     <th scope="col" className="text-center">Availability</th>
                     <th scope="col" className="text-center">Trending</th>
                     <th scope="col" className="text-center">Verification Status</th>
-                    <th scope="col" className="text-center">Action</th>
+                    <TableActionHeader />
                   </tr>
                 </thead>
                 <tbody>
@@ -261,19 +262,13 @@ const CategoryListLayer = ({ variant = "service-roots" }) => {
                           <td className="text-center">
                             <span className="px-12 py-4 radius-4 fw-medium text-sm bg-success-600 text-white">VERIFIED</span>
                           </td>
-                          <td className="text-center">
-                            <div className="d-flex align-items-center gap-10 justify-content-center">
-                              <button type="button" onClick={() => setModal({ mode: "view", id: cat.id })} className="bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0" title="View">
-                                <Icon icon="majesticons:eye-line" className="icon text-xl" />
-                              </button>
-                              <button type="button" onClick={() => setModal({ mode: "edit", id: cat.id })} className="bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0" title="Edit">
-                                <Icon icon="lucide:edit" className="menu-icon" />
-                              </button>
-                              <button type="button" onClick={() => handleDelete(cat.id)} className="remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0" title="Delete">
-                                <Icon icon="fluent:delete-24-regular" className="menu-icon" />
-                              </button>
-                            </div>
-                          </td>
+                          <TableActionCell
+                            actions={[
+                              { type: "view", onClick: () => setModal({ mode: "view", id: cat.id }) },
+                              { type: "edit", onClick: () => setModal({ mode: "edit", id: cat.id }) },
+                              { type: "delete", onClick: () => handleDelete(cat.id) },
+                            ]}
+                          />
                         </tr>
                       );
                     })

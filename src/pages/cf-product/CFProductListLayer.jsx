@@ -10,6 +10,7 @@ import {
 import { ApiError } from "../../lib/api/client";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
 import FormModal from "../../components/admin/FormModal";
+import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 import CFProductFormLayer from "./CFProductFormLayer";
 
 const CFProductListLayer = () => {
@@ -116,7 +117,7 @@ const CFProductListLayer = () => {
                   <th scope='col'>Description</th>
                   <th scope='col'>Price</th>
                   <th scope='col' className='text-center'>Status</th>
-                  <th scope='col' className='text-center'>Action</th>
+                  <TableActionHeader />
                 </tr>
               </thead>
               <tbody>
@@ -145,13 +146,16 @@ const CFProductListLayer = () => {
                             {item.isActive !== false ? "Available" : "Unavailable"}
                           </span>
                         </td>
-                        <td className='text-center'>
-                          <div className='d-flex align-items-center gap-10 justify-content-center'>
-                            <button type='button' onClick={() => setModal({ mode: "view", id: item.id })} className='bg-info-focus text-info-600 w-32-px h-32-px d-flex justify-content-center align-items-center rounded-circle border-0'><Icon icon='majesticons:eye-line' /></button>
-                            <button type='button' onClick={() => setModal({ mode: "edit", id: item.id })} className='bg-success-focus text-success-600 w-32-px h-32-px d-flex justify-content-center align-items-center rounded-circle border-0'><Icon icon='lucide:edit' /></button>
-                            <button type='button' onClick={() => handleDelete(item.id)} className='bg-danger-focus text-danger-600 w-32-px h-32-px d-flex justify-content-center align-items-center rounded-circle border-0'><Icon icon='fluent:delete-24-regular' /></button>
-                          </div>
-                        </td>
+                        <TableActionCell>
+                          <TableActionButtons
+                            size="sm"
+                            actions={[
+                              { type: "view", onClick: () => setModal({ mode: "view", id: item.id }) },
+                              { type: "edit", onClick: () => setModal({ mode: "edit", id: item.id }) },
+                              { type: "delete", onClick: () => handleDelete(item.id) },
+                            ]}
+                          />
+                        </TableActionCell>
                       </tr>
                     );
                   })

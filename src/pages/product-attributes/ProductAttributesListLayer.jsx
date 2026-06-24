@@ -3,6 +3,7 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { toast } from "react-toastify";
 import Breadcrumb from "../../components/Breadcrumb";
 import FormModal from "../../components/admin/FormModal";
+import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 import { ApiError } from "../../lib/api/client";
 import {
   createProductAttribute,
@@ -197,25 +198,13 @@ export default function ProductAttributesListLayer() {
                           </div>
                         </div>
                       </button>
-                      <div className='d-flex align-items-center gap-4 ms-auto'>
-                        <button
-                          type='button'
-                          className='btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-primary-light'
-                          style={{ width: 40, height: 40 }}
-                          title='Edit'
-                          onClick={() => setModal({ mode: "edit", row })}
-                        >
-                          <Icon icon='mdi:pencil-outline' className='text-xl' />
-                        </button>
-                        <button
-                          type='button'
-                          className='btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-danger-600'
-                          style={{ width: 40, height: 40 }}
-                          title='Delete'
-                          onClick={() => void handleDeleteRow(row)}
-                        >
-                          <Icon icon='mdi:trash-can-outline' className='text-xl' />
-                        </button>
+                      <div className='d-flex align-items-center gap-10 ms-auto'>
+                        <TableActionButtons
+                          actions={[
+                            { type: "edit", onClick: () => setModal({ mode: "edit", row }) },
+                            { type: "delete", onClick: () => void handleDeleteRow(row) },
+                          ]}
+                        />
                       </div>
                     </div>
                     {expanded && row.type === "select" && (

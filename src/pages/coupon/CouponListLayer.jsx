@@ -4,6 +4,7 @@ import { deleteCoupon, listCoupons } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import { formatDateTime, shortJson } from "../../lib/formatters";
 import FormModal from "../../components/admin/FormModal";
+import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 import CouponFormLayer from "./CouponFormLayer";
 
 export default function CouponListLayer() {
@@ -90,7 +91,7 @@ export default function CouponListLayer() {
                     <th>Discount</th>
                     <th>Valid from</th>
                     <th>Valid to</th>
-                    <th className="text-center">Action</th>
+                    <TableActionHeader />
                   </tr>
                 </thead>
                 <tbody>
@@ -112,23 +113,13 @@ export default function CouponListLayer() {
                         </td>
                         <td>{formatDateTime(row.validFrom)}</td>
                         <td>{formatDateTime(row.validTo)}</td>
-                        <td>
-                          <div className="d-flex gap-10 justify-content-center">
-                            <button type="button" onClick={() => setModal({ mode: "view", id: row.id })} className="bg-info-focus text-info-600 w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0">
-                              <Icon icon="majesticons:eye-line" className="icon text-xl" />
-                            </button>
-                            <button type="button" onClick={() => setModal({ mode: "edit", id: row.id })} className="bg-success-focus text-success-600 w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0">
-                              <Icon icon="lucide:edit" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => onDelete(row.id)}
-                              className="bg-danger-focus text-danger-600 w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0"
-                            >
-                              <Icon icon="fluent:delete-24-regular" className="icon text-xl" />
-                            </button>
-                          </div>
-                        </td>
+                        <TableActionCell
+                          actions={[
+                            { type: "view", onClick: () => setModal({ mode: "view", id: row.id }) },
+                            { type: "edit", onClick: () => setModal({ mode: "edit", id: row.id }) },
+                            { type: "delete", onClick: () => onDelete(row.id) },
+                          ]}
+                        />
                       </tr>
                     ))
                   )}

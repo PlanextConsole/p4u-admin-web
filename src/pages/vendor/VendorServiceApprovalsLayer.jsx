@@ -9,6 +9,7 @@ import {
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import { formatDateTime } from "../../lib/formatters";
+import { TableActionHeader } from "../../components/admin/TableActionButtons";
 
 /** When `embedded` is true, render without outer card (used inside Services page tab). */
 const VendorServiceApprovalsLayer = ({ embedded = false }) => {
@@ -109,7 +110,7 @@ const VendorServiceApprovalsLayer = ({ embedded = false }) => {
                 <th>SERVICE</th>
                 <th>PRICE (₹)</th>
                 <th>UPDATED</th>
-                <th>ACTIONS</th>
+                <TableActionHeader />
               </tr>
             </thead>
             <tbody>
@@ -122,7 +123,7 @@ const VendorServiceApprovalsLayer = ({ embedded = false }) => {
                     </td>
                     <td className="fw-bold">{row.price ?? "—"}</td>
                     <td>{formatDateTime(row.updatedAt)}</td>
-                    <td>
+                    <td className='text-center'>
                       <button
                         type="button"
                         className="btn btn-sm btn-success radius-8 px-16 py-6"

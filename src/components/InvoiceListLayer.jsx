@@ -1,5 +1,12 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link } from "react-router-dom";
+import TableActionButtons, { TableActionCell, TableActionHeader } from "./admin/TableActionButtons";
+
+const DEMO_ROW_ACTIONS = [
+  { type: "view", href: "#" },
+  { type: "edit", href: "#" },
+  { type: "delete", href: "#" },
+];
 
 const InvoiceListLayer = () => {
   return (
@@ -70,7 +77,7 @@ const InvoiceListLayer = () => {
               <th scope='col'>Issued Date</th>
               <th scope='col'>Amount</th>
               <th scope='col'>Status</th>
-              <th scope='col'>Action</th>
+              <TableActionHeader />
             </tr>
           </thead>
           <tbody>
@@ -113,26 +120,9 @@ const InvoiceListLayer = () => {
                   Paid
                 </span>
               </td>
-              <td>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='iconamoon:eye-light' />
-                </Link>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='lucide:edit' />
-                </Link>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='mingcute:delete-2-line' />
-                </Link>
-              </td>
+              <TableActionCell>
+                <TableActionButtons actions={DEMO_ROW_ACTIONS} />
+              </TableActionCell>
             </tr>
             <tr>
               <td>
@@ -173,26 +163,9 @@ const InvoiceListLayer = () => {
                   Paid
                 </span>
               </td>
-              <td>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='iconamoon:eye-light' />
-                </Link>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='lucide:edit' />
-                </Link>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='mingcute:delete-2-line' />
-                </Link>
-              </td>
+              <TableActionCell>
+                <TableActionButtons actions={DEMO_ROW_ACTIONS} />
+              </TableActionCell>
             </tr>
             <tr>
               <td>
@@ -233,26 +206,9 @@ const InvoiceListLayer = () => {
                   Paid
                 </span>
               </td>
-              <td>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='iconamoon:eye-light' />
-                </Link>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='lucide:edit' />
-                </Link>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='mingcute:delete-2-line' />
-                </Link>
-              </td>
+              <TableActionCell>
+                <TableActionButtons actions={DEMO_ROW_ACTIONS} />
+              </TableActionCell>
             </tr>
             <tr>
               <td>
@@ -293,26 +249,9 @@ const InvoiceListLayer = () => {
                   Paid
                 </span>
               </td>
-              <td>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='iconamoon:eye-light' />
-                </Link>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='lucide:edit' />
-                </Link>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='mingcute:delete-2-line' />
-                </Link>
-              </td>
+              <TableActionCell>
+                <TableActionButtons actions={DEMO_ROW_ACTIONS} />
+              </TableActionCell>
             </tr>
             <tr>
               <td>
@@ -353,26 +292,9 @@ const InvoiceListLayer = () => {
                   Pending
                 </span>
               </td>
-              <td>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='iconamoon:eye-light' />
-                </Link>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='lucide:edit' />
-                </Link>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='mingcute:delete-2-line' />
-                </Link>
-              </td>
+              <TableActionCell>
+                <TableActionButtons actions={DEMO_ROW_ACTIONS} />
+              </TableActionCell>
             </tr>
             <tr>
               <td>
@@ -413,26 +335,9 @@ const InvoiceListLayer = () => {
                   Paid
                 </span>
               </td>
-              <td>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='iconamoon:eye-light' />
-                </Link>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='lucide:edit' />
-                </Link>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='mingcute:delete-2-line' />
-                </Link>
-              </td>
+              <TableActionCell>
+                <TableActionButtons actions={DEMO_ROW_ACTIONS} />
+              </TableActionCell>
             </tr>
             <tr>
               <td>
@@ -473,26 +378,9 @@ const InvoiceListLayer = () => {
                   Paid
                 </span>
               </td>
-              <td>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='iconamoon:eye-light' />
-                </Link>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='lucide:edit' />
-                </Link>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='mingcute:delete-2-line' />
-                </Link>
-              </td>
+              <TableActionCell>
+                <TableActionButtons actions={DEMO_ROW_ACTIONS} />
+              </TableActionCell>
             </tr>
             <tr>
               <td>
@@ -533,26 +421,9 @@ const InvoiceListLayer = () => {
                   Pending
                 </span>
               </td>
-              <td>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='iconamoon:eye-light' />
-                </Link>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='lucide:edit' />
-                </Link>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='mingcute:delete-2-line' />
-                </Link>
-              </td>
+              <TableActionCell>
+                <TableActionButtons actions={DEMO_ROW_ACTIONS} />
+              </TableActionCell>
             </tr>
             <tr>
               <td>
@@ -593,26 +464,9 @@ const InvoiceListLayer = () => {
                   Paid
                 </span>
               </td>
-              <td>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='iconamoon:eye-light' />
-                </Link>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='lucide:edit' />
-                </Link>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='mingcute:delete-2-line' />
-                </Link>
-              </td>
+              <TableActionCell>
+                <TableActionButtons actions={DEMO_ROW_ACTIONS} />
+              </TableActionCell>
             </tr>
             <tr>
               <td>
@@ -653,26 +507,9 @@ const InvoiceListLayer = () => {
                   Paid
                 </span>
               </td>
-              <td>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='iconamoon:eye-light' />
-                </Link>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='lucide:edit' />
-                </Link>
-                <Link
-                  to='#'
-                  className='w-32-px h-32-px  me-8 bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center'
-                >
-                  <Icon icon='mingcute:delete-2-line' />
-                </Link>
-              </td>
+              <TableActionCell>
+                <TableActionButtons actions={DEMO_ROW_ACTIONS} />
+              </TableActionCell>
             </tr>
           </tbody>
         </table>

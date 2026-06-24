@@ -1,5 +1,8 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link } from "react-router-dom";
+import TableActionButtons, { TableActionCell, TableActionHeader } from "./admin/TableActionButtons";
+
+const DEMO_ROW_ACTIONS = [{ type: "view" }, { type: "edit" }, { type: "delete" }];
 
 const UsersListLayer = () => {
   return (
@@ -84,9 +87,7 @@ const UsersListLayer = () => {
                 <th scope='col' className='text-center'>
                   Status
                 </th>
-                <th scope='col' className='text-center'>
-                  Action
-                </th>
+                <TableActionHeader />
               </tr>
             </thead>
             <tbody>
@@ -130,34 +131,9 @@ const UsersListLayer = () => {
                     Active
                   </span>
                 </td>
-                <td className='text-center'>
-                  <div className='d-flex align-items-center gap-10 justify-content-center'>
-                    <button
-                      type='button'
-                      className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='majesticons:eye-line'
-                        className='icon text-xl'
-                      />
-                    </button>
-                    <button
-                      type='button'
-                      className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon icon='lucide:edit' className='menu-icon' />
-                    </button>
-                    <button
-                      type='button'
-                      className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='fluent:delete-24-regular'
-                        className='menu-icon'
-                      />
-                    </button>
-                  </div>
-                </td>
+                <TableActionCell>
+                  <TableActionButtons actions={DEMO_ROW_ACTIONS} />
+                </TableActionCell>
               </tr>
               <tr>
                 <td>
@@ -199,34 +175,9 @@ const UsersListLayer = () => {
                     Inactive
                   </span>
                 </td>
-                <td className='text-center'>
-                  <div className='d-flex align-items-center gap-10 justify-content-center'>
-                    <button
-                      type='button'
-                      className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='majesticons:eye-line'
-                        className='icon text-xl'
-                      />
-                    </button>
-                    <button
-                      type='button'
-                      className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon icon='lucide:edit' className='menu-icon' />
-                    </button>
-                    <button
-                      type='button'
-                      className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='fluent:delete-24-regular'
-                        className='menu-icon'
-                      />
-                    </button>
-                  </div>
-                </td>
+                <TableActionCell>
+                  <TableActionButtons actions={DEMO_ROW_ACTIONS} />
+                </TableActionCell>
               </tr>
               <tr>
                 <td>
@@ -268,34 +219,9 @@ const UsersListLayer = () => {
                     Active
                   </span>
                 </td>
-                <td className='text-center'>
-                  <div className='d-flex align-items-center gap-10 justify-content-center'>
-                    <button
-                      type='button'
-                      className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='majesticons:eye-line'
-                        className='icon text-xl'
-                      />
-                    </button>
-                    <button
-                      type='button'
-                      className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon icon='lucide:edit' className='menu-icon' />
-                    </button>
-                    <button
-                      type='button'
-                      className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='fluent:delete-24-regular'
-                        className='menu-icon'
-                      />
-                    </button>
-                  </div>
-                </td>
+                <TableActionCell>
+                  <TableActionButtons actions={DEMO_ROW_ACTIONS} />
+                </TableActionCell>
               </tr>
               <tr>
                 <td>
@@ -337,34 +263,9 @@ const UsersListLayer = () => {
                     Active
                   </span>
                 </td>
-                <td className='text-center'>
-                  <div className='d-flex align-items-center gap-10 justify-content-center'>
-                    <button
-                      type='button'
-                      className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='majesticons:eye-line'
-                        className='icon text-xl'
-                      />
-                    </button>
-                    <button
-                      type='button'
-                      className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon icon='lucide:edit' className='menu-icon' />
-                    </button>
-                    <button
-                      type='button'
-                      className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='fluent:delete-24-regular'
-                        className='menu-icon'
-                      />
-                    </button>
-                  </div>
-                </td>
+                <TableActionCell>
+                  <TableActionButtons actions={DEMO_ROW_ACTIONS} />
+                </TableActionCell>
               </tr>
               <tr>
                 <td>
@@ -406,34 +307,9 @@ const UsersListLayer = () => {
                     Inactive
                   </span>
                 </td>
-                <td className='text-center'>
-                  <div className='d-flex align-items-center gap-10 justify-content-center'>
-                    <button
-                      type='button'
-                      className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='majesticons:eye-line'
-                        className='icon text-xl'
-                      />
-                    </button>
-                    <button
-                      type='button'
-                      className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon icon='lucide:edit' className='menu-icon' />
-                    </button>
-                    <button
-                      type='button'
-                      className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='fluent:delete-24-regular'
-                        className='menu-icon'
-                      />
-                    </button>
-                  </div>
-                </td>
+                <TableActionCell>
+                  <TableActionButtons actions={DEMO_ROW_ACTIONS} />
+                </TableActionCell>
               </tr>
               <tr>
                 <td>
@@ -475,34 +351,9 @@ const UsersListLayer = () => {
                     Active
                   </span>
                 </td>
-                <td className='text-center'>
-                  <div className='d-flex align-items-center gap-10 justify-content-center'>
-                    <button
-                      type='button'
-                      className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='majesticons:eye-line'
-                        className='icon text-xl'
-                      />
-                    </button>
-                    <button
-                      type='button'
-                      className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon icon='lucide:edit' className='menu-icon' />
-                    </button>
-                    <button
-                      type='button'
-                      className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='fluent:delete-24-regular'
-                        className='menu-icon'
-                      />
-                    </button>
-                  </div>
-                </td>
+                <TableActionCell>
+                  <TableActionButtons actions={DEMO_ROW_ACTIONS} />
+                </TableActionCell>
               </tr>
               <tr>
                 <td>
@@ -544,34 +395,9 @@ const UsersListLayer = () => {
                     Active
                   </span>
                 </td>
-                <td className='text-center'>
-                  <div className='d-flex align-items-center gap-10 justify-content-center'>
-                    <button
-                      type='button'
-                      className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='majesticons:eye-line'
-                        className='icon text-xl'
-                      />
-                    </button>
-                    <button
-                      type='button'
-                      className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon icon='lucide:edit' className='menu-icon' />
-                    </button>
-                    <button
-                      type='button'
-                      className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='fluent:delete-24-regular'
-                        className='menu-icon'
-                      />
-                    </button>
-                  </div>
-                </td>
+                <TableActionCell>
+                  <TableActionButtons actions={DEMO_ROW_ACTIONS} />
+                </TableActionCell>
               </tr>
               <tr>
                 <td>
@@ -613,34 +439,9 @@ const UsersListLayer = () => {
                     Inactive
                   </span>
                 </td>
-                <td className='text-center'>
-                  <div className='d-flex align-items-center gap-10 justify-content-center'>
-                    <button
-                      type='button'
-                      className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='majesticons:eye-line'
-                        className='icon text-xl'
-                      />
-                    </button>
-                    <button
-                      type='button'
-                      className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon icon='lucide:edit' className='menu-icon' />
-                    </button>
-                    <button
-                      type='button'
-                      className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='fluent:delete-24-regular'
-                        className='menu-icon'
-                      />
-                    </button>
-                  </div>
-                </td>
+                <TableActionCell>
+                  <TableActionButtons actions={DEMO_ROW_ACTIONS} />
+                </TableActionCell>
               </tr>
               <tr>
                 <td>
@@ -682,34 +483,9 @@ const UsersListLayer = () => {
                     Active
                   </span>
                 </td>
-                <td className='text-center'>
-                  <div className='d-flex align-items-center gap-10 justify-content-center'>
-                    <button
-                      type='button'
-                      className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='majesticons:eye-line'
-                        className='icon text-xl'
-                      />
-                    </button>
-                    <button
-                      type='button'
-                      className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon icon='lucide:edit' className='menu-icon' />
-                    </button>
-                    <button
-                      type='button'
-                      className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='fluent:delete-24-regular'
-                        className='menu-icon'
-                      />
-                    </button>
-                  </div>
-                </td>
+                <TableActionCell>
+                  <TableActionButtons actions={DEMO_ROW_ACTIONS} />
+                </TableActionCell>
               </tr>
               <tr>
                 <td>
@@ -751,34 +527,9 @@ const UsersListLayer = () => {
                     Active
                   </span>
                 </td>
-                <td className='text-center'>
-                  <div className='d-flex align-items-center gap-10 justify-content-center'>
-                    <button
-                      type='button'
-                      className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='majesticons:eye-line'
-                        className='icon text-xl'
-                      />
-                    </button>
-                    <button
-                      type='button'
-                      className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon icon='lucide:edit' className='menu-icon' />
-                    </button>
-                    <button
-                      type='button'
-                      className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='fluent:delete-24-regular'
-                        className='menu-icon'
-                      />
-                    </button>
-                  </div>
-                </td>
+                <TableActionCell>
+                  <TableActionButtons actions={DEMO_ROW_ACTIONS} />
+                </TableActionCell>
               </tr>
             </tbody>
           </table>

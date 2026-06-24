@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import { listOrders, listVendors, getCustomer, updateOrder, getOrderStats } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import OrderDetailModal from "./OrderDetailModal";
+import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 
 const STATUS_OPTIONS = [
   { value: "", label: "Status" },
@@ -249,7 +250,7 @@ const OrderListLayer = () => {
                       <th>DISCOUNT</th>
                       <th>TOTAL</th>
                       <th>STATUS</th>
-                      <th></th>
+                      <TableActionHeader />
                     </tr>
                   </thead>
                   <tbody>
@@ -277,21 +278,13 @@ const OrderListLayer = () => {
                             <td className={disc > 0 ? "text-success-600" : ""}>{disc > 0 ? `-₹${disc.toLocaleString("en-IN")}` : "—"}</td>
                             <td className="fw-bold">₹{totalAmt.toLocaleString("en-IN")}</td>
                             <td><span className={`px-12 py-4 radius-pill text-xs fw-medium ${sb.cls}`}>{sb.label}</span></td>
-                            <td>
-                              <div className="d-flex align-items-center gap-12">
-                                <button type="button" className="btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-secondary-light" style={{ width: 36, height: 36 }} title="View" onClick={() => setModal({ orderId: o.id, mode: "view", customerName: custName, vendorName })}>
-                                  <Icon icon="mdi:eye-outline" className="text-xl" />
-                                </button>
-                                <button type="button" className="btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-secondary-light" style={{ width: 36, height: 36 }} title="Edit" onClick={() => setModal({ orderId: o.id, mode: "edit", customerName: custName, vendorName })}>
-                                  <Icon icon="mdi:pencil-outline" className="text-xl" />
-                                </button>
-                                {!isCancelled && (
-                                  <button type="button" className="btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center text-danger-600" style={{ width: 36, height: 36 }} title="Cancel" onClick={() => cancel(o)}>
-                                    <Icon icon="mdi:cancel" className="text-xl" />
-                                  </button>
-                                )}
-                              </div>
-                            </td>
+                            <TableActionCell
+                              actions={[
+                                { type: "view", onClick: () => setModal({ orderId: o.id, mode: "view", customerName: custName, vendorName }) },
+                                { type: "edit", onClick: () => setModal({ orderId: o.id, mode: "edit", customerName: custName, vendorName }) },
+                                { type: "cancel", hidden: isCancelled, onClick: () => cancel(o) },
+                              ]}
+                            />
                           </tr>
                         );
                       })

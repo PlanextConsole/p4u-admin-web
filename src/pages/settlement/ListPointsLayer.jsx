@@ -7,6 +7,7 @@ import {
 import { ApiError } from "../../lib/api/client";
 import { formatDateTime } from "../../lib/formatters";
 import FormModal from "../../components/admin/FormModal";
+import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 import SettlementFormLayer from "./SettlementFormLayer";
 
 const ListPointsLayer = () => {
@@ -107,7 +108,7 @@ const ListPointsLayer = () => {
                   <th scope='col'>Payment Mode</th>
                   <th scope='col'>Transaction ID</th>
                   <th scope='col'>Settlement Type</th>
-                  <th scope='col' className='text-center'>Action</th>
+                  <TableActionHeader />
                 </tr>
               </thead>
               <tbody>
@@ -129,13 +130,11 @@ const ListPointsLayer = () => {
                         <td>{meta.paymentMode || "—"}</td>
                         <td>{meta.transactionId || "—"}</td>
                         <td>{meta.settlementOwnerType || "Vendors"}</td>
-                        <td className='text-center'>
-                          <div className='d-flex align-items-center gap-10 justify-content-center'>
-                            <button type='button' onClick={() => setModal({ id: item.id })} className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle border-0' title='View Settlement'>
-                              <Icon icon='majesticons:eye-line' className='icon text-xl' />
-                            </button>
-                          </div>
-                        </td>
+                        <TableActionCell
+                          actions={[
+                            { type: "view", onClick: () => setModal({ id: item.id }), title: "View Settlement" },
+                          ]}
+                        />
                       </tr>
                     );
                   })
