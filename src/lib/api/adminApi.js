@@ -339,6 +339,19 @@ export function deleteCatalogService(id) {
   return api.delete(`/api/admin/services/${encodeURIComponent(id)}`);
 }
 
+/** Service bookings (`commerce_bookings`) — proxied via gateway to commerce-management-service. */
+export function listServiceBookings(params) {
+  return api.get("/api/v1/commerce/bookings/admin", params);
+}
+
+export function updateServiceBookingStatus(bookingId, body) {
+  return api.patch(`/api/v1/commerce/bookings/${encodeURIComponent(bookingId)}/status`, body);
+}
+
+export function deleteServiceBooking(bookingId) {
+  return api.delete(`/api/v1/commerce/bookings/${encodeURIComponent(bookingId)}`);
+}
+
 export function listOrders(params) {
   return api.get("/api/admin/orders", params);
 }
