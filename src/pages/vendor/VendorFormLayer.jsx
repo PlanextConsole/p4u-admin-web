@@ -16,6 +16,8 @@ import { IMAGE_ACCEPT, IMAGE_OR_PDF_ACCEPT } from "../../lib/acceptImages";
 import ImageUploadField from "../../components/admin/ImageUploadField";
 import { validateVendorForm } from "../../lib/validation/vendorForm";
 
+const VEND_REF_RE = /^VEND[a-f0-9]{6}$/i;
+
 const emptyForm = (kind = "product") => ({
   vendorKind: kind === "service" ? "service" : "product",
   ownerName: "",
@@ -141,6 +143,7 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
   const [vendorPlans, setVendorPlans] = useState([]);
   const [pendingFiles, setPendingFiles] = useState({ thumbnailUrl: null, gstCertUrl: null, panCardUrl: null });
   const [fieldErrors, setFieldErrors] = useState({});
+  const [showTechnicalId, setShowTechnicalId] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -416,6 +419,23 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
   const disabled = isReadonly || submitting || entityLoading;
   const showSkeleton = Boolean(vendorId) && entityLoading;
 
+  const copyTechnicalId = async () => {
+    if (!vendorId) return;
+    try {
+      await navigator.clipboard.writeText(vendorId);
+      toast.success("Database ID copied to clipboard.");
+    } catch {
+      toast.error("Could not copy database ID.");
+    }
+  };
+
+  const displayVendorRef =
+    formData.vendorRef && VEND_REF_RE.test(String(formData.vendorRef).trim())
+      ? String(formData.vendorRef).trim()
+      : vendorId
+        ? "—"
+        : "Generated on save";
+
   return (
     <div className='card p-0 radius-16 border-0'>
       <div className='card-body p-12 p-sm-20'>
@@ -439,8 +459,8 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
                   </h4>
                   <p className='mb-0 text-neutral-600 text-md mt-4'>
                     {formData.ownerName || "—"}
-                    {formData.vendorRef && !/^VEND[a-f0-9]{6}$/i.test(String(formData.vendorRef).trim())
-                      ? ` · ${formData.vendorRef.trim()}`
+                    {formData.vendorRef && VEND_REF_RE.test(String(formData.vendorRef).trim())
+                      ? ` · ${String(formData.vendorRef).trim()}`
                       : ""}
                   </p>
                 </div>
@@ -464,16 +484,11 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
                   <Field col='col-md-6' label='Vendor ID'>
                     <input
                       className='form-control radius-10 bg-neutral-50'
-                      value={formData.vendorRef || (vendorId ? "—" : "Generated on save")}
+                      value={displayVendorRef}
                       readOnly
                       disabled
                     />
                   </Field>
-                  {vendorId ? (
-                    <Field col='col-md-6' label='Catalog UUID (bulk CSV vendor_id)'>
-                      <input className='form-control radius-10 bg-neutral-50 font-monospace text-sm' value={vendorId} readOnly disabled />
-                    </Field>
-                  ) : null}
                   <Field col='col-md-6' label='Owner Name *' error={fieldErrors.ownerName}><input className={`form-control radius-10${fieldErrors.ownerName ? " is-invalid" : ""}`} name='ownerName' value={formData.ownerName} onChange={handleChange} disabled={disabled} /></Field>
                   <Field col='col-md-6' label='Business Name *' error={fieldErrors.businessName}><input className={`form-control radius-10${fieldErrors.businessName ? " is-invalid" : ""}`} name='businessName' value={formData.businessName} onChange={handleChange} disabled={disabled} /></Field>
                   <Field col='col-md-6' label='Email *' error={fieldErrors.email}><input type='email' className={`form-control radius-10${fieldErrors.email ? " is-invalid" : ""}`} name='email' value={formData.email} onChange={handleChange} disabled={disabled} /></Field>
@@ -576,6 +591,26 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
                     </select>
                   </Field>
                 </div>
+
+                {vendorId ? (
+                  <div className='border border-neutral-200 radius-12 p-12'>
+                    <button
+                      type='button'
+                      className='btn btn-link btn-sm text-secondary-light p-0 text-decoration-none'
+                      onClick={() => setShowTechnicalId((v) => !v)}
+                    >
+                      {showTechnicalId ? "Hide technical ID" : "Show technical ID (for CSV import)"}
+                    </button>
+                    {showTechnicalId ? (
+                      <div className='d-flex flex-wrap align-items-center gap-8 mt-8'>
+                        <code className='text-sm text-break mb-0'>{vendorId}</code>
+                        <button type='button' className='btn btn-outline-primary-600 btn-sm radius-8' onClick={() => void copyTechnicalId()}>
+                          Copy database ID
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
 
                 <div className='bg-primary-25 radius-12 p-14'>
                   <div className='d-flex flex-wrap align-items-start justify-content-between gap-10 mb-10'>
