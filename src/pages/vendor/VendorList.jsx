@@ -6,6 +6,7 @@ import {
   deleteVendor,
   listPendingVendorApplications,
   listVendors,
+  rejectVendorRequest,
   updateVendor,
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
@@ -153,6 +154,28 @@ const VendorListLayer = ({
     try {
       await updateVendor(vendorId, { status: "active" });
       toast.success("Vendor approved.");
+      await load();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : String(e));
+    }
+  };
+
+  const handleRejectSignup = async (signupId) => {
+    if (!window.confirm("Reject this vendor signup? They will be told their request was rejected.")) return;
+    try {
+      await rejectVendorRequest(signupId, {});
+      toast.success("Vendor signup rejected.");
+      await load();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : String(e));
+    }
+  };
+
+  const handleRejectCatalog = async (vendorId) => {
+    if (!window.confirm("Reject this vendor application?")) return;
+    try {
+      await updateVendor(vendorId, { status: "rejected" });
+      toast.success("Vendor rejected.");
       await load();
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : String(e));
@@ -369,21 +392,39 @@ const VendorListLayer = ({
                           <TableActionCell>
                             <div className='d-flex align-items-center gap-10 justify-content-center'>
                               {vendor.__signupRequestId ? (
-                                <button
-                                  type='button'
-                                  onClick={() => void handleApproveSignup(vendor.__signupRequestId)}
-                                  className='btn btn-success btn-sm radius-10 px-12'
-                                >
-                                  Approve
-                                </button>
+                                <>
+                                  <button
+                                    type='button'
+                                    onClick={() => void handleApproveSignup(vendor.__signupRequestId)}
+                                    className='btn btn-success btn-sm radius-10 px-12'
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    type='button'
+                                    onClick={() => void handleRejectSignup(vendor.__signupRequestId)}
+                                    className='btn btn-outline-danger btn-sm radius-10 px-12'
+                                  >
+                                    Reject
+                                  </button>
+                                </>
                               ) : statusTab === "pending" && viewEditId ? (
-                                <button
-                                  type='button'
-                                  onClick={() => void handleApproveCatalog(viewEditId)}
-                                  className='btn btn-success btn-sm radius-10 px-12'
-                                >
-                                  Approve
-                                </button>
+                                <>
+                                  <button
+                                    type='button'
+                                    onClick={() => void handleApproveCatalog(viewEditId)}
+                                    className='btn btn-success btn-sm radius-10 px-12'
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    type='button'
+                                    onClick={() => void handleRejectCatalog(viewEditId)}
+                                    className='btn btn-outline-danger btn-sm radius-10 px-12'
+                                  >
+                                    Reject
+                                  </button>
+                                </>
                               ) : null}
                               {viewEditId ? (
                                 <TableActionButtons

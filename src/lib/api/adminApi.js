@@ -448,6 +448,10 @@ export function approveVendorRequest(id, body = {}) {
   return api.patch(`/api/admin/vendor-requests/${encodeURIComponent(id)}/approve`, body);
 }
 
+export function rejectVendorRequest(id, body = {}) {
+  return api.patch(`/api/admin/vendor-requests/${encodeURIComponent(id)}/reject`, body);
+}
+
 export function deleteVendorRequest(id) {
   return api.delete(`/api/admin/vendor-requests/${encodeURIComponent(id)}`);
 }
