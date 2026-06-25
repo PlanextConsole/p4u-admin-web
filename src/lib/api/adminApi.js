@@ -373,18 +373,6 @@ export function updateOrder(id, body) {
   return api.patch(`/api/admin/orders/individual/${encodeURIComponent(id)}`, body);
 }
 
-export function listServiceBookings(params) {
-  return api.get("/api/v1/commerce/bookings/admin", params);
-}
-
-export function updateServiceBookingStatus(id, status) {
-  return api.patch(`/api/v1/commerce/bookings/${encodeURIComponent(id)}/status`, { status });
-}
-
-export function deleteServiceBooking(id) {
-  return api.delete(`/api/v1/commerce/bookings/${encodeURIComponent(id)}`);
-}
-
 export function listCoupons(params) {
   return api.get("/api/admin/coupons", params);
 }
