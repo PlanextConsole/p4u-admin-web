@@ -19,6 +19,9 @@ import {
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
+import { IMAGE_ACCEPT } from "../../lib/acceptImages";
+import { formatUploadError, validateImageFile } from "../../lib/uploadHelpers";
+import ImageUploadField from "../../components/admin/ImageUploadField";
 
 const YES_NO = ["Yes", "No"];
 
@@ -170,30 +173,45 @@ const CategoryFormLayer = ({
     let bannerUrls = !isServiceRoot ? [...formData.bannerUrls] : undefined;
 
     if (isServiceRoot && pendingIcon) {
+      const iconErr = validateImageFile(pendingIcon);
+      if (iconErr) {
+        toast.error(iconErr);
+        return;
+      }
       try {
         const res = await uploadFile(pendingIcon);
         iconUrl = res.url;
       } catch (err) {
-        toast.error("Icon upload failed");
+        toast.error(formatUploadError(err, "Icon upload failed"));
         return;
       }
     }
     if (!isServiceRoot && pendingThumbnail) {
+      const thumbErr = validateImageFile(pendingThumbnail);
+      if (thumbErr) {
+        toast.error(thumbErr);
+        return;
+      }
       try {
         const res = await uploadFile(pendingThumbnail);
         thumbnailUrl = res.url;
       } catch (err) {
-        toast.error("Thumbnail upload failed");
+        toast.error(formatUploadError(err, "Thumbnail upload failed"));
         return;
       }
     }
     if (!isServiceRoot) {
       for (const file of pendingBanners) {
+        const bannerErr = validateImageFile(file);
+        if (bannerErr) {
+          toast.error(bannerErr);
+          return;
+        }
         try {
           const res = await uploadFile(file);
           bannerUrls.push(res.url);
         } catch (err) {
-          toast.error("Banner upload failed");
+          toast.error(formatUploadError(err, "Banner upload failed"));
           return;
         }
       }
@@ -431,14 +449,14 @@ const CategoryFormLayer = ({
               <div className="row bg-neutral-50 radius-12 p-16 mb-20">
                 <div className="col-md-12 mb-0">
                   <label className="form-label fw-semibold text-primary-light text-sm mb-8">Category icon</label>
-                  <input
-                    type="file"
-                    className="form-control radius-8"
-                    accept="image/*"
+                  <ImageUploadField
                     disabled={disabled}
-                    onChange={(e) => {
-                      if (e.target.files?.[0]) setPendingIcon(e.target.files[0]);
+                    onFileSelect={(f) => setPendingIcon(f)}
+                    onLibrarySelect={(url) => {
+                      setPendingIcon(null);
+                      setFormData((prev) => ({ ...prev, iconUrl: url }));
                     }}
+                    libraryTitle="Choose category icon"
                   />
                   {(pendingIcon || formData.iconUrl) && (
                     <div className="mt-8">
@@ -458,14 +476,14 @@ const CategoryFormLayer = ({
               <div className="row bg-neutral-50 radius-12 p-16 mb-20">
                 <div className="col-md-6 mb-20">
                   <label className="form-label fw-semibold text-primary-light text-sm mb-8">Thumbnail</label>
-                  <input
-                    type="file"
-                    className="form-control radius-8"
-                    accept="image/*"
+                  <ImageUploadField
                     disabled={disabled}
-                    onChange={(e) => {
-                      if (e.target.files?.[0]) setPendingThumbnail(e.target.files[0]);
+                    onFileSelect={(f) => setPendingThumbnail(f)}
+                    onLibrarySelect={(url) => {
+                      setPendingThumbnail(null);
+                      setFormData((prev) => ({ ...prev, thumbnailUrl: url }));
                     }}
+                    libraryTitle="Choose category thumbnail"
                   />
                   {(pendingThumbnail || formData.thumbnailUrl) && (
                     <div className="mt-8">
@@ -485,7 +503,7 @@ const CategoryFormLayer = ({
                   <input
                     type="file"
                     className="form-control radius-8"
-                    accept="image/*"
+                    accept={IMAGE_ACCEPT}
                     multiple
                     disabled={disabled}
                     onChange={(e) => {

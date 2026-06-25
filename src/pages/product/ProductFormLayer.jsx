@@ -14,6 +14,7 @@ import {
 import { ApiError } from "../../lib/api/client";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
 import { IMAGE_ACCEPT } from "../../lib/acceptImages";
+import ImageUploadField from "../../components/admin/ImageUploadField";
 
 function parseMeta(v) {
   if (!v) return {};
@@ -47,6 +48,56 @@ function splitLabelAndHex(value) {
   return { label: label || s, hex: m[2] };
 }
 
+function normalizeBannerUrls(value) {
+  if (value == null) return [];
+  if (Array.isArray(value)) {
+    return value.map((x) => String(x || "").trim()).filter(Boolean);
+  }
+  if (typeof value === "string") {
+    try {
+      return normalizeBannerUrls(JSON.parse(value));
+    } catch {
+      return value.trim() ? [value.trim()] : [];
+    }
+  }
+  return [];
+}
+
+function collectProductImageUrls(thumbnailUrl, bannerUrls) {
+  const seen = new Set();
+  const out = [];
+  const push = (url) => {
+    const u = String(url || "").trim();
+    if (!u || seen.has(u)) return;
+    seen.add(u);
+    out.push(u);
+  };
+  push(thumbnailUrl);
+  normalizeBannerUrls(bannerUrls).forEach(push);
+  return out;
+}
+
+function cartesianCombinations(attrs) {
+  const keys = Object.keys(attrs).filter((k) => (attrs[k] || []).length > 0);
+  if (!keys.length) return [];
+  return keys.reduce((acc, key) => {
+    const vals = attrs[key];
+    if (!acc.length) return vals.map((v) => ({ [key]: v }));
+    const out = [];
+    for (const row of acc) {
+      for (const v of vals) out.push({ ...row, [key]: v });
+    }
+    return out;
+  }, []);
+}
+
+function attrsKey(attrs) {
+  return Object.keys(attrs)
+    .sort()
+    .map((k) => `${k}=${attrs[k]}`)
+    .join("|");
+}
+
 const emptyForm = () => ({
   name: "",
   productRef: "",
@@ -77,6 +128,7 @@ const emptyForm = () => ({
   seoTitle: "",
   seoDescription: "",
   thumbnailUrl: "",
+  bannerUrls: [],
 });
 
 const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess, onCancel }) => {
@@ -88,6 +140,7 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
   const [taxItems, setTaxItems] = useState([]);
   const [attributeDefs, setAttributeDefs] = useState([]);
   const [selectedAttributes, setSelectedAttributes] = useState({});
+  const [variations, setVariations] = useState([]);
   const [refsLoading, setRefsLoading] = useState(true);
   const [entityLoading, setEntityLoading] = useState(Boolean(productId));
   const [loadError, setLoadError] = useState("");
@@ -138,6 +191,8 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
     const meta = parseMeta(row.metadata || row.metaJson || row.extraJson);
     const productAttrs = normalizeAttrSelections(meta.productAttributes || meta.attributes || {});
     setSelectedAttributes(productAttrs);
+    const bannerUrls = normalizeBannerUrls(row.bannerUrls);
+    const thumbnailUrl = row.thumbnailUrl || bannerUrls[0] || "";
     setFormData({
       name: row.name || "",
       productRef: row.productRef || `PRD-${String(row.id || "").slice(-6)}`,
@@ -166,8 +221,22 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
       specPackSize: meta.specPackSize || "",
       seoTitle: meta.seoTitle || "",
       seoDescription: meta.seoDescription || "",
-      thumbnailUrl: row.thumbnailUrl || "",
+      thumbnailUrl,
+      bannerUrls,
     });
+    const loaded = Array.isArray(row.variations) ? row.variations : [];
+    setVariations(
+      loaded.map((v) => ({
+        id: v.id,
+        sku: v.sku || "",
+        attributes: v.attributes || {},
+        sellPrice: String(v.sellPrice ?? ""),
+        discountAmount: String(v.discountAmount ?? "0"),
+        finalPrice: String(v.finalPrice ?? v.sellPrice ?? ""),
+        quantity: String(v.quantity ?? 0),
+        isActive: v.isActive !== false,
+      })),
+    );
   }, []);
 
   const toggleSelectAttribute = (attrName, option) => {
@@ -185,6 +254,42 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
       ...prev,
       [attrName]: value ? [String(value)] : [],
     }));
+  };
+
+  const generateVariationsFromAttributes = () => {
+    const combos = cartesianCombinations(selectedAttributes);
+    if (!combos.length) {
+      toast.error("Select attribute values before generating variations.");
+      setActiveTab("attributes");
+      return;
+    }
+    const sell = formData.sellPrice.trim() || "0";
+    const fin = formData.finalPrice.trim() || sell;
+    const disc = formData.discountAmount.trim() || "0";
+    const stock = formData.quantity.trim() || "0";
+    setVariations((prev) => {
+      const byKey = new Map(prev.map((r) => [attrsKey(r.attributes), r]));
+      return combos.map((attributes) => {
+        const existing = byKey.get(attrsKey(attributes));
+        return (
+          existing || {
+            attributes,
+            sku: "",
+            sellPrice: sell,
+            discountAmount: disc,
+            finalPrice: fin,
+            quantity: stock,
+            isActive: true,
+          }
+        );
+      });
+    });
+    setActiveTab("variations");
+  };
+
+  const updateVariationRow = (index, patch) => {
+    if (isReadonly) return;
+    setVariations((prev) => prev.map((row, i) => (i === index ? { ...row, ...patch } : row)));
   };
 
   const rootCategories = useMemo(
@@ -248,13 +353,17 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
     if (isReadonly) return;
 
     let thumbnailUrl = formData.thumbnailUrl;
+    let bannerUrls = [...normalizeBannerUrls(formData.bannerUrls)];
     const thumbFile = pendingThumbnailRef.current || pendingThumbnail;
     if (thumbFile) {
       try {
         const res = await uploadFile(thumbFile);
         thumbnailUrl = res.url;
-      } catch {
-        toast.error("Thumbnail upload failed");
+        if (!bannerUrls.includes(res.url)) {
+          bannerUrls = [res.url, ...bannerUrls.filter((u) => u !== res.url)];
+        }
+      } catch (err) {
+        toast.error(err instanceof ApiError ? err.message : "Thumbnail upload failed");
         return;
       }
     }
@@ -291,7 +400,8 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
         commissionOverridePercent: formData.commissionOverridePercent !== "" ? Number(formData.commissionOverridePercent) : null,
         shortDescription: formData.shortDescription.trim() || null,
         longDescription: formData.longDescription.trim() || null,
-        thumbnailUrl: thumbnailUrl || null,
+        thumbnailUrl: thumbnailUrl || bannerUrls[0] || null,
+        bannerUrls: bannerUrls.length > 0 ? bannerUrls : null,
         metadata: {
           sku: formData.sku || null,
           productType: formData.productType || "simple",
@@ -309,6 +419,21 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
           seoTitle: formData.seoTitle || null,
           seoDescription: formData.seoDescription || null,
         },
+        ...(formData.productType === "variable"
+          ? {
+              variations: variations.map((v, idx) => ({
+                ...(v.id ? { id: v.id } : {}),
+                sku: v.sku.trim() || null,
+                attributes: v.attributes,
+                sellPrice: v.sellPrice.trim() || formData.sellPrice || "0",
+                discountAmount: v.discountAmount.trim() || "0",
+                finalPrice: v.finalPrice.trim() || v.sellPrice.trim() || formData.finalPrice || formData.sellPrice || "0",
+                quantity: Number(v.quantity) || 0,
+                isActive: v.isActive !== false,
+                sortOrder: idx,
+              })),
+            }
+          : {}),
       };
 
       if (isEdit && productId) {
@@ -328,7 +453,10 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
 
   const disabled = isReadonly || submitting || refsLoading || entityLoading;
   const showSkeleton = Boolean(productId) && entityLoading;
-  const thumbnailSrc = pendingPreviewUrl || resolveMediaUrl(formData.thumbnailUrl);
+  const productImageUrls = useMemo(
+    () => collectProductImageUrls(formData.thumbnailUrl, formData.bannerUrls),
+    [formData.thumbnailUrl, formData.bannerUrls],
+  );
   const vendorName = vendors.find((v) => v.id === formData.vendorId)?.businessName || "—";
   const categoryName = categories.find((c) => c.id === formData.categoryId)?.name || "—";
 
@@ -361,6 +489,9 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
               <Tab active={activeTab === "general"} label='General' onClick={() => setActiveTab("general")} />
               <Tab active={activeTab === "pricing"} label='Pricing' onClick={() => setActiveTab("pricing")} />
               <Tab active={activeTab === "attributes"} label='Attributes' onClick={() => setActiveTab("attributes")} />
+              {formData.productType === "variable" ? (
+                <Tab active={activeTab === "variations"} label='Variations' onClick={() => setActiveTab("variations")} />
+              ) : null}
               <Tab active={activeTab === "seo"} label='SEO' onClick={() => setActiveTab("seo")} />
             </div>
 
@@ -412,6 +543,12 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
                         {subcategories.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                       </select>
                     </Field>
+                    <Field col='col-md-4' label='Product type'>
+                      <select className='form-select radius-10' name='productType' value={formData.productType} onChange={handleChange} disabled={disabled}>
+                        <option value='simple'>Simple</option>
+                        <option value='variable'>Variable</option>
+                      </select>
+                    </Field>
                     <Field col='col-md-4' label='Quantity'>
                       <input
                         type='number'
@@ -430,26 +567,44 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
                 <div className='bg-primary-25 radius-12 p-14'>
                   <h6 className='mb-10 fw-semibold'>Product Images</h6>
                   {!isReadonly && (
-                    <input
-                      type='file'
-                      className='form-control radius-10 mb-10'
-                      accept={IMAGE_ACCEPT}
+                    <ImageUploadField
                       disabled={disabled}
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) {
-                          setPendingThumbnail(f);
-                          pendingThumbnailRef.current = f;
-                        }
+                      accept={IMAGE_ACCEPT}
+                      libraryTitle="Choose product image"
+                      onFileSelect={(f) => {
+                        setPendingThumbnail(f);
+                        pendingThumbnailRef.current = f;
+                      }}
+                      onLibrarySelect={(url) => {
+                        setPendingThumbnail(null);
+                        pendingThumbnailRef.current = null;
+                        setFormData((prev) => {
+                          const banners = normalizeBannerUrls(prev.bannerUrls);
+                          const nextBanners = banners.includes(url) ? banners : [url, ...banners];
+                          return { ...prev, thumbnailUrl: url, bannerUrls: nextBanners };
+                        });
                       }}
                     />
                   )}
-                  <div className='d-flex align-items-center gap-10'>
-                    {thumbnailSrc ? (
-                      <img src={thumbnailSrc} alt='Product' style={{ width: 96, height: 96, borderRadius: 10, objectFit: "cover" }} />
-                    ) : (
+                  <div className='d-flex flex-wrap align-items-center gap-10'>
+                    {pendingPreviewUrl ? (
+                      <img src={pendingPreviewUrl} alt='New product upload' style={{ width: 96, height: 96, borderRadius: 10, objectFit: "cover" }} />
+                    ) : null}
+                    {productImageUrls.length > 0 ? (
+                      productImageUrls.map((url) => (
+                        <img
+                          key={url}
+                          src={resolveMediaUrl(url)}
+                          alt='Product'
+                          style={{ width: 96, height: 96, borderRadius: 10, objectFit: "cover" }}
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                          }}
+                        />
+                      ))
+                    ) : !pendingPreviewUrl ? (
                       <span className='text-secondary-light'>No image selected</span>
-                    )}
+                    ) : null}
                   </div>
                 </div>
 
@@ -525,6 +680,14 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
             {activeTab === "attributes" && (
               <section className='bg-primary-25 radius-12 p-14'>
                 <h5 className='fw-bold mb-12'>Attributes</h5>
+                {formData.productType === "variable" ? (
+                  <div className='d-flex flex-wrap align-items-center justify-content-between gap-8 mb-16 p-12 rounded-12 border border-primary-200 bg-primary-50'>
+                    <p className='mb-0 text-sm text-secondary-light'>Select values, then generate SKU rows on the Variations tab.</p>
+                    <button type='button' className='btn btn-primary btn-sm radius-10' onClick={generateVariationsFromAttributes} disabled={disabled}>
+                      Generate variations
+                    </button>
+                  </div>
+                ) : null}
                 {attributeDefs.length === 0 ? (
                   <p className='text-secondary-light mb-0'>No active product attributes found.</p>
                 ) : (
@@ -577,6 +740,54 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
                         </div>
                       );
                     })}
+                  </div>
+                )}
+              </section>
+            )}
+
+            {activeTab === "variations" && formData.productType === "variable" && (
+              <section className='bg-primary-25 radius-12 p-14'>
+                <div className='d-flex flex-wrap align-items-center justify-content-between gap-8 mb-16'>
+                  <div>
+                    <h5 className='fw-bold mb-4'>Variation SKUs</h5>
+                    <p className='mb-0 text-secondary-light text-sm'>Each row is a purchasable combination with its own price and stock.</p>
+                  </div>
+                  <button type='button' className='btn btn-outline-primary btn-sm radius-10' onClick={generateVariationsFromAttributes} disabled={disabled}>
+                    Regenerate from attributes
+                  </button>
+                </div>
+                {variations.length === 0 ? (
+                  <p className='text-secondary-light mb-0'>No variations yet.</p>
+                ) : (
+                  <div className='table-responsive rounded-12 border'>
+                    <table className='table table-sm mb-0 align-middle'>
+                      <thead className='bg-neutral-100'>
+                        <tr>
+                          <th>Attributes</th>
+                          <th>SKU</th>
+                          <th>MRP</th>
+                          <th>Discount</th>
+                          <th>Final</th>
+                          <th>Stock</th>
+                          <th>Active</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {variations.map((row, idx) => (
+                          <tr key={attrsKey(row.attributes) || idx}>
+                            <td className='text-xs text-secondary-light'>
+                              {Object.entries(row.attributes).map(([k, v]) => `${k}: ${v}`).join(" · ")}
+                            </td>
+                            <td><input className='form-control form-control-sm radius-8' value={row.sku} onChange={(e) => updateVariationRow(idx, { sku: e.target.value })} disabled={disabled} /></td>
+                            <td><input className='form-control form-control-sm radius-8' value={row.sellPrice} onChange={(e) => updateVariationRow(idx, { sellPrice: e.target.value })} disabled={disabled} /></td>
+                            <td><input className='form-control form-control-sm radius-8' value={row.discountAmount} onChange={(e) => updateVariationRow(idx, { discountAmount: e.target.value })} disabled={disabled} /></td>
+                            <td><input className='form-control form-control-sm radius-8' value={row.finalPrice} onChange={(e) => updateVariationRow(idx, { finalPrice: e.target.value })} disabled={disabled} /></td>
+                            <td><input type='number' min='0' className='form-control form-control-sm radius-8' value={row.quantity} onChange={(e) => updateVariationRow(idx, { quantity: e.target.value })} disabled={disabled} /></td>
+                            <td><input type='checkbox' checked={row.isActive} onChange={(e) => updateVariationRow(idx, { isActive: e.target.checked })} disabled={disabled} /></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </section>

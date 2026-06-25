@@ -8,6 +8,7 @@ import {
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
+import { IMAGE_ACCEPT } from "../../lib/acceptImages";
 
 const empty = () => ({
   name: "",
@@ -198,7 +199,7 @@ const CFServiceFormLayer = ({
                   className='form-control radius-8'
                   name='thumbnail'
                   onChange={handleFileChange}
-                  accept='image/*'
+                  accept={IMAGE_ACCEPT}
                 />
               )}
             </div>

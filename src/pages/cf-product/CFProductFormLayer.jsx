@@ -8,6 +8,7 @@ import {
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
+import { IMAGE_ACCEPT } from "../../lib/acceptImages";
 
 const empty = () => ({
   name: "",
@@ -228,7 +229,7 @@ const CFProductFormLayer = ({
                   <img src={resolveMediaUrl(form.imageUrls[0])} alt='Product' style={{ maxHeight: 60, objectFit: "cover", borderRadius: 6 }} onError={(e) => { e.target.style.display = 'none'; }} />
                 </div>
               )}
-              {!isView && <input type='file' className='form-control radius-8' name='image' onChange={handleImage} accept='image/*' />}
+              {!isView && <input type='file' className='form-control radius-8' name='image' onChange={handleImage} accept={IMAGE_ACCEPT} />}
             </div>
 
             <div className='col-md-6 mb-20'>
@@ -238,7 +239,7 @@ const CFProductFormLayer = ({
                   <img src={resolveMediaUrl(form.thumbnailUrl)} alt='Thumbnail' style={{ maxHeight: 60, objectFit: "cover", borderRadius: 6 }} onError={(e) => { e.target.style.display = 'none'; }} />
                 </div>
               )}
-              {!isView && <input type='file' className='form-control radius-8' name='thumbnail' onChange={handleThumb} accept='image/*' />}
+              {!isView && <input type='file' className='form-control radius-8' name='thumbnail' onChange={handleThumb} accept={IMAGE_ACCEPT} />}
             </div>
           </div>
 

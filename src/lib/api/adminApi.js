@@ -1,6 +1,7 @@
 import { api, ApiError, ensureTokenFresh } from "./client";
 import { buildApiUrl } from "./config";
 import { getAccessToken } from "./tokenStorage";
+import { imageUploadFilename } from "../uploadHelpers";
 
 /** @param {{ username: string, password: string }} body */
 export function loginPublic(body) {
@@ -18,7 +19,7 @@ export async function uploadFile(file) {
     /* same as apiRequest: proceed; 401 handled below */
   }
   const formData = new FormData();
-  formData.append("file", file, file.name);
+  formData.append("file", file, imageUploadFilename(file));
   const url = buildApiUrl("/api/admin/upload");
   const headers = {};
   const token = getAccessToken();

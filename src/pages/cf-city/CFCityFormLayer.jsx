@@ -8,6 +8,7 @@ import {
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
+import { IMAGE_ACCEPT } from "../../lib/acceptImages";
 
 const empty = () => ({
   name: "",
@@ -142,7 +143,7 @@ const CFCityFormLayer = ({ isEdit = false, isView = false, initialData = null, o
                   className='form-control radius-8'
                   name='icon'
                   onChange={handleFileChange}
-                  accept='image/*'
+                  accept={IMAGE_ACCEPT}
                 />
               )}
             </div>

@@ -12,6 +12,9 @@ import {
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
+import { IMAGE_ACCEPT, IMAGE_OR_PDF_ACCEPT } from "../../lib/acceptImages";
+import ImageUploadField from "../../components/admin/ImageUploadField";
+import { validateVendorForm } from "../../lib/validation/vendorForm";
 
 const emptyForm = (kind = "product") => ({
   vendorKind: kind === "service" ? "service" : "product",
@@ -137,6 +140,7 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
   const [catalogServices, setCatalogServices] = useState([]);
   const [vendorPlans, setVendorPlans] = useState([]);
   const [pendingFiles, setPendingFiles] = useState({ thumbnailUrl: null, gstCertUrl: null, panCardUrl: null });
+  const [fieldErrors, setFieldErrors] = useState({});
 
   useEffect(() => {
     let cancelled = false;
@@ -175,7 +179,7 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
           : "product",
       ownerName: row.ownerName || "",
       businessName: row.businessName || "",
-      vendorRef: row.vendorRef?.trim() || "",
+      vendorRef: row.vendorRef?.trim() || (row.documentsJson?.vendorRef ? String(row.documentsJson.vendorRef) : ""),
       email: row.email || "",
       phone: row.phone || "",
       status: row.status === "not_verified" ? "pending" : (row.status || "pending"),
@@ -254,6 +258,13 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
   const handleChange = (e) => {
     if (isReadonly) return;
     const { name, value, type, checked } = e.target;
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
+    }
     setFormData((prev) => {
       const next = { ...prev, [name]: type === "checkbox" ? checked : value };
       if (name === "vendorPlanId") {
@@ -293,16 +304,36 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
   const handleServicesChange = (e) => {
     if (isReadonly) return;
     const value = String(e.target.value || "").trim();
+    if (fieldErrors.selectedServiceIds) {
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next.selectedServiceIds;
+        return next;
+      });
+    }
     setFormData((prev) => ({ ...prev, selectedServiceIds: value ? [value] : [] }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isReadonly) return;
-    if (formData.vendorKind !== "product" && formData.vendorKind !== "service") {
-      toast.error("Please select a vendor type.");
+
+    const validation = validateVendorForm(formData);
+    if (!validation.valid) {
+      setFieldErrors(validation.errors);
+      toast.error(validation.firstMessage || "Please fix the highlighted fields.");
+      const firstKey = Object.keys(validation.errors)[0];
+      if (["gst", "pan", "stateName", "stateCode", "registeredShopAddress"].includes(firstKey)) {
+        setActiveTab("details");
+      } else if (["ifscCode", "bankName", "accountHolderName", "accountNumber"].includes(firstKey)) {
+        setActiveTab("kyc");
+      } else {
+        setActiveTab("details");
+      }
       return;
     }
+    setFieldErrors({});
+
     setSubmitting(true);
     try {
       const uploaded = { ...formData };
@@ -332,11 +363,11 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
       const vk = uploaded.vendorKind === "service" ? "service" : "product";
 
       const payload = {
-        ownerName: uploaded.ownerName?.trim() || null,
-        businessName: uploaded.businessName?.trim() || null,
+        ownerName: uploaded.ownerName.trim(),
+        businessName: uploaded.businessName.trim(),
         vendorRef: uploaded.vendorRef?.trim() || null,
-        email: uploaded.email?.trim() || null,
-        phone: uploaded.phone?.trim() || null,
+        email: uploaded.email.trim().toLowerCase(),
+        phone: String(uploaded.phone).replace(/\D/g, "").slice(-10),
         status: uploaded.status || "pending",
         paymentStatus: uploaded.paymentStatus || "unpaid",
         transactionRef: uploaded.transactionRef?.trim() || null,
@@ -345,8 +376,8 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
         vendorKind: vk,
         vendorType: vk === "service" ? "SERVICE" : "PRODUCT",
         bannerUrl: null,
-        gst: uploaded.gst?.trim() || null,
-        pan: uploaded.pan?.trim() || null,
+        gst: uploaded.gst?.trim().toUpperCase() || null,
+        pan: uploaded.pan?.trim().toUpperCase() || null,
         secondaryPhone: null,
         membershipStatus: null,
         experience: null,
@@ -370,8 +401,8 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
         await updateVendor(vendorId, payload);
         toast.success("Vendor updated.");
       } else {
-        await createVendor(payload);
-        toast.success("Vendor created.");
+        const created = await createVendor(payload);
+        toast.success(`Vendor created. ID: ${created.vendorRef || created.id}`);
       }
       if (onSuccess) onSuccess();
     } catch (err) {
@@ -430,13 +461,26 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
             {activeTab === "details" && (
               <section className='d-flex flex-column gap-16'>
                 <div className='row g-12'>
-                  <Field col='col-md-6' label='Owner Name *'><input className='form-control radius-10' name='ownerName' value={formData.ownerName} onChange={handleChange} disabled={disabled} /></Field>
-                  <Field col='col-md-6' label='Business Name *'><input className='form-control radius-10' name='businessName' value={formData.businessName} onChange={handleChange} disabled={disabled} /></Field>
-                  <Field col='col-md-6' label='Email'><input className='form-control radius-10' name='email' value={formData.email} onChange={handleChange} disabled={disabled} /></Field>
-                  <Field col='col-md-6' label='Mobile'><input className='form-control radius-10' name='phone' value={formData.phone} onChange={handleChange} disabled={disabled} /></Field>
+                  <Field col='col-md-6' label='Vendor ID'>
+                    <input
+                      className='form-control radius-10 bg-neutral-50'
+                      value={formData.vendorRef || (vendorId ? "—" : "Generated on save")}
+                      readOnly
+                      disabled
+                    />
+                  </Field>
+                  {vendorId ? (
+                    <Field col='col-md-6' label='Catalog UUID (bulk CSV vendor_id)'>
+                      <input className='form-control radius-10 bg-neutral-50 font-monospace text-sm' value={vendorId} readOnly disabled />
+                    </Field>
+                  ) : null}
+                  <Field col='col-md-6' label='Owner Name *' error={fieldErrors.ownerName}><input className={`form-control radius-10${fieldErrors.ownerName ? " is-invalid" : ""}`} name='ownerName' value={formData.ownerName} onChange={handleChange} disabled={disabled} /></Field>
+                  <Field col='col-md-6' label='Business Name *' error={fieldErrors.businessName}><input className={`form-control radius-10${fieldErrors.businessName ? " is-invalid" : ""}`} name='businessName' value={formData.businessName} onChange={handleChange} disabled={disabled} /></Field>
+                  <Field col='col-md-6' label='Email *' error={fieldErrors.email}><input type='email' className={`form-control radius-10${fieldErrors.email ? " is-invalid" : ""}`} name='email' value={formData.email} onChange={handleChange} disabled={disabled} /></Field>
+                  <Field col='col-md-6' label='Mobile *' error={fieldErrors.phone}><input className={`form-control radius-10${fieldErrors.phone ? " is-invalid" : ""}`} name='phone' value={formData.phone} onChange={handleChange} disabled={disabled} placeholder='10-digit mobile' /></Field>
                   {formData.vendorKind !== "service" && (
-                    <Field col='col-md-6' label='Vendor Category'>
-                      <select className='form-select radius-10' name='categorySlug' value={formData.categorySlug} onChange={handleChange} disabled={disabled}>
+                    <Field col='col-md-6' label='Vendor Category *' error={fieldErrors.categorySlug}>
+                      <select className={`form-select radius-10${fieldErrors.categorySlug ? " is-invalid" : ""}`} name='categorySlug' value={formData.categorySlug} onChange={handleChange} disabled={disabled}>
                         <option value=''>Select...</option>
                         {catalogCategories
                           .filter((c) => !c.parentId)
@@ -445,9 +489,9 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
                     </Field>
                   )}
                   {formData.vendorKind === "service" && (
-                    <Field col='col-md-6' label='Services'>
+                    <Field col='col-md-6' label='Services *' error={fieldErrors.selectedServiceIds}>
                       <select
-                        className='form-select radius-10'
+                        className={`form-select radius-10${fieldErrors.selectedServiceIds ? " is-invalid" : ""}`}
                         name='selectedServiceIds'
                         value={formData.selectedServiceIds?.[0] || ""}
                         onChange={handleServicesChange}
@@ -470,7 +514,7 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
                       <option value='suspended'>Deactivated</option>
                     </select>
                   </Field>
-                  <Field col='col-md-6' label='Vendor Type *'>
+                  <Field col='col-md-6' label='Vendor Type *' error={fieldErrors.vendorKind}>
                     <select
                       className='form-select radius-10'
                       name='vendorKind'
@@ -548,17 +592,29 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
                   </div>
                   <p className='text-neutral-600 text-sm mb-0'>These details appear on customer tax invoice issued under vendor name.</p>
                   <div className='row g-12'>
-                    <Field col='col-md-6' label='GSTIN (15 chars)'><input className='form-control radius-10' name='gst' value={formData.gst} onChange={handleChange} disabled={disabled} /></Field>
-                    <Field col='col-md-6' label='PAN (10 chars)'><input className='form-control radius-10' name='pan' value={formData.pan} onChange={handleChange} disabled={disabled} /></Field>
+                    <Field col='col-md-6' label='GSTIN (15 chars)' error={fieldErrors.gst}><input className={`form-control radius-10${fieldErrors.gst ? " is-invalid" : ""}`} name='gst' value={formData.gst} onChange={handleChange} disabled={disabled} maxLength={15} /></Field>
+                    <Field col='col-md-6' label='PAN (10 chars)' error={fieldErrors.pan}><input className={`form-control radius-10${fieldErrors.pan ? " is-invalid" : ""}`} name='pan' value={formData.pan} onChange={handleChange} disabled={disabled} maxLength={10} /></Field>
                     <Field col='col-md-6' label='State Name (place of supply)'><input className='form-control radius-10' name='stateName' value={formData.stateName} onChange={handleChange} disabled={disabled} /></Field>
-                    <Field col='col-md-6' label='State Code (2 digits)'><input className='form-control radius-10' name='stateCode' value={formData.stateCode} onChange={handleChange} disabled={disabled} /></Field>
+                    <Field col='col-md-6' label='State Code (2 digits)' error={fieldErrors.stateCode}><input className={`form-control radius-10${fieldErrors.stateCode ? " is-invalid" : ""}`} name='stateCode' value={formData.stateCode} onChange={handleChange} disabled={disabled} maxLength={2} /></Field>
                     <Field col='col-md-12' label='Registered Shop Address (printed on invoice)'><input className='form-control radius-10' name='registeredShopAddress' value={formData.registeredShopAddress} onChange={handleChange} disabled={disabled} /></Field>
                   </div>
                 </div>
 
                 <div className='bg-primary-25 radius-12 p-14'>
                   <h5 className='mb-12 fw-bold'>Shop Photo</h5>
-                  {!isReadonly && <input type='file' className='form-control radius-10 mb-12' accept='image/*' disabled={disabled} onChange={(e) => { if (e.target.files?.[0]) setPendingFiles((p) => ({ ...p, thumbnailUrl: e.target.files[0] })); }} />}
+                  {!isReadonly && (
+                    <ImageUploadField
+                      className="form-control radius-10 mb-12"
+                      disabled={disabled}
+                      accept={IMAGE_ACCEPT}
+                      onFileSelect={(f) => setPendingFiles((p) => ({ ...p, thumbnailUrl: f }))}
+                      onLibrarySelect={(url) => {
+                        setPendingFiles((p) => ({ ...p, thumbnailUrl: null }));
+                        setFormData((prev) => ({ ...prev, thumbnailUrl: url }));
+                      }}
+                      libraryTitle="Choose shop photo"
+                    />
+                  )}
                   <div className='border border-dashed radius-12 py-24 text-center text-secondary-light'>
                     {pendingFiles.thumbnailUrl || formData.thumbnailUrl ? (
                       <img src={pendingFiles.thumbnailUrl ? URL.createObjectURL(pendingFiles.thumbnailUrl) : resolveMediaUrl(formData.thumbnailUrl)} alt='Shop' style={{ maxHeight: 140, objectFit: "cover", borderRadius: 10 }} />
@@ -574,7 +630,7 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
               <section className='bg-primary-25 radius-12 p-14'>
                 <div className='row g-12'>
                   <Field col='col-md-6' label='GST Certificate'>
-                    {!isReadonly && <input type='file' className='form-control radius-10' accept='image/*,.pdf' disabled={disabled} onChange={(e) => { if (e.target.files?.[0]) setPendingFiles((p) => ({ ...p, gstCertUrl: e.target.files[0] })); }} />}
+                    {!isReadonly && <input type='file' className='form-control radius-10' accept={IMAGE_OR_PDF_ACCEPT} disabled={disabled} onChange={(e) => { if (e.target.files?.[0]) setPendingFiles((p) => ({ ...p, gstCertUrl: e.target.files[0] })); }} />}
                     {formData.gstCertUrl ? (
                       <a className='text-primary-600 text-sm d-inline-block mt-8 fw-medium' href={resolveMediaUrl(formData.gstCertUrl)} target='_blank' rel='noreferrer'>View GST document</a>
                     ) : isReadonly ? (
@@ -582,7 +638,7 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
                     ) : null}
                   </Field>
                   <Field col='col-md-6' label='PAN Card'>
-                    {!isReadonly && <input type='file' className='form-control radius-10' accept='image/*,.pdf' disabled={disabled} onChange={(e) => { if (e.target.files?.[0]) setPendingFiles((p) => ({ ...p, panCardUrl: e.target.files[0] })); }} />}
+                    {!isReadonly && <input type='file' className='form-control radius-10' accept={IMAGE_OR_PDF_ACCEPT} disabled={disabled} onChange={(e) => { if (e.target.files?.[0]) setPendingFiles((p) => ({ ...p, panCardUrl: e.target.files[0] })); }} />}
                     {formData.panCardUrl ? (
                       <a className='text-primary-600 text-sm d-inline-block mt-8 fw-medium' href={resolveMediaUrl(formData.panCardUrl)} target='_blank' rel='noreferrer'>View PAN document</a>
                     ) : isReadonly ? (
@@ -590,7 +646,7 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
                     ) : null}
                   </Field>
                   <Field col='col-md-6' label='Bank Name'><input className='form-control radius-10' name='bankName' value={formData.bankName} onChange={handleChange} disabled={disabled} /></Field>
-                  <Field col='col-md-6' label='IFSC'><input className='form-control radius-10' name='ifscCode' value={formData.ifscCode} onChange={handleChange} disabled={disabled} /></Field>
+                  <Field col='col-md-6' label='IFSC' error={fieldErrors.ifscCode}><input className={`form-control radius-10${fieldErrors.ifscCode ? " is-invalid" : ""}`} name='ifscCode' value={formData.ifscCode} onChange={handleChange} disabled={disabled} maxLength={11} /></Field>
                   <Field col='col-md-6' label='Account Holder'><input className='form-control radius-10' name='accountHolderName' value={formData.accountHolderName} onChange={handleChange} disabled={disabled} /></Field>
                   <Field col='col-md-6' label='Account Number'><input className='form-control radius-10' name='accountNumber' value={formData.accountNumber} onChange={handleChange} disabled={disabled} /></Field>
                 </div>
@@ -652,10 +708,11 @@ const TabButton = ({ active, label, onClick }) => (
   </button>
 );
 
-const Field = ({ col, label, children }) => (
+const Field = ({ col, label, error, children }) => (
   <div className={col}>
     <label className='form-label fw-semibold text-neutral-700 text-sm mb-8'>{label}</label>
     {children}
+    {error ? <div className='invalid-feedback d-block text-sm mt-4'>{error}</div> : null}
   </div>
 );
 

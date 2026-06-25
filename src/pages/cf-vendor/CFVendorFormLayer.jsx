@@ -8,6 +8,7 @@ import {
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
+import { IMAGE_ACCEPT } from "../../lib/acceptImages";
 
 const empty = () => ({
   contactName: "",
@@ -243,7 +244,7 @@ const CFVendorFormLayer = ({
                   </select>
                 </Field>
                 <Field col='col-md-4' label='Logo'>
-                  {!isReadonly && <input type='file' className='form-control radius-10' onChange={handleLogo} accept='image/*' />}
+                  {!isReadonly && <input type='file' className='form-control radius-10' onChange={handleLogo} accept={IMAGE_ACCEPT} />}
                 </Field>
               </div>
             </section>
