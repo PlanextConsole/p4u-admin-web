@@ -145,7 +145,7 @@ export default function DashboardInsights() {
         bar: {
           horizontal: true,
           borderRadius: 4,
-          barHeight: "45%",
+          barHeight: "18%",
         },
       },
       dataLabels: { enabled: false },
@@ -225,10 +225,10 @@ export default function DashboardInsights() {
       </div>
 
       <div className='col-12 col-xl-6'>
-        <div className='card border-0 shadow-sm radius-16 h-100 bg-base'>
+        <div className='card border-0 shadow-sm radius-16 h-100 bg-base p4u-dashboard-vendors-card'>
           <div className='card-body p-24'>
             <h5 className='fw-bold text-primary-light mb-16 p4u-dashboard-panel-title'>Top Vendors</h5>
-            <p className='text-secondary-light text-sm mb-12'>Ranked by recent revenue contribution</p>
+            <p className='text-secondary-light text-sm mb-12 p4u-dashboard-vendors-subtitle'>Ranked by recent revenue contribution</p>
             {error && (
               <div className='alert alert-warning radius-12 py-12 px-16 mb-0' role='status'>
                 {error}
@@ -243,7 +243,7 @@ export default function DashboardInsights() {
               <div className='text-secondary-light py-4'>No vendor performance data yet.</div>
             )}
             {!error && !loading && topVendors.length > 0 && (
-              <ReactApexChart options={vendorChartOptions} series={vendorChartSeries} type='bar' height={isCompact ? 240 : 300} />
+              <ReactApexChart options={vendorChartOptions} series={vendorChartSeries} type='bar' height={isCompact ? 220 : 225} />
             )}
           </div>
         </div>

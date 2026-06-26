@@ -2706,3 +2706,98 @@ button.fw-semibold {
   line-height: 1.2 !important;
   font-weight: 600 !important;
 }
+
+/* Dashboard lower cards compact reference pass */
+section.row.g-4:has(.p4u-dashboard-recent-card) {
+  --bs-gutter-x: 1.25rem !important;
+  --bs-gutter-y: 1.25rem !important;
+}
+
+.p4u-dashboard-recent-card,
+.p4u-dashboard-vendors-card {
+  min-height: 360px !important;
+  border: 1px solid #e6edf2 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.05) !important;
+}
+
+.p4u-dashboard-recent-card .card-body,
+.p4u-dashboard-vendors-card .card-body {
+  padding: 22px 24px 20px !important;
+}
+
+.p4u-dashboard-recent-card .p4u-dashboard-panel-title,
+.p4u-dashboard-vendors-card .p4u-dashboard-panel-title {
+  margin-bottom: 18px !important;
+  color: #06172a !important;
+  font-size: 1.08rem !important;
+  line-height: 1.25 !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+}
+
+.p4u-dashboard-vendors-subtitle {
+  display: none !important;
+}
+
+.p4u-dashboard-recent-card .p4u-dashboard-recent-row {
+  min-height: 61px !important;
+  padding: 10px 0 10px !important;
+  border-bottom-color: #eef3f6 !important;
+}
+
+.p4u-dashboard-recent-card .p4u-dashboard-order-name {
+  margin-bottom: 3px !important;
+  font-size: 0.9rem !important;
+  line-height: 1.18 !important;
+  font-weight: 500 !important;
+}
+
+.p4u-dashboard-recent-card .p4u-dashboard-order-meta {
+  font-size: 0.82rem !important;
+  line-height: 1.25 !important;
+  color: #51657d !important;
+}
+
+.p4u-dashboard-recent-card .p4u-dashboard-order-status {
+  min-width: 72px !important;
+  padding: 4px 11px !important;
+  font-size: 0.76rem !important;
+  line-height: 1.05 !important;
+  font-weight: 600 !important;
+}
+
+.p4u-dashboard-recent-card .p4u-dashboard-order-amount {
+  min-width: 44px !important;
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+}
+
+.p4u-dashboard-vendors-card .apexcharts-canvas,
+.p4u-dashboard-vendors-card .apexcharts-svg {
+  width: 100% !important;
+}
+
+.p4u-dashboard-vendors-card .apexcharts-text,
+.p4u-dashboard-vendors-card .apexcharts-xaxis-label,
+.p4u-dashboard-vendors-card .apexcharts-yaxis-label {
+  font-size: 10px !important;
+  font-weight: 400 !important;
+  fill: #51657d !important;
+}
+
+.p4u-dashboard-vendors-card .apexcharts-gridline {
+  stroke: #e5edf3 !important;
+}
+
+@media (max-width: 767px) {
+  .p4u-dashboard-recent-card,
+  .p4u-dashboard-vendors-card {
+    min-height: auto !important;
+  }
+
+  .p4u-dashboard-recent-card .p4u-dashboard-recent-row {
+    min-height: auto !important;
+    padding: 12px 0 !important;
+  }
+}
