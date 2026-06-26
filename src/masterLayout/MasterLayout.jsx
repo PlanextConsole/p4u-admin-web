@@ -5,7 +5,7 @@ import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import ThemeToggleButton from "../helper/ThemeToggleButton";
 import { getAccessToken } from "../lib/api/tokenStorage";
-/** e.g. "Admin User" â†’ "AU", "admin" â†’ "AD", "John Doe" â†’ "JD" */
+/** Converts display name to profile initials. */
 function displayNameToInitials(name) {
   const s = String(name || "").trim();
   if (!s) return "?";
@@ -150,7 +150,7 @@ const MasterLayout = ({ children }) => {
           <Link
             to='/dashboard'
             className='sidebar-logo d-flex align-items-center text-decoration-none gap-12'
-            aria-label='Planext4u â€” dashboard home'
+            aria-label='Planext4u dashboard home'
           >
             <img
               src='/assets/images/logo-icon.png'
@@ -169,7 +169,7 @@ const MasterLayout = ({ children }) => {
         <div className='sidebar-menu-area'>
           <ul className='sidebar-menu' id='sidebar-menu'>
             
-            {/* â”€â”€â”€ MAIN â”€â”€â”€ */}
+            {/* MAIN */}
             <li className='sidebar-menu-group-title'>Main</li>
             <li>
               <NavLink to='/dashboard' className={sidebarNavClass} end>
@@ -178,7 +178,7 @@ const MasterLayout = ({ children }) => {
               </NavLink>
             </li>
 
-            {/* â”€â”€â”€ PRODUCT MANAGEMENT â”€â”€â”€ */}
+            {/* PRODUCT MANAGEMENT */}
             <li className='sidebar-menu-group-title'>Main</li>
             <li>
               <NavLink to='/product-vendors' className={sidebarNavClass}>
@@ -211,7 +211,7 @@ const MasterLayout = ({ children }) => {
               </NavLink>
             </li>
 
-            {/* â”€â”€â”€ SERVICE MANAGEMENT â”€â”€â”€ */}
+            {/* SERVICE MANAGEMENT */}
             <li className='sidebar-menu-group-title'>Service Management</li>
             <li>
               <NavLink to='/service-vendors' className={sidebarNavClass}>
@@ -238,12 +238,12 @@ const MasterLayout = ({ children }) => {
               </NavLink>
             </li>
 
-            {/* â”€â”€â”€ CLASSIFIED (CF) MANAGEMENT â”€â”€â”€ */}
+            {/* CLASSIFIED (CF) MANAGEMENT */}
             <li className='sidebar-menu-group-title'>Classified (CF) Management</li>
             <li>
               <NavLink to='/cf-vendors' className={sidebarNavClass}>
                 <Icon icon='mdi:store-check-outline' className='menu-icon' />
-                <span title='Classified listings â€” separate from catalog marketplace vendors'>CF vendors (classified)</span>
+                <span title='Classified listings separate from catalog marketplace vendors'>CF vendors (classified)</span>
               </NavLink>
             </li>
             <li>
@@ -271,7 +271,7 @@ const MasterLayout = ({ children }) => {
               </NavLink>
             </li>
 
-            {/* â”€â”€â”€ SALES & FINANCIALS â”€â”€â”€ */}
+            {/* SALES & FINANCIALS */}
             <li className='sidebar-menu-group-title'>Finance</li>
             <li>
               <NavLink to='/orders' className={sidebarNavClass}>
@@ -310,7 +310,7 @@ const MasterLayout = ({ children }) => {
               </NavLink>
             </li>
 
-            {/* â”€â”€â”€ CUSTOMERS â”€â”€â”€ */}
+            {/* CUSTOMERS */}
             <li className='sidebar-menu-group-title'>Users</li>
             <li>
               <NavLink to='/customers' className={sidebarNavClass}>
@@ -324,8 +324,14 @@ const MasterLayout = ({ children }) => {
                 <span>Occupations</span>
               </NavLink>
             </li>
+            <li>
+              <NavLink to='/admin/social' className={sidebarNavClass}>
+                <Icon icon='mdi:heart-outline' className='menu-icon' />
+                <span>Social Dashboard</span>
+              </NavLink>
+            </li>
 
-            {/* â”€â”€â”€ MARKETING & CONTENT â”€â”€â”€ */}
+            {/* MARKETING & CONTENT */}
             <li className='sidebar-menu-group-title'>Marketing & Content</li>
             <li>
               <NavLink to='/homepage-cms' className={sidebarNavClass}>
@@ -370,7 +376,7 @@ const MasterLayout = ({ children }) => {
               </NavLink>
             </li>
 
-            {/* â”€â”€â”€ SYSTEM & REPORTS â”€â”€â”€ */}
+            {/* SYSTEM & REPORTS */}
             <li className='sidebar-menu-group-title'>Reports</li>
             <li>
               <NavLink to='/platform-variables' className={sidebarNavClass}>
@@ -391,6 +397,7 @@ const MasterLayout = ({ children }) => {
               </NavLink>
             </li>
 
+
           </ul>
         </div>
       </aside>
@@ -407,7 +414,7 @@ const MasterLayout = ({ children }) => {
                   <Icon icon='heroicons:bars-3-solid' className='icon' />
                 </button>
                 <form className='navbar-search'>
-                  <input type='text' name='search' placeholder='Search pages, featuresâ€¦' />
+                  <input type='text' name='search' placeholder='Search pages, features...' />
                   <Icon icon='ion:search-outline' className='icon' />
                 </form>
               </div>
@@ -415,7 +422,7 @@ const MasterLayout = ({ children }) => {
             <div className='col-auto'>
               <div className='d-flex flex-wrap align-items-center gap-3'>
                 <ThemeToggleButton />
-                {/* Language, Messages, Notifications, and Profile sections remain unchanged */}
+                {/* MAIN */}
                 <div className='dropdown'>
                   <button
                     className='admin-reference-role-pill d-flex justify-content-center align-items-center px-14 py-6 border bg-white text-primary-light fw-bold text-sm rounded-pill flex-shrink-0'
@@ -466,7 +473,7 @@ const MasterLayout = ({ children }) => {
         <footer className='d-footer'>
           <div className='row align-items-center justify-content-between'>
             <div className='col-auto'>
-              <p className='mb-0'>Â© 2026 P4U. All Rights Reserved.</p>
+              <p className='mb-0'>(c) 2026 P4U. All Rights Reserved.</p>
             </div>
           </div>
         </footer>

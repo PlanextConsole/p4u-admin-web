@@ -9,15 +9,15 @@ import {
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 
-/** Compact Indian currency for card headline (e.g. ₹1.2L). */
+/** Compact Indian currency for card headline (e.g. â‚¹1.2L). */
 function formatInrCompact(n) {
   const x = Number(n);
-  if (!Number.isFinite(x) || x === 0) return "₹0";
+  if (!Number.isFinite(x) || x === 0) return "â‚¹0";
   const abs = Math.abs(x);
-  if (abs >= 1e7) return `₹${(x / 1e7).toFixed(2)}Cr`;
-  if (abs >= 1e5) return `₹${(x / 1e5).toFixed(2)}L`;
-  if (abs >= 1e3) return `₹${(x / 1e3).toFixed(2)}K`;
-  return `₹${Math.round(x)}`;
+  if (abs >= 1e7) return `â‚¹${(x / 1e7).toFixed(2)}Cr`;
+  if (abs >= 1e5) return `â‚¹${(x / 1e5).toFixed(2)}L`;
+  if (abs >= 1e3) return `â‚¹${(x / 1e3).toFixed(2)}K`;
+  return `â‚¹${Math.round(x)}`;
 }
 
 async function sumAllOrdersTotalAmount() {
@@ -48,7 +48,7 @@ const METRICS = [
   { key: "activeAds", label: "Active Ads", icon: "mdi:bullhorn-outline", accent: "#086d80", wash: "#e7f1f2" },
 ];
 
-/** Dashboard metric cards → admin list routes (see App.jsx). */
+/** Dashboard metric cards â†’ admin list routes (see App.jsx). */
 const METRIC_TO = {
   customers: "/customers",
   vendors: "/product-vendors",
@@ -150,18 +150,18 @@ export default function DashboardSummary() {
   const ord = c.orders || {};
 
   const values = {
-    customers: cust.total ?? "—",
-    vendors: vend.total ?? "—",
-    orders: ord.total ?? "—",
-    revenue: revenueSum != null ? formatInrCompact(revenueSum) : "—",
-    settlements: c.settlements?.total ?? "—",
-    services: servicesCount != null ? String(servicesCount) : "—",
-    activeAds: activeAdsCount != null ? String(activeAdsCount) : "—",
+    customers: cust.total ?? "â€”",
+    vendors: vend.total ?? "â€”",
+    orders: ord.total ?? "â€”",
+    revenue: revenueSum != null ? formatInrCompact(revenueSum) : "â€”",
+    settlements: c.settlements?.total ?? "â€”",
+    services: servicesCount != null ? String(servicesCount) : "â€”",
+    activeAds: activeAdsCount != null ? String(activeAdsCount) : "â€”",
   };
 
   const vendorBreakdown =
     vend.product != null && vend.service != null
-      ? `${vend.product} product · ${vend.service} service`
+      ? `${vend.product} product Â· ${vend.service} service`
       : null;
   const vendorPendingNote =
     typeof vend.pending === "number" && vend.pending > 0
@@ -172,12 +172,12 @@ export default function DashboardSummary() {
     <div className='mb-24'>
       <div className='d-flex align-items-center justify-content-between mb-12'>
         <p className='text-secondary-light mb-0 text-sm'>Overview metrics</p>
-        <p className='text-secondary-light mb-0 text-xs'>Updated at {updatedAt || "—"}</p>
+        <p className='text-secondary-light mb-0 text-xs'>Updated at {updatedAt || "â€”"}</p>
       </div>
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(7, minmax(155px, 1fr))",
+          gridTemplateColumns: "repeat(7, minmax(190px, 1fr))",
           overflowX: "auto",
           gap: "1rem",
         }}
@@ -199,7 +199,7 @@ export default function DashboardSummary() {
                     <h3 className='fw-bold mb-0 text-primary-light text-2xl mt-8'>{values[m.key]}</h3>
                     {m.key === "vendors" && (vendorBreakdown || vendorPendingNote) ? (
                       <p className='text-secondary-light text-xs mb-0 mt-6'>
-                        {[vendorBreakdown, vendorPendingNote].filter(Boolean).join(" · ")}
+                        {[vendorBreakdown, vendorPendingNote].filter(Boolean).join(" Â· ")}
                       </p>
                     ) : null}
                   </div>
