@@ -9,15 +9,15 @@ import {
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 
-/** Compact Indian currency for card headline (e.g. â‚¹1.2L). */
+/** Compact Indian currency for card headline (e.g. Ã¢â€šÂ¹1.2L). */
 function formatInrCompact(n) {
   const x = Number(n);
-  if (!Number.isFinite(x) || x === 0) return "â‚¹0";
+  if (!Number.isFinite(x) || x === 0) return "Ã¢â€šÂ¹0";
   const abs = Math.abs(x);
-  if (abs >= 1e7) return `â‚¹${(x / 1e7).toFixed(2)}Cr`;
-  if (abs >= 1e5) return `â‚¹${(x / 1e5).toFixed(2)}L`;
-  if (abs >= 1e3) return `â‚¹${(x / 1e3).toFixed(2)}K`;
-  return `â‚¹${Math.round(x)}`;
+  if (abs >= 1e7) return `Ã¢â€šÂ¹${(x / 1e7).toFixed(2)}Cr`;
+  if (abs >= 1e5) return `Ã¢â€šÂ¹${(x / 1e5).toFixed(2)}L`;
+  if (abs >= 1e3) return `Ã¢â€šÂ¹${(x / 1e3).toFixed(2)}K`;
+  return `Ã¢â€šÂ¹${Math.round(x)}`;
 }
 
 async function sumAllOrdersTotalAmount() {
@@ -48,7 +48,7 @@ const METRICS = [
   { key: "activeAds", label: "Active Ads", icon: "mdi:bullhorn-outline", accent: "#086d80", wash: "#e7f1f2" },
 ];
 
-/** Dashboard metric cards â†’ admin list routes (see App.jsx). */
+/** Dashboard metric cards Ã¢â€ â€™ admin list routes (see App.jsx). */
 const METRIC_TO = {
   customers: "/customers",
   vendors: "/product-vendors",
@@ -150,18 +150,18 @@ export default function DashboardSummary() {
   const ord = c.orders || {};
 
   const values = {
-    customers: cust.total ?? "â€”",
-    vendors: vend.total ?? "â€”",
-    orders: ord.total ?? "â€”",
-    revenue: revenueSum != null ? formatInrCompact(revenueSum) : "â€”",
-    settlements: c.settlements?.total ?? "â€”",
-    services: servicesCount != null ? String(servicesCount) : "â€”",
-    activeAds: activeAdsCount != null ? String(activeAdsCount) : "â€”",
+    customers: cust.total ?? "Ã¢â‚¬â€",
+    vendors: vend.total ?? "Ã¢â‚¬â€",
+    orders: ord.total ?? "Ã¢â‚¬â€",
+    revenue: revenueSum != null ? formatInrCompact(revenueSum) : "Ã¢â‚¬â€",
+    settlements: c.settlements?.total ?? "Ã¢â‚¬â€",
+    services: servicesCount != null ? String(servicesCount) : "Ã¢â‚¬â€",
+    activeAds: activeAdsCount != null ? String(activeAdsCount) : "Ã¢â‚¬â€",
   };
 
   const vendorBreakdown =
     vend.product != null && vend.service != null
-      ? `${vend.product} product Â· ${vend.service} service`
+      ? `${vend.product} product Ã‚Â· ${vend.service} service`
       : null;
   const vendorPendingNote =
     typeof vend.pending === "number" && vend.pending > 0
@@ -172,7 +172,7 @@ export default function DashboardSummary() {
     <div className='mb-24'>
       <div className='d-flex align-items-center justify-content-between mb-12'>
         <p className='text-secondary-light mb-0 text-sm'>Overview metrics</p>
-        <p className='text-secondary-light mb-0 text-xs'>Updated at {updatedAt || "â€”"}</p>
+        <p className='text-secondary-light mb-0 text-xs'>Updated at {updatedAt || "Ã¢â‚¬â€"}</p>
       </div>
       <div
         style={{
@@ -199,13 +199,13 @@ export default function DashboardSummary() {
                     <h3 className='fw-bold mb-0 text-primary-light text-2xl mt-8'>{values[m.key]}</h3>
                     {m.key === "vendors" && (vendorBreakdown || vendorPendingNote) ? (
                       <p className='text-secondary-light text-xs mb-0 mt-6'>
-                        {[vendorBreakdown, vendorPendingNote].filter(Boolean).join(" Â· ")}
+                        {[vendorBreakdown, vendorPendingNote].filter(Boolean).join(" Ã‚Â· ")}
                       </p>
                     ) : null}
                   </div>
                   <span
                     className='w-48-px h-48-px radius-12 d-flex align-items-center justify-content-center flex-shrink-0'
-                    style={{ background: m.wash || `${m.accent}18`, color: m.accent }}
+                    style={{ "--metric-accent": m.accent }}
                     aria-hidden
                   >
                     <Icon icon={m.icon} className='text-2xl' />

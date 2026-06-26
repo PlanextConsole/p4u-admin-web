@@ -289,7 +289,7 @@ html[data-theme="dark"] .form-select option {
   min-height: 42px;
 }
 
-/* â”€â”€â”€ P4U admin: flat teal sidebar â”€â”€â”€ */
+/* ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ P4U admin: flat teal sidebar ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ */
 .sidebar {
   background: #149a9a !important;
   border-inline-end: 1px solid rgba(255, 255, 255, 0.12) !important;
@@ -2008,4 +2008,158 @@ section.row.g-4 h5 {
 
 .p4u-dashboard-metric-link h3 {
   overflow-wrap: anywhere;
+}
+
+/* Dashboard reference icon and recent-order typography pass */
+.p4u-dashboard-metric-link .w-48-px.h-48-px {
+  width: 52px !important;
+  height: 52px !important;
+  border-radius: 14px !important;
+  background: var(--metric-accent, #0b7285) !important;
+  color: #ffffff !important;
+  box-shadow: 0 14px 30px rgba(6, 23, 42, 0.08) !important;
+}
+
+.p4u-dashboard-metric-link .w-48-px.h-48-px svg,
+.p4u-dashboard-metric-link .w-48-px.h-48-px .icon {
+  width: 26px !important;
+  height: 26px !important;
+  color: #ffffff !important;
+  stroke: currentColor !important;
+  fill: none;
+}
+
+.p4u-dashboard-metric-link:nth-child(1) .w-48-px.h-48-px { background: #086d80 !important; }
+.p4u-dashboard-metric-link:nth-child(2) .w-48-px.h-48-px { background: #3b6df6 !important; }
+.p4u-dashboard-metric-link:nth-child(3) .w-48-px.h-48-px { background: #20bf8f !important; }
+.p4u-dashboard-metric-link:nth-child(4) .w-48-px.h-48-px { background: #f97316 !important; }
+.p4u-dashboard-metric-link:nth-child(5) .w-48-px.h-48-px { background: #e12d68 !important; }
+.p4u-dashboard-metric-link:nth-child(6) .w-48-px.h-48-px { background: #356df3 !important; }
+.p4u-dashboard-metric-link:nth-child(7) .w-48-px.h-48-px { background: #086d80 !important; }
+
+.p4u-dashboard-panel-title {
+  color: #06172a !important;
+  font-size: 1.34rem !important;
+  font-weight: 850 !important;
+  letter-spacing: -0.03em;
+}
+
+.p4u-dashboard-recent-card .card-body {
+  padding: 28px 30px 26px !important;
+}
+
+.p4u-dashboard-recent-subtitle {
+  display: none !important;
+}
+
+.p4u-dashboard-recent-list {
+  gap: 0 !important;
+}
+
+.p4u-dashboard-recent-row {
+  min-height: 74px;
+  padding: 14px 0 !important;
+  border-bottom: 1px solid #edf2f5;
+  border-radius: 0 !important;
+}
+
+.p4u-dashboard-recent-row:last-child {
+  border-bottom: 0;
+}
+
+.p4u-dashboard-order-name {
+  margin-bottom: 3px !important;
+  color: #06172a !important;
+  font-size: 1.02rem !important;
+  line-height: 1.18;
+  font-weight: 850 !important;
+}
+
+.p4u-dashboard-order-meta {
+  color: #51657d !important;
+  font-size: 0.88rem !important;
+  line-height: 1.25;
+  font-weight: 550 !important;
+}
+
+.p4u-dashboard-order-status {
+  min-width: 92px;
+  padding: 6px 13px !important;
+  border-radius: 999px !important;
+  text-align: center;
+  font-size: 0.86rem !important;
+  line-height: 1;
+  font-weight: 850 !important;
+}
+
+.p4u-dashboard-order-amount {
+  min-width: 66px;
+  text-align: right;
+  color: #06172a !important;
+  font-size: 0.98rem !important;
+  font-weight: 850 !important;
+}
+
+/* Keep Iconify filled icons visible in dashboard metric blocks */
+.p4u-dashboard-metric-link .w-48-px.h-48-px svg path {
+  fill: currentColor !important;
+  stroke: currentColor !important;
+}
+
+/* Font weight correction: match reference lighter text */
+.sidebar-logo .sidebar-logo-title {
+  font-weight: 760 !important;
+}
+
+.sidebar-menu li > a,
+.sidebar-menu .sidebar-submenu li a {
+  font-weight: 520 !important;
+}
+
+.sidebar-menu li > a.active-page,
+.sidebar-menu .sidebar-submenu li a.active-page,
+.sidebar-menu .sidebar-submenu li a.active {
+  font-weight: 650 !important;
+}
+
+.sidebar-menu .sidebar-menu-group-title {
+  font-weight: 700 !important;
+}
+
+.p4u-dashboard-panel-title {
+  font-size: 1.18rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.015em !important;
+}
+
+.p4u-dashboard-recent-card .card-body {
+  padding: 26px 28px 24px !important;
+}
+
+.p4u-dashboard-recent-subtitle {
+  display: block !important;
+  margin-bottom: 18px !important;
+  color: #51657d !important;
+  font-size: 0.95rem !important;
+  font-weight: 450 !important;
+}
+
+.p4u-dashboard-order-name {
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+}
+
+.p4u-dashboard-order-meta {
+  font-size: 0.9rem !important;
+  font-weight: 400 !important;
+}
+
+.p4u-dashboard-order-status {
+  font-weight: 650 !important;
+}
+
+.p4u-dashboard-order-amount {
+  font-size: 0.95rem !important;
+  font-weight: 650 !important;
 }

@@ -37,7 +37,7 @@ function statusLabel(status) {
 
 function formatInr(value) {
   const n = Number(value || 0);
-  return `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+  return `\u20B9${n.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }
 
 export default function DashboardInsights() {
@@ -153,7 +153,7 @@ export default function DashboardInsights() {
       xaxis: {
         categories: topVendors.map((v) => v.name),
         labels: {
-          formatter: (v) => `₹${Math.round(v / 1000)}k`,
+          formatter: (v) => `\u20B9${Math.round(v / 1000)}k`,
         },
       },
       tooltip: {
@@ -172,10 +172,10 @@ export default function DashboardInsights() {
   return (
     <section className='row g-4'>
       <div className='col-12 col-xl-6'>
-        <div className='card border-0 shadow-sm radius-16 h-100 bg-base'>
+        <div className='card border-0 shadow-sm radius-16 h-100 bg-base p4u-dashboard-recent-card'>
           <div className='card-body p-24'>
-            <h5 className='fw-bold text-primary-light mb-20'>Recent Orders</h5>
-            <p className='text-secondary-light text-sm mb-12'>Most recent order activity · updated {updatedAt || "—"}</p>
+            <h5 className='fw-bold text-primary-light mb-20 p4u-dashboard-panel-title'>Recent Orders</h5>
+            <p className='text-secondary-light text-sm mb-12 p4u-dashboard-recent-subtitle'>Most recent order activity - updated {updatedAt || "-"}</p>
             {error && (
               <div className='alert alert-warning radius-12 py-12 px-16 mb-0' role='status'>
                 {error}
@@ -192,7 +192,7 @@ export default function DashboardInsights() {
               <div className='text-secondary-light py-4'>No recent orders found.</div>
             )}
             {!error && !loading && recentOrders.length > 0 && (
-              <div className='d-flex flex-column gap-20'>
+              <div className='d-flex flex-column p4u-dashboard-recent-list'>
                 {recentOrders.map((o) => {
                   const m = parseMeta(o.metadata);
                   const customerName =
@@ -202,18 +202,18 @@ export default function DashboardInsights() {
                     "Unknown customer";
                   const vendorName = vendorMap[o.vendorId] || "Unknown vendor";
                   return (
-                  <div key={o.id} className={`d-flex justify-content-between gap-3 p-8 radius-8 hover-bg-neutral-50 ${isCompact ? "flex-column align-items-start" : "align-items-center"}`}>
+                    <div key={o.id} className={`d-flex justify-content-between gap-3 p-8 radius-8 hover-bg-neutral-50 p4u-dashboard-recent-row ${isCompact ? "flex-column align-items-start" : "align-items-center"}`}>
                       <div className='min-w-0 w-100'>
-                        <h6 className='mb-4 fw-semibold text-primary-light text-truncate'>{customerName}</h6>
-                        <p className='text-secondary-light mb-0 text-md text-truncate'>
-                          {(o.orderRef || o.id || "—")} · {vendorName}
+                        <h6 className='mb-4 fw-semibold text-primary-light text-truncate p4u-dashboard-order-name'>{customerName}</h6>
+                        <p className='text-secondary-light mb-0 text-md text-truncate p4u-dashboard-order-meta'>
+                          {(o.orderRef || o.id || "-")} - {vendorName}
                         </p>
                       </div>
                       <div className={`d-flex align-items-center gap-12 ${isCompact ? "w-100 justify-content-between" : "flex-shrink-0"}`}>
-                        <span className={`px-12 py-4 rounded-pill fw-medium text-sm ${statusPill(o.status)}`}>
+                        <span className={`px-12 py-4 rounded-pill fw-medium text-sm p4u-dashboard-order-status ${statusPill(o.status)}`}>
                           {statusLabel(o.status)}
                         </span>
-                        <span className='fw-bold text-primary-light'>{formatInr(o.totalAmount)}</span>
+                        <span className='fw-bold text-primary-light p4u-dashboard-order-amount'>{formatInr(o.totalAmount)}</span>
                       </div>
                     </div>
                   );
@@ -227,7 +227,7 @@ export default function DashboardInsights() {
       <div className='col-12 col-xl-6'>
         <div className='card border-0 shadow-sm radius-16 h-100 bg-base'>
           <div className='card-body p-24'>
-            <h5 className='fw-bold text-primary-light mb-16'>Top Vendors</h5>
+            <h5 className='fw-bold text-primary-light mb-16 p4u-dashboard-panel-title'>Top Vendors</h5>
             <p className='text-secondary-light text-sm mb-12'>Ranked by recent revenue contribution</p>
             {error && (
               <div className='alert alert-warning radius-12 py-12 px-16 mb-0' role='status'>
