@@ -160,8 +160,8 @@ const MasterLayout = ({ children }) => {
               height={40}
             />
             <div className='sidebar-logo-copy'>
-              <span className='sidebar-logo-title'>Planext4u</span>
-              <span className='sidebar-logo-tagline'>ALL SOLUTIONS INDIA Pvt Ltd</span>
+              <span className='sidebar-logo-title'>Marketplace</span>
+              <span className='sidebar-logo-tagline'>Admin Console</span>
             </div>
           </Link>
         </div>
@@ -179,23 +179,23 @@ const MasterLayout = ({ children }) => {
             </li>
 
             {/* ─── PRODUCT MANAGEMENT ─── */}
-            <li className='sidebar-menu-group-title'>Product Management</li>
+            <li className='sidebar-menu-group-title'>Main</li>
             <li>
               <NavLink to='/product-vendors' className={sidebarNavClass}>
                 <Icon icon='mdi:store-outline' className='menu-icon' />
-                <span title='Vendors selling products in the Shop tab'>Product vendors</span>
+                <span title='Vendors selling products in the Shop tab'>Product Vendors</span>
               </NavLink>
             </li>
             <li>
               <NavLink to='/product-categories' className={sidebarNavClass}>
                 <Icon icon='mdi:shape-outline' className='menu-icon' />
-                <span title='Shop / catalog product taxonomy'>Product categories</span>
+                <span title='Shop / catalog product taxonomy'>Categories</span>
               </NavLink>
             </li>
             <li>
               <NavLink to='/subcategories' className={sidebarNavClass}>
                 <Icon icon='mdi:shape-plus-outline' className='menu-icon' />
-                <span>Subcategories</span>
+                <span>Parent Items</span>
               </NavLink>
             </li>
             <li>
@@ -207,7 +207,7 @@ const MasterLayout = ({ children }) => {
             <li>
               <NavLink to='/product-attributes' className={sidebarNavClass}>
                 <Icon icon='mdi:tune-variant' className='menu-icon' />
-                <span>Product attributes</span>
+                <span>Product Attributes</span>
               </NavLink>
             </li>
 
@@ -216,7 +216,7 @@ const MasterLayout = ({ children }) => {
             <li>
               <NavLink to='/service-vendors' className={sidebarNavClass}>
                 <Icon icon='mdi:room-service-outline' className='menu-icon' />
-                <span title='Vendors offering bookable services in the Services tab'>Service vendors</span>
+                <span title='Vendors offering bookable services in the Services tab'>Service Vendors</span>
               </NavLink>
             </li>
             <li>
@@ -272,7 +272,7 @@ const MasterLayout = ({ children }) => {
             </li>
 
             {/* ─── SALES & FINANCIALS ─── */}
-            <li className='sidebar-menu-group-title'>Sales & Financials</li>
+            <li className='sidebar-menu-group-title'>Finance</li>
             <li>
               <NavLink to='/orders' className={sidebarNavClass}>
                 <Icon icon='mdi:clipboard-list-outline' className='menu-icon' />
@@ -294,13 +294,13 @@ const MasterLayout = ({ children }) => {
             <li>
               <NavLink to='/points' className={sidebarNavClass}>
                 <Icon icon='mdi:star-circle-outline' className='menu-icon' />
-                <span>Points System</span>
+                <span>Points</span>
               </NavLink>
             </li>
             <li>
               <NavLink to='/tax' className={sidebarNavClass}>
                 <Icon icon='mdi:calculator-variant-outline' className='menu-icon' />
-                <span>Tax Management</span>
+                <span>Tax</span>
               </NavLink>
             </li>
             <li>
@@ -371,7 +371,7 @@ const MasterLayout = ({ children }) => {
             </li>
 
             {/* ─── SYSTEM & REPORTS ─── */}
-            <li className='sidebar-menu-group-title'>System & Reports</li>
+            <li className='sidebar-menu-group-title'>Reports</li>
             <li>
               <NavLink to='/platform-variables' className={sidebarNavClass}>
                 <Icon icon='mdi:cogs' className='menu-icon' />
@@ -418,12 +418,12 @@ const MasterLayout = ({ children }) => {
                 {/* Language, Messages, Notifications, and Profile sections remain unchanged */}
                 <div className='dropdown'>
                   <button
-                    className='d-flex justify-content-center align-items-center w-40-px h-40-px p-0 border-0 bg-primary-600 text-white fw-bold text-sm rounded-circle flex-shrink-0'
+                    className='admin-reference-role-pill d-flex justify-content-center align-items-center px-14 py-6 border bg-white text-primary-light fw-bold text-sm rounded-pill flex-shrink-0'
                     type='button'
                     data-bs-toggle='dropdown'
                     aria-label={`Account menu (${displayName})`}
                   >
-                    {profileInitials}
+                    Admin
                   </button>
                   <div className='dropdown-menu to-top dropdown-menu-sm'>
                     <div className='py-12 px-16 radius-8 bg-primary-50 mb-16 d-flex align-items-center justify-content-between gap-2'>
@@ -432,7 +432,7 @@ const MasterLayout = ({ children }) => {
                           className='w-40-px h-40-px rounded-circle bg-primary-600 text-white fw-bold text-sm d-flex align-items-center justify-content-center flex-shrink-0'
                           aria-hidden
                         >
-                          {profileInitials}
+                          Admin
                         </span>
                         <div>
                           <h6 className='text-lg text-primary-light fw-semibold mb-0'>{displayName}</h6>

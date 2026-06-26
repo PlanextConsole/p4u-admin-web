@@ -39,13 +39,13 @@ async function sumAllOrdersTotalAmount() {
 }
 
 const METRICS = [
-  { key: "customers", label: "Customers", icon: "mdi:account-group-outline", accent: "#14b8a6" },
-  { key: "vendors", label: "Vendors", icon: "mdi:store-outline", accent: "#3b82f6" },
-  { key: "orders", label: "Orders", icon: "mdi:cart-outline", accent: "#22c55e" },
-  { key: "revenue", label: "Revenue", icon: "mdi:currency-inr", accent: "#f97316" },
-  { key: "settlements", label: "Settlements", icon: "mdi:receipt-text-outline", accent: "#ec4899" },
-  { key: "services", label: "Services", icon: "mdi:wrench-outline", accent: "#06b6d4" },
-  { key: "activeAds", label: "Active Ads", icon: "mdi:bullhorn-outline", accent: "#0d9488" },
+  { key: "customers", label: "Customers", icon: "mdi:account-group-outline", accent: "#0b7285", wash: "#e7f4f5" },
+  { key: "vendors", label: "Vendors", icon: "mdi:store-outline", accent: "#3b6df6", wash: "#edf3ff" },
+  { key: "orders", label: "Orders", icon: "mdi:cart-outline", accent: "#20bf8f", wash: "#eaf8f3" },
+  { key: "revenue", label: "Revenue", icon: "mdi:currency-usd", accent: "#f97316", wash: "#fff1e5" },
+  { key: "settlements", label: "Settlements", icon: "mdi:cash", accent: "#e12d68", wash: "#fde8f0" },
+  { key: "services", label: "Services", icon: "mdi:wrench-outline", accent: "#356df3", wash: "#edf3ff" },
+  { key: "activeAds", label: "Active Ads", icon: "mdi:bullhorn-outline", accent: "#086d80", wash: "#e7f1f2" },
 ];
 
 /** Dashboard metric cards → admin list routes (see App.jsx). */
@@ -177,7 +177,7 @@ export default function DashboardSummary() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
+          gridTemplateColumns: "repeat(7, minmax(155px, 1fr))",`r`n          overflowX: "auto",
           gap: "1rem",
         }}
       >
@@ -204,7 +204,7 @@ export default function DashboardSummary() {
                   </div>
                   <span
                     className='w-48-px h-48-px radius-12 d-flex align-items-center justify-content-center flex-shrink-0'
-                    style={{ background: `${m.accent}18`, color: m.accent }}
+                    style={{ background: m.wash || `${m.accent}18`, color: m.accent }}
                     aria-hidden
                   >
                     <Icon icon={m.icon} className='text-2xl' />
