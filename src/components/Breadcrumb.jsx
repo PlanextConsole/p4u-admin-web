@@ -1,22 +1,21 @@
 import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
+
 // eslint-disable-next-line react/prop-types
 const Breadcrumb = ({ title, pagetitle, subtitle }) => {
+  const showPageHeading = Boolean(subtitle && pagetitle);
+
   return (
-    <div className='p4u-admin-filter-row align-items-center justify-content-between gap-3 mb-24'>
-      <div>
-        {subtitle && pagetitle ? (
+    <div className='p4u-admin-filter-row align-items-center justify-content-between gap-3 mb-24 p4u-breadcrumb-bar'>
+      <div className='p4u-breadcrumb-heading'>
+        {showPageHeading ? (
           <>
-            <h4 className='fw-bold mb-8 text-primary-light'>{pagetitle}</h4>
+            <h4 className='fw-semibold mb-8 text-primary-light'>{pagetitle}</h4>
             <p className='text-secondary-light mb-0 text-md'>{subtitle}</p>
           </>
-        ) : pagetitle ? (
-          <h6 className='fw-semibold mb-0'>{pagetitle}</h6>
-        ) : (
-          <h6 className='fw-semibold mb-0'>{title}</h6>
-        )}
+        ) : null}
       </div>
-      <ul className='d-flex align-items-center gap-2'>
+      <ul className='d-flex align-items-center gap-2 p4u-breadcrumb-trail'>
         <li className='fw-medium'>
           <Link
             to='/dashboard'

@@ -17,10 +17,10 @@ function lastNDatesIso(n) {
 
 function formatInrAxis(val) {
   const v = Number(val);
-  if (!Number.isFinite(v)) return "₹0";
-  if (v >= 100000) return `₹${(v / 100000).toFixed(1)}L`;
-  if (v >= 1000) return `₹${(v / 1000).toFixed(0)}K`;
-  return `₹${Math.round(v)}`;
+  if (!Number.isFinite(v)) return "\u20B90";
+  if (v >= 100000) return `\u20B9${(v / 100000).toFixed(1)}L`;
+  if (v >= 1000) return `\u20B9${(v / 1000).toFixed(0)}K`;
+  return `\u20B9${Math.round(v)}`;
 }
 
 async function aggregateRevenueByDay() {
@@ -153,7 +153,7 @@ export default function DashboardCharts() {
       },
       colors: ["#8b5cf6"],
       xaxis: {
-        categories: revenue.categories.length ? revenue.categories : ["—", "—", "—", "—", "—", "—", "—"],
+        categories: revenue.categories.length ? revenue.categories : ["-", "-", "-", "-", "-", "-", "-"],
         labels: { style: { fontSize: "12px" } },
         axisBorder: { show: false },
       },
@@ -218,7 +218,7 @@ export default function DashboardCharts() {
         <div className='card border-0 shadow-sm radius-16 h-100 bg-base'>
           <div className='card-body p-24'>
             <h5 className='fw-bold text-primary-light mb-16'>Revenue Trend</h5>
-            <p className='text-secondary-light text-sm mb-12'>Last 7 days · updated {updatedAt || "—"}</p>
+            <p className='text-secondary-light text-sm mb-12'>Last 7 days - updated {updatedAt || "-"}</p>
             {error && (
               <div className='alert alert-warning radius-12 py-12 px-16 mb-0' role='status'>
                 {error}

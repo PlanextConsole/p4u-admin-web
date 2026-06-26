@@ -9,15 +9,15 @@ import {
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 
-/** Compact Indian currency for card headline (e.g. Ã¢â€šÂ¹1.2L). */
+/** Compact Indian currency for card headline. */
 function formatInrCompact(n) {
   const x = Number(n);
-  if (!Number.isFinite(x) || x === 0) return "Ã¢â€šÂ¹0";
+  if (!Number.isFinite(x) || x === 0) return "\u20B90";
   const abs = Math.abs(x);
-  if (abs >= 1e7) return `Ã¢â€šÂ¹${(x / 1e7).toFixed(2)}Cr`;
-  if (abs >= 1e5) return `Ã¢â€šÂ¹${(x / 1e5).toFixed(2)}L`;
-  if (abs >= 1e3) return `Ã¢â€šÂ¹${(x / 1e3).toFixed(2)}K`;
-  return `Ã¢â€šÂ¹${Math.round(x)}`;
+  if (abs >= 1e7) return `\u20B9${(x / 1e7).toFixed(2)}Cr`;
+  if (abs >= 1e5) return `\u20B9${(x / 1e5).toFixed(2)}L`;
+  if (abs >= 1e3) return `\u20B9${(x / 1e3).toFixed(2)}K`;
+  return `\u20B9${Math.round(x)}`;
 }
 
 async function sumAllOrdersTotalAmount() {
@@ -42,18 +42,18 @@ const METRICS = [
   { key: "customers", label: "Customers", icon: "mdi:account-group-outline", accent: "#0b7285", wash: "#e7f4f5" },
   { key: "vendors", label: "Vendors", icon: "mdi:store-outline", accent: "#3b6df6", wash: "#edf3ff" },
   { key: "orders", label: "Orders", icon: "mdi:cart-outline", accent: "#20bf8f", wash: "#eaf8f3" },
-  { key: "revenue", label: "Revenue", icon: "mdi:currency-usd", accent: "#f97316", wash: "#fff1e5" },
+  { key: "revenue", label: "Revenue", icon: "mdi:currency-inr", accent: "#f97316", wash: "#fff1e5" },
   { key: "settlements", label: "Settlements", icon: "mdi:cash", accent: "#e12d68", wash: "#fde8f0" },
   { key: "services", label: "Services", icon: "mdi:wrench-outline", accent: "#356df3", wash: "#edf3ff" },
   { key: "activeAds", label: "Active Ads", icon: "mdi:bullhorn-outline", accent: "#086d80", wash: "#e7f1f2" },
 ];
 
-/** Dashboard metric cards Ã¢â€ â€™ admin list routes (see App.jsx). */
+/** Dashboard metric cards to admin list routes. */
 const METRIC_TO = {
   customers: "/customers",
   vendors: "/product-vendors",
   orders: "/orders",
-  revenue: "/orders",
+  revenue: "/reports/tax",
   settlements: "/settlements",
   services: "/service",
   activeAds: "/advertisements",
@@ -150,18 +150,18 @@ export default function DashboardSummary() {
   const ord = c.orders || {};
 
   const values = {
-    customers: cust.total ?? "Ã¢â‚¬â€",
-    vendors: vend.total ?? "Ã¢â‚¬â€",
-    orders: ord.total ?? "Ã¢â‚¬â€",
-    revenue: revenueSum != null ? formatInrCompact(revenueSum) : "Ã¢â‚¬â€",
-    settlements: c.settlements?.total ?? "Ã¢â‚¬â€",
-    services: servicesCount != null ? String(servicesCount) : "Ã¢â‚¬â€",
-    activeAds: activeAdsCount != null ? String(activeAdsCount) : "Ã¢â‚¬â€",
+    customers: cust.total ?? "-",
+    vendors: vend.total ?? "-",
+    orders: ord.total ?? "-",
+    revenue: revenueSum != null ? formatInrCompact(revenueSum) : "-",
+    settlements: c.settlements?.total ?? "-",
+    services: servicesCount != null ? String(servicesCount) : "-",
+    activeAds: activeAdsCount != null ? String(activeAdsCount) : "-",
   };
 
   const vendorBreakdown =
     vend.product != null && vend.service != null
-      ? `${vend.product} product Ã‚Â· ${vend.service} service`
+      ? `${vend.product} product - ${vend.service} service`
       : null;
   const vendorPendingNote =
     typeof vend.pending === "number" && vend.pending > 0
@@ -172,14 +172,14 @@ export default function DashboardSummary() {
     <div className='mb-24'>
       <div className='d-flex align-items-center justify-content-between mb-12'>
         <p className='text-secondary-light mb-0 text-sm'>Overview metrics</p>
-        <p className='text-secondary-light mb-0 text-xs'>Updated at {updatedAt || "Ã¢â‚¬â€"}</p>
+        <p className='text-secondary-light mb-0 text-xs'>Updated at {updatedAt || "-"}</p>
       </div>
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(7, minmax(190px, 1fr))",
+          gridTemplateColumns: "repeat(7, minmax(205px, 1fr))",
           overflowX: "auto",
-          gap: "1rem",
+          gap: "1.25rem",
         }}
       >
       {METRICS.map((m) => {
@@ -199,7 +199,7 @@ export default function DashboardSummary() {
                     <h3 className='fw-bold mb-0 text-primary-light text-2xl mt-8'>{values[m.key]}</h3>
                     {m.key === "vendors" && (vendorBreakdown || vendorPendingNote) ? (
                       <p className='text-secondary-light text-xs mb-0 mt-6'>
-                        {[vendorBreakdown, vendorPendingNote].filter(Boolean).join(" Ã‚Â· ")}
+                        {[vendorBreakdown, vendorPendingNote].filter(Boolean).join(" - ")}
                       </p>
                     ) : null}
                   </div>
