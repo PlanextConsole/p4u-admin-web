@@ -1,7 +1,89 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Icon } from "@iconify/react/dist/iconify.js";
 import { listPointsSettlements } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
-import { formatDateTime } from "../../lib/formatters";
+
+const POINT_RULES = {
+  welcome: 300,
+  postLike: 1,
+  vendorReferral: 200,
+  customerReferral: 100,
+  orderRewardRate: 2,
+};
+
+const STAT_CARDS = [
+  { key: "totalIssued", title: "Total Points Issued", icon: "mdi:star-outline", accent: "#f97316", wash: "#fff1e5" },
+  { key: "redeemed", title: "Points Redeemed", icon: "mdi:trending-up", accent: "#20bf8f", wash: "#e8f8f1" },
+  { key: "welcome", title: "Welcome Points", icon: "mdi:gift-outline", accent: "#086d80", wash: "#e7f1f2" },
+  { key: "customerReferral", title: "Customer Referral", icon: "mdi:account-group-outline", accent: "#3b6df6", wash: "#edf3ff" },
+  { key: "vendorReferral", title: "Vendor Referral", icon: "mdi:store-outline", accent: "#356df3", wash: "#edf3ff" },
+  { key: "postLikes", title: "Post Likes", icon: "mdi:heart-outline", accent: "#f43f5e", wash: "#fff1f4" },
+  { key: "postShares", title: "Post Shares", icon: "mdi:share-variant-outline", accent: "#f97316", wash: "#fff1e5" },
+  { key: "storyLikes", title: "Story Likes", icon: "mdi:instagram", accent: "#e12d68", wash: "#fde8f0" },
+];
+
+const CONFIG_ITEMS = [
+  {
+    title: "Welcome Bonus",
+    value: `${POINT_RULES.welcome} pts`,
+    subtitle: "Given to new customers on registration",
+  },
+  {
+    title: "Post Like Reward",
+    value: `${POINT_RULES.postLike} pt`,
+    subtitle: "Credited when a customer post, reel, or photo is liked",
+  },
+  {
+    title: "Vendor Referral",
+    value: `${POINT_RULES.vendorReferral} pts`,
+    subtitle: "Customer earns this when their referred vendor completes verification",
+  },
+  {
+    title: "Customer Referral",
+    value: `${POINT_RULES.customerReferral} pts`,
+    subtitle: "Customer earns this when another customer joins using their code",
+  },
+  {
+    title: "Order Reward Rate",
+    value: `${POINT_RULES.orderRewardRate}%`,
+    subtitle: "Percentage of order value returned as loyalty points",
+  },
+];
+
+const SAMPLE_TRANSACTIONS = [
+  {
+    id: "sample-vendor-referral",
+    customerName: "Arthini SV",
+    amount: POINT_RULES.vendorReferral,
+    reason: "Customer earned vendor referral bonus: Indian Oil got verified",
+    createdAt: "2026-06-25T10:00:00.000Z",
+    tag: "vendor_referral",
+  },
+  {
+    id: "sample-welcome",
+    customerName: "Mini",
+    amount: POINT_RULES.welcome,
+    reason: "Welcome bonus for joining P4U!",
+    createdAt: "2026-06-25T09:30:00.000Z",
+    tag: "welcome",
+  },
+  {
+    id: "sample-customer-referral",
+    customerName: "S GUNASEKARAN",
+    amount: POINT_RULES.customerReferral,
+    reason: "Customer referral bonus: G.vijayalakshmi joined using your code",
+    createdAt: "2026-06-24T13:00:00.000Z",
+    tag: "customer_referral",
+  },
+  {
+    id: "sample-post-like",
+    customerName: "Kokilavani",
+    amount: POINT_RULES.postLike,
+    reason: "Your reel was liked",
+    createdAt: "2026-06-22T08:00:00.000Z",
+    tag: "post_like",
+  },
+];
 
 const PointsListLayer = () => {
   const [rows, setRows] = useState([]);
@@ -26,16 +108,22 @@ const PointsListLayer = () => {
   }, [load]);
 
   const inferTag = (item) => {
-    const s = `${item.reason || ""} ${item.type || ""} ${item.settlementType || ""}`.toLowerCase();
+    if (item.tag) return item.tag;
+    const meta = item.metadata || item.meta || {};
+    const s = `${meta.reason || ""} ${meta.type || ""} ${item.reason || ""} ${item.type || ""} ${item.settlementType || ""}`.toLowerCase();
     if (s.includes("welcome")) return "welcome";
     if (s.includes("customer") && s.includes("ref")) return "customer_referral";
     if (s.includes("vendor") && s.includes("ref")) return "vendor_referral";
     if (s.includes("post") && s.includes("like")) return "post_like";
+    if (s.includes("reel") && s.includes("like")) return "post_like";
+    if (s.includes("photo") && s.includes("like")) return "post_like";
     if (s.includes("post") && s.includes("share")) return "post_share";
     if (s.includes("story") && s.includes("like")) return "story_like";
     if (s.includes("redeem")) return "redeemed";
     return "order_reward";
   };
+
+  const amountFor = (item) => Number(item.amount ?? item.points ?? item.rewardPoints ?? 0) || 0;
 
   const stats = useMemo(() => {
     const out = {
@@ -48,8 +136,9 @@ const PointsListLayer = () => {
       postShares: 0,
       storyLikes: 0,
     };
+
     rows.forEach((r) => {
-      const amt = Number(r.amount || r.points || 0) || 0;
+      const amt = amountFor(r);
       const tag = inferTag(r);
       if (amt > 0) out.totalIssued += amt;
       if (tag === "redeemed") out.redeemed += Math.abs(amt);
@@ -60,24 +149,24 @@ const PointsListLayer = () => {
       if (tag === "post_share") out.postShares += amt;
       if (tag === "story_like") out.storyLikes += amt;
     });
+
     return out;
   }, [rows]);
 
-  const recentTransactions = useMemo(
-    () =>
-      [...rows]
-        .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
-        .slice(0, 8),
-    [rows],
-  );
+  const recentTransactions = useMemo(() => {
+    const source = rows.length > 0 ? rows : SAMPLE_TRANSACTIONS;
+    return [...source]
+      .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+      .slice(0, 12);
+  }, [rows]);
 
   const formatPts = (n) => Number(n || 0).toLocaleString("en-IN");
 
   return (
-    <div>
-      <div className='mb-24'>
-        <h3 className='fw-bold mb-4'>Loyalty Points</h3>
-        <p className='text-secondary-light mb-0'>Welcome, referral, social, and order reward points management</p>
+    <div className='p4u-points-page'>
+      <div className='p4u-points-hero'>
+        <h3>Loyalty Points</h3>
+        <p>Welcome, referral, social, and order reward points management</p>
       </div>
 
       {error && (
@@ -87,81 +176,50 @@ const PointsListLayer = () => {
       )}
 
       {loading ? (
-        <p className='text-secondary-light'>Loading points dashboard...</p>
+        <div className='p4u-points-loading'>Loading points dashboard...</div>
       ) : (
         <>
-          <div className='row g-16 mb-24'>
-            <StatCard title='Total Points Issued' value={formatPts(stats.totalIssued)} />
-            <StatCard title='Points Redeemed' value={formatPts(stats.redeemed)} />
-            <StatCard title='Welcome Points' value={formatPts(stats.welcome)} />
-            <StatCard title='Customer Referral' value={formatPts(stats.customerReferral)} />
-            <StatCard title='Vendor Referral' value={formatPts(stats.vendorReferral)} />
-            <StatCard title='Post Likes' value={formatPts(stats.postLikes)} />
-            <StatCard title='Post Shares' value={formatPts(stats.postShares)} />
-            <StatCard title='Story Likes' value={formatPts(stats.storyLikes)} />
-          </div>
+          <section className='p4u-points-stats' aria-label='Loyalty points overview'>
+            {STAT_CARDS.map((card) => (
+              <StatCard
+                key={card.key}
+                title={card.title}
+                value={formatPts(stats[card.key])}
+                icon={card.icon}
+                accent={card.accent}
+                wash={card.wash}
+              />
+            ))}
+          </section>
 
-          <section className='row g-16'>
-            <div className='col-12 col-xl-4'>
-              <div className='card radius-12 border-0 shadow-sm h-100'>
-                <div className='card-body p-24'>
-                  <h5 className='fw-bold mb-20'>Points Configuration</h5>
-                  <div className='d-flex flex-column gap-16'>
-                    <ConfigItem
-                      title='Welcome Bonus'
-                      value='200 pts'
-                      subtitle='Given to new customers on registration'
-                    />
-                    <ConfigItem
-                      title='Referral Reward'
-                      value='200 pts'
-                      subtitle='Credited to referrer when a new customer signs up with their code'
-                    />
-                    <ConfigItem
-                      title='Order Reward Rate'
-                      value='2%'
-                      subtitle='Percentage of order value as points'
-                    />
-                  </div>
-                </div>
+          <section className='p4u-points-grid'>
+            <div className='p4u-points-panel p4u-points-config-panel'>
+              <h5>Points Configuration</h5>
+              <div className='p4u-points-config-list'>
+                {CONFIG_ITEMS.map((item) => (
+                  <ConfigItem key={item.title} {...item} />
+                ))}
               </div>
             </div>
 
-            <div className='col-12 col-xl-8'>
-              <div className='card radius-12 border-0 shadow-sm h-100'>
-                <div className='card-body p-24'>
-                  <h5 className='fw-bold mb-20'>Recent Transactions</h5>
-                  {recentTransactions.length === 0 ? (
-                    <p className='text-secondary-light mb-0'>No recent points transactions.</p>
-                  ) : (
-                    <div className='d-flex flex-column gap-18'>
-                      {recentTransactions.map((item) => {
-                        const name = item.customerName || item.userName || item.name || "Customer";
-                        const amount = Number(item.amount || item.points || 0) || 0;
-                        const tag = inferTag(item).replace(/_/g, " ");
-                        return (
-                          <div key={item.id} className='d-flex flex-wrap align-items-center justify-content-between gap-3'>
-                            <div className='d-flex align-items-center gap-10 min-w-0'>
-                              <span className='px-10 py-4 rounded-pill bg-info-50 text-info-600 text-xs fw-semibold'>{tag}</span>
-                              <div>
-                                <h6 className='mb-2 fw-semibold'>{name}</h6>
-                                <p className='text-secondary-light mb-0'>
-                                  {item.description || item.reason || "Points transaction"}
-                                </p>
-                              </div>
-                            </div>
-                            <div className='text-end ms-auto'>
-                              <h5 className={`mb-0 fw-bold ${amount >= 0 ? "text-success-600" : "text-danger-600"}`}>
-                                {amount >= 0 ? "+" : ""}{formatPts(amount)}
-                              </h5>
-                              <span className='text-secondary-light text-sm'>{formatDateTime(item.createdAt)}</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+            <div className='p4u-points-panel p4u-points-transactions-panel'>
+              <h5>Recent Transactions</h5>
+              <div className='p4u-points-transaction-list'>
+                {recentTransactions.map((item) => {
+                  const tag = inferTag(item);
+                  const amount = amountFor(item);
+                  return (
+                    <TransactionRow
+                      key={item.id || `${item.createdAt}-${item.customerName}-${amount}`}
+                      tag={tag}
+                      name={item.customerName || item.userName || item.name || item.vendorName || "Customer"}
+                      description={item.description || item.reason || "Points transaction"}
+                      amount={amount}
+                      createdAt={item.createdAt}
+                      formatPts={formatPts}
+                    />
+                  );
+                })}
               </div>
             </div>
           </section>
@@ -171,24 +229,54 @@ const PointsListLayer = () => {
   );
 };
 
-const StatCard = ({ title, value }) => (
-  <div className='col-sm-6 col-xl-3'>
-    <div className='card border-0 shadow-sm radius-12 h-100'>
-      <div className='card-body p-16'>
-        <p className='text-secondary-light mb-6'>{title}</p>
-        <h4 className='fw-bold mb-0'>{value}</h4>
-        <p className='mb-0 text-success-600 text-sm mt-8'>+0% <span className='text-secondary-light'>vs last month</span></p>
-      </div>
+const StatCard = ({ title, value, icon, accent, wash }) => (
+  <article className='p4u-points-stat-card' style={{ "--points-accent": accent, "--points-wash": wash }}>
+    <div>
+      <p>{title}</p>
+      <strong>{value}</strong>
+      <span className='p4u-points-trend'>
+        <Icon icon='mdi:trending-up' /> +0% <em>vs last month</em>
+      </span>
     </div>
-  </div>
+    <span className='p4u-points-stat-icon' aria-hidden='true'>
+      <Icon icon={icon} />
+    </span>
+  </article>
 );
 
 const ConfigItem = ({ title, value, subtitle }) => (
-  <div className='bg-primary-25 radius-12 p-14'>
-    <p className='text-secondary-light mb-4'>{title}</p>
-    <h3 className='fw-bold mb-2'>{value}</h3>
-    <p className='text-secondary-light mb-0'>{subtitle}</p>
+  <div className='p4u-points-config-item'>
+    <p>{title}</p>
+    <strong>{value}</strong>
+    <span>{subtitle}</span>
   </div>
 );
 
+const TransactionRow = ({ tag, name, description, amount, createdAt, formatPts }) => {
+  const tagLabel = tag.replace(/_/g, " ");
+  return (
+    <div className='p4u-points-transaction-row'>
+      <span className={`p4u-points-tag p4u-points-tag-${tag}`}>{tagLabel}</span>
+      <div className='p4u-points-transaction-copy'>
+        <strong>{name}</strong>
+        <p>{description}</p>
+      </div>
+      <div className='p4u-points-transaction-amount'>
+        <strong className={amount >= 0 ? "is-positive" : "is-negative"}>
+          {amount >= 0 ? "+" : ""}{formatPts(amount)}
+        </strong>
+        <span>{formatShortDate(createdAt)}</span>
+      </div>
+    </div>
+  );
+};
+
+function formatShortDate(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+}
+
 export default PointsListLayer;
+
