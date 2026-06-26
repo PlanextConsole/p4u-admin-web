@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import ThemeToggleButton from "../helper/ThemeToggleButton";
 import { getAccessToken } from "../lib/api/tokenStorage";
 /** Converts display name to profile initials. */
 function displayNameToInitials(name) {
@@ -24,19 +23,21 @@ function sidebarNavClass({ isActive }) {
   return isActive ? "active-page" : "";
 }
 
-function readProfileLabelFromToken() {
+function readProfileFromToken() {
   const t = getAccessToken();
-  if (!t || typeof t !== "string") return null;
+  if (!t || typeof t !== "string") return { name: null, email: null };
   try {
     const part = t.split(".")[1];
-    if (!part) return null;
+    if (!part) return { name: null, email: null };
     const json = JSON.parse(atob(part.replace(/-/g, "+").replace(/_/g, "/")));
+    const email = typeof json.email === "string" && json.email.trim() ? json.email.trim() : null;
     const n = json.name || json.preferred_username || json.email;
-    if (typeof n !== "string" || !n.trim()) return null;
+    if (typeof n !== "string" || !n.trim()) return { name: null, email };
     const base = n.includes("@") ? n.split("@")[0].trim() : n.trim();
-    return base.replace(/[._]+/g, " ").trim() || null;
+    const name = base.replace(/[._]+/g, " ").trim() || null;
+    return { name, email };
   } catch {
-    return null;
+    return { name: null, email: null };
   }
 }
 
@@ -45,13 +46,20 @@ const MasterLayout = ({ children }) => {
   const { logout } = useAuth();
   let [sidebarActive, seSidebarActive] = useState(false);
   let [mobileMenu, setMobileMenu] = useState(false);
-  const [displayName, setDisplayName] = useState("Admin User");
+  const [displayName, setDisplayName] = useState("Super Admin");
+  const [displayEmail, setDisplayEmail] = useState("admin@planext4u.com");
   const location = useLocation();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
+  };
 
   useEffect(() => {
     const sync = () => {
-      const fromToken = readProfileLabelFromToken();
-      setDisplayName(fromToken || "Admin User");
+      const { name, email } = readProfileFromToken();
+      setDisplayName(name || "Super Admin");
+      setDisplayEmail(email || "admin@planext4u.com");
     };
     sync();
     window.addEventListener("p4u-admin-token-updated", sync);
@@ -136,11 +144,11 @@ const MasterLayout = ({ children }) => {
     <section className={mobileMenu ? "overlay active" : "overlay "}>
       <aside
         className={
-          sidebarActive
+          (sidebarActive
             ? "sidebar active "
             : mobileMenu
               ? "sidebar sidebar-open"
-              : "sidebar"
+              : "sidebar") + " p4u-sidebar-shell"
         }
       >
         <button onClick={mobileMenuControl} type='button' className='sidebar-close-btn'>
@@ -166,7 +174,7 @@ const MasterLayout = ({ children }) => {
           </Link>
         </div>
 
-        <div className='sidebar-menu-area'>
+        <div className='sidebar-menu-area p4u-sidebar-menu-scroll'>
           <ul className='sidebar-menu' id='sidebar-menu'>
             
             {/* MAIN */}
@@ -179,7 +187,7 @@ const MasterLayout = ({ children }) => {
             </li>
 
             {/* PRODUCT MANAGEMENT */}
-            <li className='sidebar-menu-group-title'>Main</li>
+            <li className='sidebar-menu-group-title'>Product Management</li>
             <li>
               <NavLink to='/product-vendors' className={sidebarNavClass}>
                 <Icon icon='mdi:store-outline' className='menu-icon' />
@@ -400,6 +408,28 @@ const MasterLayout = ({ children }) => {
 
           </ul>
         </div>
+
+        <div className='sidebar-user-footer'>
+          <span className='sidebar-user-footer__avatar' aria-hidden>
+            {profileInitials}
+          </span>
+          <div className='sidebar-user-footer__info min-w-0'>
+            <div className='sidebar-user-footer__name-row'>
+              <span className='sidebar-user-footer__name text-truncate'>{displayName}</span>
+              <span className='sidebar-user-footer__badge'>Admin</span>
+            </div>
+            <span className='sidebar-user-footer__email text-truncate d-block'>{displayEmail}</span>
+          </div>
+          <button
+            type='button'
+            className='sidebar-user-footer__logout'
+            onClick={handleLogout}
+            aria-label='Log out'
+            title='Log out'
+          >
+            <Icon icon='solar:logout-2-outline' className='text-xl' />
+          </button>
+        </div>
       </aside>
 
       <main className={sidebarActive ? "dashboard-main active" : "dashboard-main"}>
@@ -417,52 +447,6 @@ const MasterLayout = ({ children }) => {
                   <input type='text' name='search' placeholder='Search pages, features...' />
                   <Icon icon='ion:search-outline' className='icon' />
                 </form>
-              </div>
-            </div>
-            <div className='col-auto'>
-              <div className='d-flex flex-wrap align-items-center gap-3'>
-                <ThemeToggleButton />
-                {/* MAIN */}
-                <div className='dropdown'>
-                  <button
-                    className='admin-reference-role-pill d-flex justify-content-center align-items-center px-14 py-6 border bg-white text-primary-light fw-bold text-sm rounded-pill flex-shrink-0'
-                    type='button'
-                    data-bs-toggle='dropdown'
-                    aria-label={`Account menu (${displayName})`}
-                  >
-                    Admin
-                  </button>
-                  <div className='dropdown-menu to-top dropdown-menu-sm'>
-                    <div className='py-12 px-16 radius-8 bg-primary-50 mb-16 d-flex align-items-center justify-content-between gap-2'>
-                      <div className='d-flex align-items-center gap-12'>
-                        <span
-                          className='w-40-px h-40-px rounded-circle bg-primary-600 text-white fw-bold text-sm d-flex align-items-center justify-content-center flex-shrink-0'
-                          aria-hidden
-                        >
-                          Admin
-                        </span>
-                        <div>
-                          <h6 className='text-lg text-primary-light fw-semibold mb-0'>{displayName}</h6>
-                        </div>
-                      </div>
-                    </div>
-                    <ul className='to-top-list'>
-                      <li><Link className='dropdown-item text-black px-0 py-8 hover-bg-transparent hover-text-primary d-flex align-items-center gap-3' to='/view-profile'><Icon icon='solar:user-linear' className='icon text-xl' /> My Profile</Link></li>
-                      <li>
-                        <button
-                          type='button'
-                          className='dropdown-item text-black px-0 py-8 hover-bg-transparent hover-text-danger d-flex align-items-center gap-3 w-100 border-0 bg-transparent'
-                          onClick={() => {
-                            logout();
-                            navigate("/login", { replace: true });
-                          }}
-                        >
-                          <Icon icon='lucide:power' className='icon text-xl' /> Log Out
-                        </button>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
               </div>
             </div>
           </div>

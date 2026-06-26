@@ -2864,3 +2864,123 @@ button.fw-semibold {
 .sidebar-menu .sidebar-submenu li a.active {
   font-weight: 500 !important;
 }
+
+/* Sidebar shell: scrollable menu + fixed user footer with logout */
+.p4u-sidebar-shell {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  overflow: hidden !important;
+}
+
+.p4u-sidebar-menu-scroll {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+.sidebar-user-footer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+  padding: 14px 16px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: #06172a;
+}
+
+.sidebar-user-footer__avatar {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #2a3f55;
+  color: #e8f0f6;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: lowercase;
+}
+
+.sidebar-user-footer__info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.sidebar-user-footer__name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin-bottom: 2px;
+}
+
+.sidebar-user-footer__name {
+  color: #ffffff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.sidebar-user-footer__badge {
+  flex-shrink: 0;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(20, 154, 154, 0.22);
+  color: #5eead4;
+  font-size: 0.62rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.sidebar-user-footer__email {
+  color: #8fa5ba;
+  font-size: 0.72rem;
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+.sidebar-user-footer__logout {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #b7c7d7;
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.sidebar-user-footer__logout:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sidebar.active:not(:hover) .sidebar-user-footer__info {
+  display: none !important;
+}
+
+.sidebar.active:not(:hover) .sidebar-user-footer {
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 8px 14px;
+}
+
+.sidebar.active:hover .sidebar-user-footer {
+  flex-direction: row;
+  padding: 14px 16px 16px;
+}
+
+.sidebar.active:hover .sidebar-user-footer__info {
+  display: block !important;
+}
