@@ -177,7 +177,8 @@ export default function DashboardSummary() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(7, minmax(155px, 1fr))",`r`n          overflowX: "auto",
+          gridTemplateColumns: "repeat(7, minmax(155px, 1fr))",
+          overflowX: "auto",
           gap: "1rem",
         }}
       >
