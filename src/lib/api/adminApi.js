@@ -345,7 +345,8 @@ export function listServiceBookings(params) {
 }
 
 export function updateServiceBookingStatus(bookingId, body) {
-  return api.patch(`/api/v1/commerce/bookings/${encodeURIComponent(bookingId)}/status`, body);
+  const payload = typeof body === "string" ? { status: body } : body;
+  return api.patch(`/api/v1/commerce/bookings/${encodeURIComponent(bookingId)}/status`, payload);
 }
 
 export function deleteServiceBooking(bookingId) {
