@@ -169,19 +169,12 @@ export default function DashboardSummary() {
       : null;
 
   return (
-    <div className='mb-24'>
-      <div className='d-flex align-items-center justify-content-between mb-12'>
+    <div className='mb-16'>
+      <div className='d-flex align-items-center justify-content-between mb-8'>
         <p className='text-secondary-light mb-0 text-sm'>Overview metrics</p>
         <p className='text-secondary-light mb-0 text-xs'>Updated at {updatedAt || "-"}</p>
       </div>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(7, minmax(205px, 1fr))",
-          overflowX: "auto",
-          gap: "1.25rem",
-        }}
-      >
+      <div className='p4u-dashboard-metrics-grid'>
       {METRICS.map((m) => {
         const to = METRIC_TO[m.key];
         return (

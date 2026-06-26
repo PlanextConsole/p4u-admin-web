@@ -2636,83 +2636,7 @@ button.fw-semibold {
   font-weight: 600 !important;
 }
 
-/* Dashboard recent orders exact reference spacing and typography */
-.p4u-dashboard-recent-card .card-body {
-  padding: 24px 24px 26px !important;
-}
-
-.p4u-dashboard-recent-card .p4u-dashboard-panel-title {
-  margin-bottom: 22px !important;
-  color: #06172a !important;
-  font-size: 1.15rem !important;
-  line-height: 1.25 !important;
-  font-weight: 600 !important;
-  letter-spacing: -0.015em !important;
-}
-
-.p4u-dashboard-recent-card .p4u-dashboard-recent-subtitle {
-  display: none !important;
-}
-
-.p4u-dashboard-recent-card .p4u-dashboard-recent-list {
-  gap: 0 !important;
-}
-
-.p4u-dashboard-recent-card .p4u-dashboard-recent-row {
-  min-height: 81px !important;
-  padding: 15px 0 14px !important;
-  border-bottom: 1px solid #edf2f5 !important;
-  border-radius: 0 !important;
-}
-
-.p4u-dashboard-recent-card .p4u-dashboard-recent-row:hover {
-  background: transparent !important;
-}
-
-.p4u-dashboard-recent-card .p4u-dashboard-recent-row:last-child {
-  border-bottom: 0 !important;
-}
-
-.p4u-dashboard-recent-card .p4u-dashboard-order-name {
-  margin-bottom: 4px !important;
-  color: #06172a !important;
-  font-size: 0.96rem !important;
-  line-height: 1.2 !important;
-  font-weight: 500 !important;
-  letter-spacing: -0.01em !important;
-}
-
-.p4u-dashboard-recent-card .p4u-dashboard-order-meta {
-  color: #51657d !important;
-  font-size: 0.9rem !important;
-  line-height: 1.25 !important;
-  font-weight: 400 !important;
-}
-
-.p4u-dashboard-recent-card .p4u-dashboard-order-status {
-  min-width: 82px !important;
-  padding: 4px 12px !important;
-  text-align: center !important;
-  font-size: 0.84rem !important;
-  line-height: 1.1 !important;
-  font-weight: 600 !important;
-}
-
-.p4u-dashboard-recent-card .p4u-dashboard-order-amount {
-  min-width: 48px !important;
-  text-align: right !important;
-  color: #06172a !important;
-  font-size: 0.94rem !important;
-  line-height: 1.2 !important;
-  font-weight: 600 !important;
-}
-
-/* Dashboard lower cards compact reference pass */
-section.row.g-4:has(.p4u-dashboard-recent-card) {
-  --bs-gutter-x: 1.25rem !important;
-  --bs-gutter-y: 1.25rem !important;
-}
-
+/* Dashboard Recent Orders + Top Vendors — reference typography (final) */
 .p4u-dashboard-recent-card,
 .p4u-dashboard-vendors-card {
   min-height: 360px !important;
@@ -2736,40 +2660,56 @@ section.row.g-4:has(.p4u-dashboard-recent-card) {
   letter-spacing: -0.01em !important;
 }
 
-.p4u-dashboard-vendors-subtitle {
-  display: none !important;
+.p4u-dashboard-recent-card .p4u-dashboard-recent-list {
+  gap: 0 !important;
 }
 
 .p4u-dashboard-recent-card .p4u-dashboard-recent-row {
-  min-height: 61px !important;
-  padding: 10px 0 10px !important;
-  border-bottom-color: #eef3f6 !important;
+  min-height: 62px !important;
+  padding: 11px 0 !important;
+  border-bottom: 1px solid #eef3f6 !important;
+  border-radius: 0 !important;
+}
+
+.p4u-dashboard-recent-card .p4u-dashboard-recent-row:hover {
+  background: transparent !important;
+}
+
+.p4u-dashboard-recent-card .p4u-dashboard-recent-row:last-child {
+  border-bottom: 0 !important;
 }
 
 .p4u-dashboard-recent-card .p4u-dashboard-order-name {
   margin-bottom: 3px !important;
-  font-size: 0.9rem !important;
-  line-height: 1.18 !important;
-  font-weight: 500 !important;
+  color: #06172a !important;
+  font-size: 0.9375rem !important;
+  line-height: 1.2 !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
 }
 
 .p4u-dashboard-recent-card .p4u-dashboard-order-meta {
-  font-size: 0.82rem !important;
-  line-height: 1.25 !important;
   color: #51657d !important;
+  font-size: 0.8125rem !important;
+  line-height: 1.25 !important;
+  font-weight: 400 !important;
 }
 
 .p4u-dashboard-recent-card .p4u-dashboard-order-status {
   min-width: 72px !important;
   padding: 4px 11px !important;
-  font-size: 0.76rem !important;
+  text-align: center !important;
+  font-size: 0.75rem !important;
   line-height: 1.05 !important;
   font-weight: 600 !important;
 }
 
 .p4u-dashboard-recent-card .p4u-dashboard-order-amount {
   min-width: 44px !important;
-  font-size: 0.9rem !important;
+  text-align: right !important;
+  color: #06172a !important;
+  font-size: 0.9375rem !important;
+  line-height: 1.2 !important;
   font-weight: 600 !important;
 }
 
@@ -2800,4 +2740,127 @@ section.row.g-4:has(.p4u-dashboard-recent-card) {
     min-height: auto !important;
     padding: 12px 0 !important;
   }
+}
+
+/* Dashboard: fit on one screen, no metric-row horizontal scroll */
+.p4u-dashboard-page {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.p4u-dashboard-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.dashboard-main-body:has(.p4u-dashboard-page) {
+  padding: 18px 22px 16px !important;
+}
+
+.dashboard-main-body:has(.p4u-dashboard-page) .p4u-breadcrumb-bar {
+  margin-bottom: 12px !important;
+}
+
+.dashboard-main-body:has(.p4u-dashboard-page) .p4u-breadcrumb-heading h4 {
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+  margin-bottom: 2px !important;
+}
+
+.dashboard-main-body:has(.p4u-dashboard-page) .p4u-breadcrumb-heading p {
+  font-size: 0.875rem !important;
+  margin-bottom: 0 !important;
+}
+
+.p4u-dashboard-page .p4u-dashboard-metric-link {
+  min-width: 0 !important;
+}
+
+.p4u-dashboard-page .p4u-dashboard-metric-link .card {
+  width: 100% !important;
+  min-height: 118px !important;
+}
+
+.p4u-dashboard-page .p4u-dashboard-metric-link .card-body {
+  padding: 14px 12px 12px !important;
+}
+
+.p4u-dashboard-page .p4u-dashboard-metric-link .card::after {
+  width: 72px !important;
+  height: 72px !important;
+}
+
+.p4u-dashboard-page .p4u-dashboard-metric-link h3 {
+  font-size: 1.2rem !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.02em !important;
+}
+
+.p4u-dashboard-page .p4u-dashboard-metric-link .text-secondary-light.text-sm {
+  font-size: 0.78rem !important;
+}
+
+.p4u-dashboard-page .p4u-dashboard-metric-link .w-48-px.h-48-px {
+  width: 40px !important;
+  height: 40px !important;
+}
+
+.p4u-dashboard-page .p4u-dashboard-metric-link .w-48-px.h-48-px .icon {
+  font-size: 1.25rem !important;
+}
+
+.p4u-dashboard-page .p4u-dashboard-charts-card .card-body {
+  padding: 18px 18px 14px !important;
+}
+
+.p4u-dashboard-page .p4u-dashboard-charts-card .p4u-dashboard-panel-title {
+  margin-bottom: 12px !important;
+}
+
+.p4u-dashboard-page .p4u-dashboard-recent-card,
+.p4u-dashboard-page .p4u-dashboard-vendors-card {
+  min-height: 0 !important;
+}
+
+.p4u-dashboard-page .p4u-dashboard-recent-card .card-body,
+.p4u-dashboard-page .p4u-dashboard-vendors-card .card-body {
+  padding: 18px 18px 14px !important;
+}
+
+.p4u-dashboard-page .p4u-dashboard-recent-card .p4u-dashboard-recent-row {
+  min-height: 54px !important;
+  padding: 8px 0 !important;
+}
+
+@media (max-width: 1599px) {
+  .p4u-dashboard-metrics-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1199px) {
+  .p4u-dashboard-metrics-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .p4u-dashboard-metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Sidebar menu: normal weight (not bold) */
+.sidebar-menu li > a,
+.sidebar-menu .sidebar-submenu li a {
+  font-weight: 400 !important;
+}
+
+.sidebar-menu li > a.active-page,
+.sidebar-menu .sidebar-submenu li a.active-page,
+.sidebar-menu .sidebar-submenu li a.active {
+  font-weight: 500 !important;
 }

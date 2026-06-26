@@ -88,7 +88,6 @@ export default function DashboardCharts() {
   const [error, setError] = useState("");
   const [revenue, setRevenue] = useState({ categories: [], data: [] });
   const [categoryRows, setCategoryRows] = useState([]);
-  const [updatedAt, setUpdatedAt] = useState("");
   const [isCompact, setIsCompact] = useState(false);
 
   useEffect(() => {
@@ -108,7 +107,6 @@ export default function DashboardCharts() {
         if (!cancelled) {
           setRevenue(rev);
           setCategoryRows(cats);
-          setUpdatedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
         }
       } catch (e) {
         if (!cancelled) {
@@ -213,12 +211,11 @@ export default function DashboardCharts() {
   const hasCategoryData = donutSeries.length > 0;
 
   return (
-    <section className='row g-4 mb-24'>
+    <section className='row g-3 mb-16 p4u-dashboard-charts-row'>
       <div className='col-12 col-xl-7'>
-        <div className='card border-0 shadow-sm radius-16 h-100 bg-base'>
-          <div className='card-body p-24'>
-            <h5 className='fw-bold text-primary-light mb-16'>Revenue Trend</h5>
-            <p className='text-secondary-light text-sm mb-12'>Last 7 days - updated {updatedAt || "-"}</p>
+        <div className='card border-0 shadow-sm radius-16 h-100 bg-base p4u-dashboard-charts-card'>
+          <div className='card-body p-20'>
+            <h5 className='mb-0 p4u-dashboard-panel-title'>Revenue Trend</h5>
             {error && (
               <div className='alert alert-warning radius-12 py-12 px-16 mb-0' role='status'>
                 {error}
@@ -230,16 +227,15 @@ export default function DashboardCharts() {
               </div>
             )}
             {!error && !loading && (
-              <ReactApexChart options={lineOptions} series={lineSeries} type='area' height={isCompact ? 240 : 300} />
+              <ReactApexChart options={lineOptions} series={lineSeries} type='area' height={isCompact ? 200 : 220} />
             )}
           </div>
         </div>
       </div>
       <div className='col-12 col-xl-5'>
-        <div className='card border-0 shadow-sm radius-16 h-100 bg-base'>
-          <div className='card-body p-24'>
-            <h5 className='fw-bold text-primary-light mb-16'>Categories</h5>
-            <p className='text-secondary-light text-sm mb-12'>Product distribution snapshot</p>
+        <div className='card border-0 shadow-sm radius-16 h-100 bg-base p4u-dashboard-charts-card'>
+          <div className='card-body p-20'>
+            <h5 className='mb-0 p4u-dashboard-panel-title'>Categories</h5>
             {error && (
               <div className='alert alert-warning radius-12 py-12 px-16 mb-0' role='status'>
                 {error}
@@ -251,7 +247,7 @@ export default function DashboardCharts() {
               </div>
             )}
             {!error && !loading && hasCategoryData && (
-              <ReactApexChart options={donutOptions} series={donutSeries} type='donut' height={isCompact ? 260 : 320} />
+              <ReactApexChart options={donutOptions} series={donutSeries} type='donut' height={isCompact ? 220 : 240} />
             )}
             {!error && !loading && !hasCategoryData && (
               <div className='text-secondary-light py-5 text-center'>No product category distribution yet.</div>

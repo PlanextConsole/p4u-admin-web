@@ -4,11 +4,11 @@ import DashboardInsights from "./DashboardInsights";
 
 const DashBoardLayerOne = () => {
   return (
-    <>
+    <div className='p4u-dashboard-page'>
       <DashboardSummary />
       <DashboardCharts />
       <DashboardInsights />
-    </>
+    </div>
   );
 };
 

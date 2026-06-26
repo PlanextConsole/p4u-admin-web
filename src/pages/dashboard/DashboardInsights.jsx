@@ -46,7 +46,6 @@ export default function DashboardInsights() {
   const [orders, setOrders] = useState([]);
   const [vendorMap, setVendorMap] = useState({});
   const [customerById, setCustomerById] = useState({});
-  const [updatedAt, setUpdatedAt] = useState("");
   const [isCompact, setIsCompact] = useState(false);
 
   useEffect(() => {
@@ -95,7 +94,6 @@ export default function DashboardInsights() {
         );
         if (!cancelled) {
           setCustomerById(Object.fromEntries(pairs));
-          setUpdatedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
         }
       } catch (e) {
         if (!cancelled) {
@@ -170,12 +168,11 @@ export default function DashboardInsights() {
   );
 
   return (
-    <section className='row g-4'>
+    <section className='row g-3 p4u-dashboard-insights-row'>
       <div className='col-12 col-xl-6'>
         <div className='card border-0 shadow-sm radius-16 h-100 bg-base p4u-dashboard-recent-card'>
           <div className='card-body p-24'>
-            <h5 className='fw-bold text-primary-light mb-20 p4u-dashboard-panel-title'>Recent Orders</h5>
-            <p className='text-secondary-light text-sm mb-12 p4u-dashboard-recent-subtitle'>Most recent order activity - updated {updatedAt || "-"}</p>
+            <h5 className='mb-0 p4u-dashboard-panel-title'>Recent Orders</h5>
             {error && (
               <div className='alert alert-warning radius-12 py-12 px-16 mb-0' role='status'>
                 {error}
@@ -204,10 +201,10 @@ export default function DashboardInsights() {
                   return (
                     <div key={o.id} className={`d-flex justify-content-between gap-3 p-8 radius-8 hover-bg-neutral-50 p4u-dashboard-recent-row ${isCompact ? "flex-column align-items-start" : "align-items-center"}`}>
                       <div className='min-w-0 w-100'>
-                        <h6 className='mb-4 fw-semibold text-primary-light text-truncate p4u-dashboard-order-name'>{customerName}</h6>
-                        <p className='text-secondary-light mb-0 text-md text-truncate p4u-dashboard-order-meta'>
-                          {(o.orderRef || o.id || "-")} - {vendorName}
-                        </p>
+                        <span className='d-block text-truncate p4u-dashboard-order-name'>{customerName}</span>
+                        <span className='d-block text-truncate p4u-dashboard-order-meta'>
+                          {(o.orderRef || o.id || "-")} · {vendorName}
+                        </span>
                       </div>
                       <div className={`d-flex align-items-center gap-12 ${isCompact ? "w-100 justify-content-between" : "flex-shrink-0"}`}>
                         <span className={`px-12 py-4 rounded-pill fw-medium text-sm p4u-dashboard-order-status ${statusPill(o.status)}`}>
@@ -227,8 +224,7 @@ export default function DashboardInsights() {
       <div className='col-12 col-xl-6'>
         <div className='card border-0 shadow-sm radius-16 h-100 bg-base p4u-dashboard-vendors-card'>
           <div className='card-body p-24'>
-            <h5 className='fw-bold text-primary-light mb-16 p4u-dashboard-panel-title'>Top Vendors</h5>
-            <p className='text-secondary-light text-sm mb-12 p4u-dashboard-vendors-subtitle'>Ranked by recent revenue contribution</p>
+            <h5 className='mb-0 p4u-dashboard-panel-title'>Top Vendors</h5>
             {error && (
               <div className='alert alert-warning radius-12 py-12 px-16 mb-0' role='status'>
                 {error}
@@ -243,7 +239,7 @@ export default function DashboardInsights() {
               <div className='text-secondary-light py-4'>No vendor performance data yet.</div>
             )}
             {!error && !loading && topVendors.length > 0 && (
-              <ReactApexChart options={vendorChartOptions} series={vendorChartSeries} type='bar' height={isCompact ? 220 : 225} />
+              <ReactApexChart options={vendorChartOptions} series={vendorChartSeries} type='bar' height={isCompact ? 200 : 210} />
             )}
           </div>
         </div>
