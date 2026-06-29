@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { toast } from "react-toastify";
 import {
@@ -12,7 +13,7 @@ import {
 import { ApiError } from "../../lib/api/client";
 import { formatDateTime } from "../../lib/formatters";
 import FormModal from "../../components/admin/FormModal";
-import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
+import TableActionButtons from "../../components/admin/TableActionButtons";
 import VendorFormLayer from "./VendorFormLayer";
 
 const STATUS_TABS = [
@@ -83,22 +84,64 @@ function toCsv(rows) {
   return rows.map((r) => r.map(esc).join(",")).join("\n");
 }
 
+function formatVendorDateTime(value) {
+  if (!value) return "—";
+  const dt = new Date(value);
+  if (Number.isNaN(dt.getTime())) return "—";
+  const day = dt.toLocaleString("en-IN", { day: "2-digit" });
+  const mon = dt.toLocaleString("en-IN", { month: "short" });
+  const yr = String(dt.getFullYear()).slice(-2);
+  const time = dt.toLocaleString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+  return `${day} ${mon} ${yr}, ${time}`;
+}
+
+function resolvePaymentStatus(v) {
+  const docs = v.documentsJson && typeof v.documentsJson === "object" ? v.documentsJson : {};
+  return String(v.paymentStatus || docs.paymentStatus || v.membershipStatus || "unpaid").toLowerCase();
+}
+
+function formatCommission(v) {
+  const n = v.commissionRate;
+  if (n == null || n === "") return "—";
+  return `${Number(n)}%`;
+}
+
+function statusPill(statusKey) {
+  const map = {
+    verified: { label: "Verified", cls: "p4u-vendor-pill is-verified" },
+    pending: { label: "Pending", cls: "p4u-vendor-pill is-pending" },
+    rejected: { label: "Rejected", cls: "p4u-vendor-pill is-rejected" },
+    deactivated: { label: "Deactivated", cls: "p4u-vendor-pill is-deactivated" },
+    deleted: { label: "Deleted", cls: "p4u-vendor-pill is-deactivated" },
+  };
+  return map[statusKey] || { label: statusKey, cls: "p4u-vendor-pill is-pending" };
+}
+
+function paymentPill(value) {
+  const p = String(value || "unpaid").toLowerCase();
+  if (p === "paid") return { label: "paid", cls: "p4u-vendor-pill is-paid" };
+  return { label: "unpaid", cls: "p4u-vendor-pill is-unpaid" };
+}
+
 /**
- * @param {{ vendorKind: 'product'|'service', pageTitle: string, pageSubtitle?: string, addButtonLabel: string, searchPlaceholder?: string, csvFilenamePrefix?: string }} props
+ * @param {{ vendorKind: 'product'|'service', pageTitle?: string, pageSubtitle?: string, addButtonLabel: string, searchPlaceholder?: string, csvFilenamePrefix?: string, headerLinkLabel?: string, headerLinkTo?: string }} props
  */
 const VendorListLayer = ({
   vendorKind,
-  pageTitle,
+  pageTitle = "Vendors",
   pageSubtitle,
   addButtonLabel,
   searchPlaceholder,
   csvFilenamePrefix,
+  headerLinkLabel,
+  headerLinkTo,
 }) => {
   const [vendors, setVendors] = useState([]);
   const [pendingApplications, setPendingApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [paymentFilter, setPaymentFilter] = useState("");
   const [statusTab, setStatusTab] = useState("pending");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -216,6 +259,9 @@ const VendorListLayer = ({
     const q = search.trim().toLowerCase();
     return rows.filter((v) => {
       if (statusTab !== "pending" && statusTab && v.__status !== statusTab) return false;
+      if (paymentFilter && statusTab !== "pending") {
+        if (resolvePaymentStatus(v) !== paymentFilter) return false;
+      }
       if (fromDate) {
         const d = new Date(v.createdAt);
         if (Number.isNaN(d.getTime()) || d < new Date(fromDate)) return false;
@@ -236,7 +282,7 @@ const VendorListLayer = ({
         (v.businessType || "").toLowerCase().includes(q)
       );
     });
-  }, [rows, statusTab, fromDate, toDate, search]);
+  }, [rows, statusTab, fromDate, toDate, search, paymentFilter]);
 
   const exportCsv = () => {
     const rowsCsv = [
@@ -273,187 +319,201 @@ const VendorListLayer = ({
     return vendor.__catalogVendorId || vendor.id || null;
   };
 
+  const heroSubtitle =
+    pageSubtitle ??
+    `${counts.verified} registered vendors · Multi-level approval`;
+
   return (
-    <div className='card h-100 p-0 radius-16 border-0 shadow-sm'>
-      <div className='card-body p-24'>
-        <div className='mb-20'>
-          <h3 className='fw-bold mb-4'>{pageTitle}</h3>
-          <p className='text-secondary-light mb-0'>
-            {pageSubtitle ?? (
-              <>
-                {catalogRows.length} in catalog · {pendingRows.length} awaiting approval
-                {" · "}
-                Pending tab matches vendor registration fields (name, business, category, GST/PAN)
-              </>
-            )}
-          </p>
+    <div className='p4u-vendors-page'>
+      <header className='p4u-vendors-hero'>
+        <div>
+          <h3>{pageTitle}</h3>
+          <p>{heroSubtitle}</p>
         </div>
+        {headerLinkLabel && headerLinkTo ? (
+          <Link to={headerLinkTo} className='p4u-vendors-hero__action'>
+            <Icon icon='ic:baseline-plus' /> {headerLinkLabel}
+          </Link>
+        ) : null}
+      </header>
 
-        <div className='bg-primary-50 radius-12 p-6 p4u-admin-filter-row gap-6 mb-16'>
-          {STATUS_TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type='button'
-              onClick={() => setStatusTab(tab.key)}
-              className={`btn border-0 radius-10 px-14 py-8 ${statusTab === tab.key ? "bg-white fw-semibold text-primary-600" : "bg-transparent text-secondary-light"}`}
-            >
-              {tab.label}
-              {tab.key === "pending" ? ` (${counts.pending})` : ""}
-              {tab.key === "deactivated" ? ` (${counts.deactivated})` : ""}
-              {tab.key === "deleted" ? ` (${counts.deleted})` : ""}
-            </button>
-          ))}
+      <nav className='p4u-vendors-tabs' aria-label='Vendor status filters'>
+        {STATUS_TABS.map((tab) => (
+          <button
+            key={tab.key}
+            type='button'
+            className={statusTab === tab.key ? "is-active" : ""}
+            onClick={() => setStatusTab(tab.key)}
+          >
+            {tab.label}
+            {tab.key === "pending" ? ` (${counts.pending})` : ""}
+            {tab.key === "deactivated" ? ` (${counts.deactivated})` : ""}
+            {tab.key === "deleted" ? ` (${counts.deleted})` : ""}
+          </button>
+        ))}
+      </nav>
+
+      <section className='p4u-vendors-stats' aria-label='Vendor overview'>
+        <SummaryCard title='Total Vendors' value={counts.total} icon='mdi:storefront-outline' tone='total' />
+        <SummaryCard title='Verified' value={counts.verified} icon='mdi:shield-check-outline' tone='verified' />
+        <SummaryCard title='Pending' value={counts.pending} icon='mdi:clock-outline' tone='pending' />
+        <SummaryCard title='Rejected' value={counts.rejected} icon='mdi:close-circle-outline' tone='rejected' />
+      </section>
+
+      <div className='p4u-vendors-toolbar'>
+        <label className='p4u-vendors-search'>
+          <Icon icon='mdi:magnify' />
+          <input
+            type='search'
+            placeholder={searchPlaceholder || "Search vendors..."}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </label>
+        {statusTab !== "pending" ? (
+          <select value={paymentFilter} onChange={(e) => setPaymentFilter(e.target.value)} aria-label='Payment filter'>
+            <option value=''>Payment</option>
+            <option value='paid'>Paid</option>
+            <option value='unpaid'>Unpaid</option>
+            <option value='partial'>Partial</option>
+          </select>
+        ) : null}
+        <input type='date' value={fromDate} onChange={(e) => setFromDate(e.target.value)} title='From date' aria-label='From date' />
+        <input type='date' value={toDate} onChange={(e) => setToDate(e.target.value)} title='To date' aria-label='To date' />
+        <div className='p4u-vendors-toolbar__actions'>
+          <button type='button' onClick={() => setModal({ mode: "add" })} className='p4u-vendors-btn-primary'>
+            <Icon icon='ic:baseline-plus' /> {addButtonLabel}
+          </button>
+          <button type='button' onClick={exportCsv} className='p4u-vendors-btn-outline'>
+            <Icon icon='mdi:download-outline' /> Export CSV
+          </button>
         </div>
+      </div>
 
-        <div className='row g-12 mb-16'>
-          <SummaryCard title={vendorKind === "service" ? "Total service vendors" : "Total product vendors"} value={counts.total} icon='mdi:storefront-outline' color='info' />
-          <SummaryCard title='Verified' value={counts.verified} icon='mdi:shield-check-outline' color='success' />
-          <SummaryCard title='Pending' value={counts.pending} icon='mdi:clock-outline' color='warning' />
-          <SummaryCard title='Rejected' value={counts.rejected} icon='mdi:close-circle-outline' color='danger' />
-        </div>
-
-        <div className='card radius-12 border-0 mb-16'>
-          <div className='card-body p-16 p4u-admin-filter-row gap-10 align-items-center'>
-            <div className='input-group radius-10 p4u-filter-search' style={{ minWidth: 160, maxWidth: 300 }}>
-              <span className='input-group-text bg-white border-end-0'><Icon icon='mdi:magnify' /></span>
-              <input
-                type='text'
-                className='form-control border-start-0 h-40-px'
-                placeholder={searchPlaceholder || "Search vendors"}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-            <input type='date' className='form-control radius-10 h-40-px' value={fromDate} onChange={(e) => setFromDate(e.target.value)} title='From date' />
-            <input type='date' className='form-control radius-10 h-40-px' value={toDate} onChange={(e) => setToDate(e.target.value)} title='To date' />
-            <div className='p4u-admin-filter-row__end gap-8'>
-              <button type='button' onClick={() => setModal({ mode: "add" })} className='btn btn-primary radius-10 px-20 d-flex align-items-center gap-8'>
-                <Icon icon='ic:baseline-plus' /> {addButtonLabel}
-              </button>
-              <button type='button' onClick={exportCsv} className='btn btn-outline-secondary radius-10 d-flex align-items-center gap-8'>
-                <Icon icon='mdi:download-outline' /> Export CSV
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {error && <div className='alert alert-danger radius-12 mb-16' role='alert'>{error}</div>}
-        {loading ? (
-          <p className='text-secondary-light mb-0'>Loading vendors...</p>
-        ) : (
-          <div className='table-responsive scroll-sm' style={{ overflowX: "auto" }}>
-              <table className='table bordered-table sm-table mb-0' style={{ minWidth: 960 }}>
-                <thead>
-                  <tr>
-                    <th className='text-nowrap' style={{ width: 48 }}>#</th>
-                    <th>BUSINESS / OWNER</th>
-                    <th>EMAIL</th>
-                    <th>MOBILE</th>
-                    {statusTab === "pending" ? (
-                      <>
-                        <th>TYPE</th>
-                        <th>CATEGORY</th>
-                        <th>GST / PAN</th>
-                        <th>SUBMITTED</th>
-                      </>
-                    ) : null}
-                    <TableActionHeader />
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.length > 0 ? (
-                    filtered.map((vendor, rowIndex) => {
-                      const viewEditId = openVendorId(vendor);
-                      return (
-                        <tr key={vendor.id}>
-                          <td className='text-secondary-light text-sm'>{rowIndex + 1}</td>
+      {error && <div className='alert alert-danger radius-12 mb-16' role='alert'>{error}</div>}
+      {loading ? (
+        <p className='text-secondary-light mb-0'>Loading vendors...</p>
+      ) : (
+        <div className='p4u-vendors-table-wrap'>
+          <table className='p4u-vendors-table'>
+            <thead>
+              <tr>
+                {statusTab === "pending" ? <th>#</th> : null}
+                <th>Business</th>
+                <th>Email</th>
+                <th>Mobile</th>
+                {statusTab === "pending" ? (
+                  <>
+                    <th>Type</th>
+                    <th>Category</th>
+                    <th>GST / PAN</th>
+                    <th>Submitted</th>
+                  </>
+                ) : (
+                  <>
+                    <th>Commission</th>
+                    <th>Payment</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Updated</th>
+                  </>
+                )}
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length > 0 ? (
+                filtered.map((vendor, rowIndex) => {
+                  const viewEditId = openVendorId(vendor);
+                  const pay = paymentPill(resolvePaymentStatus(vendor));
+                  const st = statusPill(vendor.__status);
+                  return (
+                    <tr key={vendor.id || vendor.__signupRequestId || rowIndex}>
+                      {statusTab === "pending" ? (
+                        <td className='text-secondary-light'>{rowIndex + 1}</td>
+                      ) : null}
+                      <td>
+                        <div className='business-name'>{vendor.businessName || "—"}</div>
+                        <div className='business-owner'>{vendor.ownerName || "—"}</div>
+                        {vendor.__source === "signup" ? (
+                          <span className='p4u-vendor-pill is-pending mt-1'>Signup only</span>
+                        ) : null}
+                      </td>
+                      <td>{vendor.email || "—"}</td>
+                      <td>{formatPhoneDisplay(vendor.phone)}</td>
+                      {statusTab === "pending" ? (
+                        <>
                           <td>
-                            <div className='fw-semibold text-primary-light'>{vendor.businessName || "—"}</div>
-                            <div className='text-neutral-600 text-sm'>{vendor.ownerName || "—"}</div>
-                            {vendor.__source === "signup" ? (
-                              <span className='badge bg-warning-100 text-warning-700 text-xs mt-1'>Signup only</span>
+                            {vendor.vendorType === "SERVICE" ? "Service" : "Product"}
+                            {vendor.businessType ? (
+                              <div className='business-owner'>{vendor.businessType}</div>
                             ) : null}
                           </td>
-                          <td>{vendor.email || "—"}</td>
-                          <td>{formatPhoneDisplay(vendor.phone)}</td>
-                          {statusTab === "pending" ? (
+                          <td>{vendor.categoryLabel || "—"}</td>
+                          <td>{formatTaxCell(vendor.gst, vendor.pan)}</td>
+                          <td>{vendor.createdAt ? formatVendorDateTime(vendor.createdAt) : "—"}</td>
+                        </>
+                      ) : (
+                        <>
+                          <td>{formatCommission(vendor)}</td>
+                          <td><span className={pay.cls}>{pay.label}</span></td>
+                          <td><span className={st.cls}>{st.label}</span></td>
+                          <td>{vendor.createdAt ? formatVendorDateTime(vendor.createdAt) : "—"}</td>
+                          <td>{vendor.updatedAt ? formatVendorDateTime(vendor.updatedAt) : "—"}</td>
+                        </>
+                      )}
+                      <td>
+                        <div className='d-flex align-items-center gap-8'>
+                          {vendor.__signupRequestId ? (
                             <>
-                              <td className='text-sm'>
-                                {vendor.vendorType === "SERVICE" ? "Service" : "Product"}
-                                {vendor.businessType ? (
-                                  <div className='text-neutral-600 text-xs'>{vendor.businessType}</div>
-                                ) : null}
-                              </td>
-                              <td className='text-sm'>{vendor.categoryLabel || "—"}</td>
-                              <td className='text-sm'>{formatTaxCell(vendor.gst, vendor.pan)}</td>
-                              <td className='text-sm text-nowrap'>{vendor.createdAt ? formatDateTime(vendor.createdAt) : "—"}</td>
+                              <button type='button' onClick={() => void handleApproveSignup(vendor.__signupRequestId)} className='btn btn-success btn-sm radius-10 px-12'>Approve</button>
+                              <button type='button' onClick={() => void handleRejectSignup(vendor.__signupRequestId)} className='btn btn-outline-danger btn-sm radius-10 px-12'>Reject</button>
+                            </>
+                          ) : statusTab === "pending" && viewEditId ? (
+                            <>
+                              <button type='button' onClick={() => void handleApproveCatalog(viewEditId)} className='btn btn-success btn-sm radius-10 px-12'>Approve</button>
+                              <button type='button' onClick={() => void handleRejectCatalog(viewEditId)} className='btn btn-outline-danger btn-sm radius-10 px-12'>Reject</button>
                             </>
                           ) : null}
-                          <TableActionCell>
-                            <div className='d-flex align-items-center gap-10 justify-content-center'>
-                              {vendor.__signupRequestId ? (
-                                <>
-                                  <button
-                                    type='button'
-                                    onClick={() => void handleApproveSignup(vendor.__signupRequestId)}
-                                    className='btn btn-success btn-sm radius-10 px-12'
-                                  >
-                                    Approve
-                                  </button>
-                                  <button
-                                    type='button'
-                                    onClick={() => void handleRejectSignup(vendor.__signupRequestId)}
-                                    className='btn btn-outline-danger btn-sm radius-10 px-12'
-                                  >
-                                    Reject
-                                  </button>
-                                </>
-                              ) : statusTab === "pending" && viewEditId ? (
-                                <>
-                                  <button
-                                    type='button'
-                                    onClick={() => void handleApproveCatalog(viewEditId)}
-                                    className='btn btn-success btn-sm radius-10 px-12'
-                                  >
-                                    Approve
-                                  </button>
-                                  <button
-                                    type='button'
-                                    onClick={() => void handleRejectCatalog(viewEditId)}
-                                    className='btn btn-outline-danger btn-sm radius-10 px-12'
-                                  >
-                                    Reject
-                                  </button>
-                                </>
-                              ) : null}
-                              {viewEditId ? (
-                                <TableActionButtons
-                                  actions={[
-                                    { type: "view", onClick: () => setModal({ mode: "view", id: viewEditId }) },
-                                    { type: "edit", onClick: () => setModal({ mode: "edit", id: viewEditId }) },
-                                    { type: "delete", onClick: () => void handleDelete(viewEditId) },
-                                  ]}
-                                />
-                              ) : vendor.__signupRequestId ? (
-                                <TableActionButtons
-                                  actions={[
-                                    { type: "view", onClick: () => setModal({ mode: "view", signupApplication: vendor }), title: "View application" },
-                                  ]}
-                                />
-                              ) : null}
-                            </div>
-                          </TableActionCell>
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr><td colSpan={statusTab === "pending" ? 9 : 5} className='text-center py-4'>No vendors found.</td></tr>
-                  )}
-                </tbody>
-              </table>
-          </div>
-        )}
-      </div>
+                          {viewEditId ? (
+                            <>
+                              <button
+                                type='button'
+                                className='p4u-vendors-view-btn'
+                                title='View vendor'
+                                onClick={() => setModal({ mode: "view", id: viewEditId })}
+                              >
+                                <Icon icon='mdi:eye-outline' />
+                              </button>
+                              <TableActionButtons
+                                actions={[
+                                  { type: "edit", onClick: () => setModal({ mode: "edit", id: viewEditId }) },
+                                  { type: "delete", onClick: () => void handleDelete(viewEditId) },
+                                ]}
+                              />
+                            </>
+                          ) : vendor.__signupRequestId ? (
+                            <button
+                              type='button'
+                              className='p4u-vendors-view-btn'
+                              title='View application'
+                              onClick={() => setModal({ mode: "view", signupApplication: vendor })}
+                            >
+                              <Icon icon='mdi:eye-outline' />
+                            </button>
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr><td colSpan={statusTab === "pending" ? 9 : 9} className='text-center py-4'>No vendors found.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {modal && (
         <FormModal onClose={() => setModal(null)} size='xl'>
@@ -509,28 +569,16 @@ function DetailField({ label, value }) {
   );
 }
 
-const SummaryCard = ({ title, value, icon, color }) => {
-  const map = {
-    info: "bg-info-50 text-info-600",
-    success: "bg-success-50 text-success-600",
-    warning: "bg-warning-50 text-warning-600",
-    danger: "bg-danger-50 text-danger-600",
-  };
-  return (
-    <div className='col-sm-6 col-xl-3'>
-      <div className='radius-12 p-16 bg-neutral-50 border'>
-        <div className='d-flex align-items-center gap-10'>
-          <span className={`w-40-px h-40-px rounded-circle d-flex align-items-center justify-content-center ${map[color]}`}>
-            <Icon icon={icon} className='text-xl' />
-          </span>
-          <div>
-            <div className='text-sm text-secondary-light'>{title}</div>
-            <h5 className='mb-0 fw-bold'>{value}</h5>
-          </div>
-        </div>
-      </div>
+const SummaryCard = ({ title, value, icon, tone }) => (
+  <article className={`p4u-vendors-stat is-${tone}`}>
+    <span className='p4u-vendors-stat__icon' aria-hidden='true'>
+      <Icon icon={icon} />
+    </span>
+    <div>
+      <p className='p4u-vendors-stat__label'>{title}</p>
+      <p className='p4u-vendors-stat__value'>{value}</p>
     </div>
-  );
-};
+  </article>
+);
 
 export default VendorListLayer;

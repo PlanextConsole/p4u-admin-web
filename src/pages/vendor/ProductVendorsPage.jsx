@@ -5,13 +5,15 @@ import VendorListLayer from "./VendorList";
 const ProductVendorsPage = () => {
   return (
     <MasterLayout>
-      <Breadcrumb title="Product vendors" pagetitle="Product vendors" />
+      <Breadcrumb title="Vendors" pagetitle="Product vendors" />
       <VendorListLayer
         vendorKind="product"
-        pageTitle="Product vendors"
-        addButtonLabel="Add product vendor"
-        searchPlaceholder="Search product vendors"
+        pageTitle="Vendors"
+        addButtonLabel="Add Product Vendor"
+        searchPlaceholder="Search vendors..."
         csvFilenamePrefix="product-vendors"
+        headerLinkLabel="Service Vendor"
+        headerLinkTo="/service-vendors"
       />
     </MasterLayout>
   );
