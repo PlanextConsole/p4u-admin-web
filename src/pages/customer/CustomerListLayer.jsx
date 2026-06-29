@@ -161,7 +161,6 @@ const CustomerListLayer = () => {
   return (
     <div className="p4u-customers-page">
       <div className="p4u-customers-hero">
-        <h3>Customers</h3>
         <p>{total.toLocaleString("en-IN")} registered customers</p>
       </div>
 
