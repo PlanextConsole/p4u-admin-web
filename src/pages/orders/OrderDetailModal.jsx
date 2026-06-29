@@ -4,12 +4,13 @@ import { toast } from "react-toastify";
 import { getOrder, updateOrder } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 
-const STEPS = ["placed", "paid", "accepted", "in_progress", "delivered", "completed"];
+const STEPS = ["placed", "paid", "accepted", "in_progress", "shipped", "delivered", "completed"];
 const STEP_LABELS = {
   placed: "Placed",
   paid: "Paid",
   accepted: "Accepted",
   in_progress: "In Progress",
+  shipped: "Shipped",
   delivered: "Delivered",
   completed: "Completed",
 };
@@ -87,6 +88,7 @@ const OrderDetailModal = ({ orderId, initialMode = "view", onClose, onSaved, cus
   const productTax = Number(meta.taxOnProduct ?? meta.taxAmount ?? meta.tax ?? 0) || 0;
   const grandTotal = Number(order?.totalAmount ?? meta.totalOrderValue ?? 0) || 0;
   const paymentRef = meta.paymentRefId || meta.paymentReferenceId || meta.paymentRef || order?.paymentRef || "—";
+  const gatewayOrderId = meta.gatewayOrderId || meta.razorpayOrderId || meta.orderId || "—";
 
   const save = async () => {
     if (!orderId) return;
@@ -106,12 +108,12 @@ const OrderDetailModal = ({ orderId, initialMode = "view", onClose, onSaved, cus
 
   return (
     <div
-      className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+      className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-16 p4u-order-modal-backdrop"
       style={{ background: "rgba(0,0,0,0.5)", zIndex: 1050 }}
       onClick={onClose}
     >
       <div
-        className="bg-white radius-12 shadow-lg"
+        className="bg-white radius-12 shadow-lg p4u-order-modal"
         style={{ width: "min(720px, 95vw)", maxHeight: "90vh", overflowY: "auto" }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -219,8 +221,14 @@ const OrderDetailModal = ({ orderId, initialMode = "view", onClose, onSaved, cus
                 </div>
                 <div className="d-flex justify-content-between mt-8">
                   <span className="text-secondary-light">Payment Ref ID</span>
-                  <span className="text-secondary-light">{paymentRef}</span>
+                  <span className="text-secondary-light text-sm">{paymentRef}</span>
                 </div>
+                {gatewayOrderId !== "—" && (
+                  <div className="d-flex justify-content-between mt-8">
+                    <span className="text-secondary-light">Gateway Order ID</span>
+                    <span className="text-secondary-light text-sm">{gatewayOrderId}</span>
+                  </div>
+                )}
               </div>
 
               {mode === "edit" && (

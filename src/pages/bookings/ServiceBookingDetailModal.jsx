@@ -102,6 +102,8 @@ const ServiceBookingDetailModal = ({
   const platformFee = Number(meta.platformFee ?? 0) || 0;
   const gstOnFee = Number(meta.gstOnPlatformFee ?? (platformFee ? platformFee * 0.18 : 0)) || 0;
   const paymentRef = meta.paymentRefId || meta.paymentReferenceId || meta.paymentRef || "—";
+  const gatewayOrderId = meta.gatewayOrderId || meta.razorpayOrderId || meta.orderId || "—";
+  const points = Number(meta.pointsRedeemed ?? meta.points ?? 0) || 0;
 
   const save = async () => {
     if (!booking?.id) return;
@@ -123,12 +125,12 @@ const ServiceBookingDetailModal = ({
 
   return (
     <div
-      className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-16"
+      className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-16 p4u-order-modal-backdrop"
       style={{ background: "rgba(0,0,0,0.5)", zIndex: 1050 }}
       onClick={onClose}
     >
       <div
-        className="bg-white radius-12 shadow-lg w-100"
+        className="bg-white radius-12 shadow-lg w-100 p4u-order-modal"
         style={{ maxWidth: 720, maxHeight: "90vh", overflowY: "auto" }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -208,8 +210,9 @@ const ServiceBookingDetailModal = ({
             </div>
           </div>
 
-          <div className="border radius-8 p-16 mb-16 bg-info-50">
+          <div className="border radius-8 p-16 mb-16 p4u-order-modal__breakdown">
             <Row label="Item Total (MRP)" value={formatMoney(itemTotal)} />
+            <Row label="Points Redeemed" value={`${points} pts`} valueClass="text-primary-600" show={points > 0} />
             <Row label="Platform Fee" value={formatMoney(platformFee)} show={platformFee > 0} />
             <Row label="GST on Platform Fee (18%)" value={formatMoney(gstOnFee)} show={gstOnFee > 0} />
             <div className="d-flex justify-content-between py-12 mt-8 border-top">
@@ -220,6 +223,12 @@ const ServiceBookingDetailModal = ({
               <span className="text-secondary-light">Payment Ref ID</span>
               <span className="text-secondary-light text-sm">{paymentRef}</span>
             </div>
+            {gatewayOrderId !== "—" && (
+              <div className="d-flex justify-content-between mt-8">
+                <span className="text-secondary-light">Gateway Order ID</span>
+                <span className="text-secondary-light text-sm">{gatewayOrderId}</span>
+              </div>
+            )}
           </div>
 
           {mode === "edit" && (
@@ -252,12 +261,12 @@ const ServiceBookingDetailModal = ({
   );
 };
 
-function Row({ label, value, show = true }) {
+function Row({ label, value, valueClass = "", show = true }) {
   if (!show) return null;
   return (
     <div className="d-flex justify-content-between py-6">
       <span className="text-secondary-light">{label}</span>
-      <span className="fw-medium">{value}</span>
+      <span className={`fw-medium ${valueClass}`.trim()}>{value}</span>
     </div>
   );
 }
