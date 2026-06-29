@@ -509,6 +509,35 @@ export function updateObjectionableFeedLog(id, body) {
   return api.patch(`/api/admin/objectionableFeedLog/batchFeed/${encodeURIComponent(id)}`, body);
 }
 
+/** P4U Social admin dashboard aggregate stats + charts */
+export function getSocialDashboard() {
+  return api.get("/api/admin/social/dashboard");
+}
+
+export function listSocialUsers(params) {
+  return api.get("/api/admin/social/users", params);
+}
+
+export function listSocialPosts(params) {
+  return api.get("/api/admin/social/posts", params);
+}
+
+export function listSocialReports(params) {
+  return api.get("/api/admin/social/reports", params);
+}
+
+export function listSocialHashtags(params) {
+  return api.get("/api/admin/social/hashtags", params);
+}
+
+export function listSocialAudio(params) {
+  return api.get("/api/admin/social/audio", params);
+}
+
+export function removeSocialPost(id) {
+  return api.patch(`/api/admin/social/posts/${encodeURIComponent(id)}/remove`);
+}
+
 /** @param {{ limit?: number, offset?: number }} [params] */
 export function listRecentPushNotifications(params) {
   return api.get("/api/admin/notifications/recent", params);
