@@ -46,7 +46,7 @@ const emptyProductVisual = () => ({
 });
 
 /**
- * @param {{ variant?: 'service-roots' | 'service-subs' | 'product-roots' | 'product-subs', isEdit?: boolean, isView?: boolean, categoryId?: string, scope?: 'root'|'subcategory', rootCategories?: { id: string, name: string }[], onSuccess?: () => void, onCancel?: () => void }} props
+ * @param {{ variant?: 'service-roots' | 'service-subs' | 'product-roots' | 'product-subs', isEdit?: boolean, isView?: boolean, categoryId?: string, scope?: 'root'|'subcategory', rootCategories?: { id: string, name: string }[], onSuccess?: () => void, onCancel?: () => void, onDelete?: () => void }} props
  */
 const CategoryFormLayer = ({
   variant = "service-roots",
@@ -57,6 +57,7 @@ const CategoryFormLayer = ({
   rootCategories = [],
   onSuccess,
   onCancel,
+  onDelete,
 }) => {
   const navigate = useNavigate();
   const isRoot = scope === "root";
@@ -65,6 +66,7 @@ const CategoryFormLayer = ({
   const isServiceSub = variant === "service-subs";
   const isProductSub = variant === "product-subs" || (variant === "product-roots" && !isRoot);
   const isAnySub = isProductSub || isServiceSub;
+  const inModal = Boolean(onCancel);
 
   const initialEmpty = () => {
     if (isServiceRoot) return emptyServiceRoot();
@@ -332,103 +334,100 @@ const CategoryFormLayer = ({
   const showSkeleton = Boolean(categoryId) && entityLoading;
 
   const titleLine = () => {
-    if (isServiceRoot) return isView ? "View service category" : isEdit ? "Edit service category" : "Add service category";
-    if (isProductRoot) return isView ? "View product category" : isEdit ? "Edit product category" : "Add product category";
-    if (isServiceSub) return isView ? "View service subcategory" : isEdit ? "Edit service subcategory" : "Add service subcategory";
-    return isView ? "View subcategory" : isEdit ? "Edit subcategory" : "Add subcategory";
+    const name = formData.name?.trim();
+    if (isEdit && name) return `Edit: ${name}`;
+    if (isAnySub) return isView ? "View subcategory" : isEdit ? "Edit subcategory" : "Add Subcategory";
+    if (isServiceRoot) return isView ? "View service category" : isEdit ? "Edit service category" : "Add Category";
+    if (isProductRoot) return isView ? "View product category" : isEdit ? "Edit product category" : "Add Category";
+    return isView ? "View category" : isEdit ? "Edit category" : "Add Category";
   };
 
-  return (
-    <div className="card h-100 p-0 radius-12">
+  const typeLabel = isServiceRoot || isServiceSub ? "SERVICE" : "PRODUCT";
+
+  const cancelAction = () => {
+    if (onCancel) onCancel();
+    else navigate(-1);
+  };
+
+  const content = (
+  <div className={inModal ? "p4u-category-modal" : "card h-100 p-0 radius-12"}>
+    {!inModal && (
       <div className="card-header border-bottom bg-base py-16 px-24">
         <h4 className="text-lg fw-semibold mb-0">{titleLine()}</h4>
-        {isServiceRoot && (
-          <p className="text-secondary-light text-sm mb-0 mt-4">
-            Top-level groups for the booking flow (service categories).
-          </p>
-        )}
-        {isProductRoot && (
-          <p className="text-secondary-light text-sm mb-0 mt-4">
-            Shop catalog roots (product categories).
-          </p>
-        )}
       </div>
-      <div className="card-body p-24">
-        {loadError && categoryId && !showSkeleton && (
-          <div className="alert alert-danger radius-12 mb-16" role="alert">
-            {loadError}
-          </div>
-        )}
-        {showSkeleton ? (
-          <p className="text-secondary-light mb-0">Loading category...</p>
-        ) : (
-          <form onSubmit={handleSubmit}>
-            <div className="row">
-              {isAnySub && (
-                <div className="col-md-12 mb-20">
-                  <label className="form-label fw-semibold text-primary-light text-sm mb-8">Parent category *</label>
-                  <select
-                    className="form-control radius-8 form-select"
-                    name="parentId"
-                    value={formData.parentId}
-                    onChange={handleChange}
-                    disabled={disabled}
-                  >
-                    <option value="">Select parent...</option>
-                    {rootCategories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name || c.id}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">
-                  Name <span className="text-danger">*</span>
-                </label>
-                <input
-                  type="text"
-                  className="form-control radius-8"
-                  name="name"
-                  value={formData.name}
+    )}
+    <div className={inModal ? "" : "card-body p-24"}>
+      {inModal && <h4 className="p4u-category-modal__title">{titleLine()}</h4>}
+      {loadError && categoryId && !showSkeleton && (
+        <div className="alert alert-danger radius-12 mb-16" role="alert">{loadError}</div>
+      )}
+      {showSkeleton ? (
+        <p className="text-secondary-light mb-0">Loading category...</p>
+      ) : (
+        <form onSubmit={handleSubmit}>
+          <div className="p4u-category-form-grid">
+            {isAnySub && (
+              <div style={{ gridColumn: "1 / -1" }}>
+                <label className="form-label">Parent category <span className="text-danger">*</span></label>
+                <select
+                  className="form-control form-select"
+                  name="parentId"
+                  value={formData.parentId}
                   onChange={handleChange}
                   disabled={disabled}
-                  maxLength={255}
-                  placeholder={isServiceRoot ? "e.g. Home Services, Repair, Beauty" : ""}
-                />
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Availability</label>
-                <select className="form-control radius-8 form-select" name="availability" value={formData.availability} onChange={handleChange} disabled={disabled}>
-                  {YES_NO.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
+                >
+                  <option value="">Select parent...</option>
+                  {rootCategories.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name || c.id}</option>
                   ))}
                 </select>
               </div>
+            )}
+            <div>
+              <label className="form-label">{isAnySub ? "Subcategory Name" : "Category Name"} <span className="text-danger">*</span></label>
+              <input
+                type="text"
+                className="form-control"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                disabled={disabled}
+                maxLength={255}
+                placeholder={isServiceRoot ? "e.g. Home Services, Repair, Beauty" : ""}
+              />
+            </div>
+            <div>
+              <label className="form-label">Category Type</label>
+              <select className="form-control form-select" disabled value={typeLabel}>
+                <option value={typeLabel}>{typeLabel}</option>
+              </select>
+            </div>
+          </div>
 
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Trending</label>
-                <select className="form-control radius-8 form-select" name="trending" value={formData.trending} onChange={handleChange} disabled={disabled}>
-                  {YES_NO.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
+          <div className="p4u-category-form-box">
+            <h6>Status &amp; visibility</h6>
+            <div className="p4u-category-form-grid">
+              <div>
+                <label className="form-label">Availability</label>
+                <select className="form-control form-select" name="availability" value={formData.availability} onChange={handleChange} disabled={disabled}>
+                  {YES_NO.map((o) => <option key={o} value={o}>{o}</option>)}
                 </select>
               </div>
-
+              <div>
+                <label className="form-label">Trending</label>
+                <select className="form-control form-select" name="trending" value={formData.trending} onChange={handleChange} disabled={disabled}>
+                  {YES_NO.map((o) => <option key={o} value={o}>{o}</option>)}
+                </select>
+              </div>
               {(isProductRoot || isProductSub) && (
-                <div className="col-md-6 mb-20">
-                  <label className="form-label fw-semibold text-primary-light text-sm mb-8">Commission Override % (this category)</label>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <label className="form-label">Commission Override % (this category)</label>
                   <input
                     type="number"
                     min="0"
                     max="100"
                     step="0.01"
-                    className="form-control radius-8"
+                    className="form-control"
                     name="commissionOverridePercent"
                     value={formData.commissionOverridePercent}
                     onChange={handleChange}
@@ -437,45 +436,43 @@ const CategoryFormLayer = ({
                   />
                 </div>
               )}
-
-              <div className="col-md-12 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Description</label>
-                <textarea className="form-control radius-8" name="description" rows={4} value={formData.description} onChange={handleChange} disabled={disabled} />
-              </div>
-
             </div>
+          </div>
 
-            {isServiceRoot ? (
-              <div className="row bg-neutral-50 radius-12 p-16 mb-20">
-                <div className="col-md-12 mb-0">
-                  <label className="form-label fw-semibold text-primary-light text-sm mb-8">Category icon</label>
-                  <ImageUploadField
-                    disabled={disabled}
-                    onFileSelect={(f) => setPendingIcon(f)}
-                    onLibrarySelect={(url) => {
-                      setPendingIcon(null);
-                      setFormData((prev) => ({ ...prev, iconUrl: url }));
-                    }}
-                    libraryTitle="Choose category icon"
-                  />
-                  {(pendingIcon || formData.iconUrl) && (
-                    <div className="mt-8">
-                      <img
-                        src={pendingIcon ? URL.createObjectURL(pendingIcon) : resolveMediaUrl(formData.iconUrl)}
-                        alt="Category icon"
-                        style={{ maxWidth: 96, maxHeight: 96, objectFit: "cover", borderRadius: 8 }}
-                        onError={(e) => {
-                          e.target.style.display = "none";
-                        }}
-                      />
-                    </div>
+          {isServiceRoot ? (
+            <div className="p4u-category-form-box">
+              <h6>Media</h6>
+              <div>
+                <label className="form-label">Icon (from Media Library)</label>
+                <ImageUploadField
+                  disabled={disabled}
+                  onFileSelect={(f) => setPendingIcon(f)}
+                  onLibrarySelect={(url) => {
+                    setPendingIcon(null);
+                    setFormData((prev) => ({ ...prev, iconUrl: url }));
+                  }}
+                  libraryTitle="Choose category icon"
+                />
+                <div className="p4u-category-media-preview mt-12">
+                  {(pendingIcon || formData.iconUrl) ? (
+                    <img
+                      src={pendingIcon ? URL.createObjectURL(pendingIcon) : resolveMediaUrl(formData.iconUrl)}
+                      alt="Category icon"
+                      style={{ maxWidth: "100%", maxHeight: 140, objectFit: "contain" }}
+                      onError={(e) => { e.target.style.display = "none"; }}
+                    />
+                  ) : (
+                    <span className="text-secondary-light text-sm">No icon selected</span>
                   )}
                 </div>
               </div>
-            ) : (
-              <div className="row bg-neutral-50 radius-12 p-16 mb-20">
-                <div className="col-md-6 mb-20">
-                  <label className="form-label fw-semibold text-primary-light text-sm mb-8">Thumbnail</label>
+            </div>
+          ) : (
+            <div className="p4u-category-form-box">
+              <h6>Media</h6>
+              <div className="p4u-category-media-grid">
+                <div>
+                  <label className="form-label">Image</label>
                   <ImageUploadField
                     disabled={disabled}
                     onFileSelect={(f) => setPendingThumbnail(f)}
@@ -485,24 +482,24 @@ const CategoryFormLayer = ({
                     }}
                     libraryTitle="Choose category thumbnail"
                   />
-                  {(pendingThumbnail || formData.thumbnailUrl) && (
-                    <div className="mt-8">
+                  <div className="p4u-category-media-preview mt-12">
+                    {(pendingThumbnail || formData.thumbnailUrl) ? (
                       <img
                         src={pendingThumbnail ? URL.createObjectURL(pendingThumbnail) : resolveMediaUrl(formData.thumbnailUrl)}
                         alt="Thumbnail"
-                        style={{ maxWidth: 120, maxHeight: 120, objectFit: "cover", borderRadius: 8 }}
-                        onError={(e) => {
-                          e.target.style.display = "none";
-                        }}
+                        style={{ maxWidth: "100%", maxHeight: 140, objectFit: "cover" }}
+                        onError={(e) => { e.target.style.display = "none"; }}
                       />
-                    </div>
-                  )}
+                    ) : (
+                      <span className="text-secondary-light text-sm">No image selected</span>
+                    )}
+                  </div>
                 </div>
-                <div className="col-md-6 mb-20">
-                  <label className="form-label fw-semibold text-primary-light text-sm mb-8">Banner (optional)</label>
+                <div>
+                  <label className="form-label">Banner Image</label>
                   <input
                     type="file"
-                    className="form-control radius-8"
+                    className="form-control"
                     accept={IMAGE_ACCEPT}
                     multiple
                     disabled={disabled}
@@ -510,40 +507,65 @@ const CategoryFormLayer = ({
                       if (e.target.files?.length) setPendingBanners([...e.target.files]);
                     }}
                   />
-                  {formData.bannerUrls.length > 0 && (
-                    <div className="d-flex flex-wrap gap-2 mt-8">
-                      {formData.bannerUrls.map((url, i) => (
-                        <div key={i} className="position-relative">
-                          <img
-                            src={resolveMediaUrl(url)}
-                            alt={`Banner ${i + 1}`}
-                            style={{ width: 80, height: 50, objectFit: "cover", borderRadius: 6 }}
-                            onError={(e) => {
-                              e.target.style.display = "none";
-                            }}
-                          />
-                          {!disabled && (
-                            <button
-                              type="button"
-                              className="position-absolute top-0 end-0 border-0 bg-danger-600 text-white rounded-circle d-flex align-items-center justify-content-center"
-                              style={{ width: 18, height: 18, fontSize: 10 }}
-                              onClick={() => removeBannerUrl(i)}
-                            >
-                              &times;
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <div className="p4u-category-media-preview mt-12">
+                    {formData.bannerUrls.length > 0 ? (
+                      <div className="d-flex flex-wrap gap-2 p-2">
+                        {formData.bannerUrls.map((url, i) => (
+                          <div key={i} className="position-relative">
+                            <img
+                              src={resolveMediaUrl(url)}
+                              alt={`Banner ${i + 1}`}
+                              style={{ width: 120, height: 72, objectFit: "cover", borderRadius: 10 }}
+                              onError={(e) => { e.target.style.display = "none"; }}
+                            />
+                            {!disabled && (
+                              <button
+                                type="button"
+                                className="position-absolute top-0 end-0 border-0 bg-danger text-white rounded-circle d-flex align-items-center justify-content-center"
+                                style={{ width: 22, height: 22, fontSize: 12 }}
+                                onClick={() => removeBannerUrl(i)}
+                              >
+                                &times;
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-secondary-light text-sm">No banner selected</span>
+                    )}
+                  </div>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
+          <div className="mb-16">
+            <label className="form-label">Description</label>
+            <textarea className="form-control" name="description" rows={4} value={formData.description} onChange={handleChange} disabled={disabled} />
+          </div>
+
+          {inModal ? (
+            <div className="p4u-category-modal__foot">
+              {isEdit && onDelete && !isView ? (
+                <button type="button" onClick={onDelete} className="is-danger">
+                  <Icon icon="mdi:trash-can-outline" /> Delete
+                </button>
+              ) : <span />}
+              <div className="p4u-category-modal__foot-right">
+                <button type="button" onClick={cancelAction} className="p4u-categories-btn-outline is-outline">Cancel</button>
+                {!isView && (
+                  <button type="submit" disabled={disabled} className="p4u-categories-btn-primary is-primary">
+                    {submitting ? "Saving..." : "Save"}
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
             <div className="d-flex align-items-center justify-content-between mt-24">
               <button
                 type="button"
-                onClick={isView ? onCancel || (() => navigate(-1)) : handleReset}
+                onClick={isView ? cancelAction : handleReset}
                 className="btn border border-danger-600 text-danger-600 bg-hover-danger-200 text-md px-56 py-12 radius-8 d-flex align-items-center gap-2"
               >
                 <Icon icon="mdi:close-circle-outline" className="text-xl" /> {isView ? "Back" : "Reset"}
@@ -554,11 +576,14 @@ const CategoryFormLayer = ({
                 </button>
               )}
             </div>
-          </form>
-        )}
-      </div>
+          )}
+        </form>
+      )}
     </div>
+  </div>
   );
+
+  return content;
 };
 
 export default CategoryFormLayer;

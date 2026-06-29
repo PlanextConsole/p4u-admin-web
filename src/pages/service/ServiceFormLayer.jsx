@@ -36,9 +36,10 @@ const emptyForm = () => ({
   duration: "",
 });
 
-const ServiceFormLayer = ({ isEdit = false, isView = false, serviceId, onSuccess, onCancel }) => {
+const ServiceFormLayer = ({ isEdit = false, isView = false, serviceId, onSuccess, onCancel, onDelete }) => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState(emptyForm);
+  const [activeTab, setActiveTab] = useState("general");
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [serviceLoading, setServiceLoading] = useState(Boolean(serviceId));
@@ -47,6 +48,7 @@ const ServiceFormLayer = ({ isEdit = false, isView = false, serviceId, onSuccess
   const [pendingIcon, setPendingIcon] = useState(null);
   const pendingIconRef = useRef(null);
   const [mediaLibraryOpen, setMediaLibraryOpen] = useState(false);
+  const inModal = Boolean(onCancel);
 
   useEffect(() => {
     let cancelled = false;
@@ -215,149 +217,93 @@ const ServiceFormLayer = ({ isEdit = false, isView = false, serviceId, onSuccess
     }
   };
 
-  const handleReset = () => {
-    setFormData(emptyForm());
-    setPendingIcon(null);
-    pendingIconRef.current = null;
-  };
-
   const disabled = isView || submitting || serviceLoading;
   const showSkeleton = Boolean(serviceId) && serviceLoading;
   const categorySelectDisabled = disabled || categoriesLoading;
 
+  const modalTitle = () => {
+    const name = formData.name?.trim();
+    if (isEdit && name) return `Edit: ${name}`;
+    if (isEdit) return "Edit Service";
+    return "New Service";
+  };
+
+  const cancelAction = () => {
+    if (onCancel) onCancel();
+    else navigate(-1);
+  };
+
   return (
-    <div className="card h-100 p-0 radius-12">
-      <div className="card-header border-bottom bg-base py-16 px-24">
-        <h4 className="text-lg fw-semibold mb-0">{isView ? "View service" : isEdit ? "Edit service" : "Add service"}</h4>
-        <p className="text-secondary-light text-sm mb-0 mt-4">Services are bookable actions (e.g. Plumbing, Cleaning), not catalog products.</p>
-      </div>
-      <div className="card-body p-24">
-        {loadError && serviceId && !showSkeleton && (
-          <div className="alert alert-danger radius-12 mb-16" role="alert">
-            {loadError}
+    <div className={inModal ? "p4u-service-modal" : "card h-100 p-0 radius-12"}>
+      {!inModal && (
+        <div className="card-header border-bottom bg-base py-16 px-24">
+          <h4 className="text-lg fw-semibold mb-0">{modalTitle()}</h4>
+        </div>
+      )}
+      <div className={inModal ? "" : "card-body p-24"}>
+        {inModal && (
+          <div className="p4u-service-modal__head">
+            <span className="p4u-service-modal__icon">
+              <Icon icon="mdi:wrench-outline" />
+            </span>
+            <h4 className="p4u-service-modal__title">{modalTitle()}</h4>
           </div>
+        )}
+        {loadError && serviceId && !showSkeleton && (
+          <div className="alert alert-danger radius-12 mb-16" role="alert">{loadError}</div>
         )}
         {showSkeleton ? (
           <p className="text-secondary-light mb-0">Loading service...</p>
         ) : (
           <form onSubmit={handleSubmit} noValidate>
-            <div className="row">
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">
-                  Service name <span className="text-danger">*</span>
-                </label>
-                <input
-                  type="text"
-                  className="form-control radius-8"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  disabled={disabled}
-                  maxLength={255}
-                  placeholder="e.g. Plumbing, AC repair, House cleaning"
-                  required
-                />
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">
-                  Service category <span className="text-danger">*</span>
-                </label>
-                <select
-                  className="form-control radius-8 form-select"
-                  name="parentCategoryId"
-                  value={formData.parentCategoryId}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setFormData((prev) => ({ ...prev, parentCategoryId: value, categoryId: "" }));
-                  }}
-                  disabled={categorySelectDisabled}
-                  required
-                >
-                  <option value="">{categoriesLoading ? "Loading categories…" : "Select category…"}</option>
-                  {rootCategories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="col-md-6 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">
-                  Service subcategory <span className="text-danger">*</span>
-                </label>
-                <select
-                  className="form-control radius-8 form-select"
-                  name="categoryId"
-                  value={formData.categoryId}
-                  onChange={handleChange}
-                  disabled={categorySelectDisabled || !formData.parentCategoryId}
-                  required
-                >
-                  <option value="">
-                    {formData.parentCategoryId ? (subcategories.length ? "Select subcategory…" : "No subcategories — add one in admin") : "Select category first"}
-                  </option>
-                  {subcategories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div className="p4u-service-tabs">
+              <Tab active={activeTab === "general"} label="General" onClick={() => setActiveTab("general")} />
+              <Tab active={activeTab === "pricing"} label="Pricing & Slots" onClick={() => setActiveTab("pricing")} />
+              <Tab active={activeTab === "descriptions"} label="Descriptions" onClick={() => setActiveTab("descriptions")} />
+            </div>
 
-              <div className="col-md-12 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Description</label>
-                <textarea
-                  className="form-control radius-8"
-                  name="description"
-                  rows={4}
-                  value={formData.description}
-                  onChange={handleChange}
-                  disabled={disabled}
-                  placeholder="What the customer gets, coverage notes, or booking hints"
-                />
-              </div>
-
-              <div className="col-md-12 mb-20">
-                <div className="bg-neutral-50 radius-12 p-16">
-                  <label className="form-label fw-semibold text-primary-light text-sm mb-8">Service icon / image</label>
-                  <p className="text-secondary-light text-xs mb-8">Square icon or image used in the booking journey (not a product gallery).</p>
-                  <div className="d-flex flex-wrap gap-8 mb-8">
-                    <input
-                      type="file"
-                      className="form-control radius-8 flex-grow-1"
-                      style={{ minWidth: 200 }}
-                      accept={IMAGE_ACCEPT}
-                      disabled={disabled}
-                      onChange={(e) => {
-                        if (e.target.files?.[0]) {
-                          setPendingIcon(e.target.files[0]);
-                          pendingIconRef.current = e.target.files[0];
-                        }
-                      }}
-                    />
-                    {!disabled && (
-                      <button
-                        type="button"
-                        className="btn btn-outline-primary radius-8 text-nowrap"
-                        onClick={() => setMediaLibraryOpen(true)}
-                      >
-                        <Icon icon="mdi:folder-image" className="me-4" />
-                        Media Library
-                      </button>
-                    )}
-                  </div>
-                  {(pendingIcon || formData.iconUrl) && (
-                    <div className="mt-8">
-                      <img
-                        src={pendingIcon ? URL.createObjectURL(pendingIcon) : resolveMediaUrl(formData.iconUrl)}
-                        alt=""
-                        style={{ maxWidth: 88, maxHeight: 88, objectFit: "cover", borderRadius: 8 }}
-                        onError={(e) => {
-                          e.target.style.display = "none";
+            {activeTab === "general" && (
+              <section>
+                <div className="p4u-service-form-box">
+                  <h6><Icon icon="mdi:image-outline" className="me-1" /> Service Image</h6>
+                  {!isView && (
+                    <div className="d-flex flex-wrap gap-8 mb-12">
+                      <input
+                        type="file"
+                        className="form-control"
+                        style={{ maxWidth: 320 }}
+                        accept={IMAGE_ACCEPT}
+                        disabled={disabled}
+                        onChange={(e) => {
+                          if (e.target.files?.[0]) {
+                            setPendingIcon(e.target.files[0]);
+                            pendingIconRef.current = e.target.files[0];
+                          }
                         }}
                       />
+                      {!disabled && (
+                        <button type="button" className="p4u-services-btn-outline" onClick={() => setMediaLibraryOpen(true)}>
+                          <Icon icon="mdi:folder-image" /> Media Library
+                        </button>
+                      )}
                     </div>
                   )}
+                  <div className="p4u-service-media-preview">
+                    {(pendingIcon || formData.iconUrl) ? (
+                      <img
+                        src={pendingIcon ? URL.createObjectURL(pendingIcon) : resolveMediaUrl(formData.iconUrl)}
+                        alt="Service"
+                        style={{ maxWidth: "100%", maxHeight: 140, objectFit: "cover" }}
+                        onError={(e) => { e.target.style.display = "none"; }}
+                      />
+                    ) : (
+                      <div className="text-center text-secondary-light text-sm p-3">
+                        <Icon icon="mdi:image-plus-outline" className="text-2xl mb-2" />
+                        <div>Upload Service Image</div>
+                        <div className="text-xs mt-1">Click to open Media Library</div>
+                      </div>
+                    )}
+                  </div>
                   <MediaLibraryPicker
                     open={mediaLibraryOpen}
                     onClose={() => setMediaLibraryOpen(false)}
@@ -368,97 +314,172 @@ const ServiceFormLayer = ({ isEdit = false, isView = false, serviceId, onSuccess
                     }}
                   />
                 </div>
-              </div>
 
-              <div className="col-md-4 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Availability</label>
-                <select className="form-control radius-8 form-select" name="availability" value={formData.availability} onChange={handleChange} disabled={disabled}>
-                  {YES_NO.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="col-md-4 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Trending</label>
-                <select className="form-control radius-8 form-select" name="trending" value={formData.trending} onChange={handleChange} disabled={disabled}>
-                  {YES_NO.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="col-md-4 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Emergency service</label>
-                <select className="form-control radius-8 form-select" name="emergency" value={formData.emergency} onChange={handleChange} disabled={disabled}>
-                  {YES_NO.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                <div className="row g-12 mb-16">
+                  <Field col="col-md-12" label="Title *">
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      disabled={disabled}
+                      maxLength={255}
+                      placeholder="Service name"
+                      required
+                    />
+                  </Field>
+                  <Field col="col-md-6" label="Service category *">
+                    <select
+                      className="form-select"
+                      name="parentCategoryId"
+                      value={formData.parentCategoryId}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData((prev) => ({ ...prev, parentCategoryId: value, categoryId: "" }));
+                      }}
+                      disabled={categorySelectDisabled}
+                      required
+                    >
+                      <option value="">{categoriesLoading ? "Loading categories…" : "Select category"}</option>
+                      {rootCategories.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field col="col-md-6" label="Subcategory *">
+                    <select
+                      className="form-select"
+                      name="categoryId"
+                      value={formData.categoryId}
+                      onChange={handleChange}
+                      disabled={categorySelectDisabled || !formData.parentCategoryId}
+                      required
+                    >
+                      <option value="">
+                        {formData.parentCategoryId ? (subcategories.length ? "Select subcategory" : "No subcategories") : "Select category first"}
+                      </option>
+                      {subcategories.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field col="col-md-4" label="Availability">
+                    <select className="form-select" name="availability" value={formData.availability} onChange={handleChange} disabled={disabled}>
+                      {YES_NO.map((o) => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </Field>
+                  <Field col="col-md-4" label="Trending">
+                    <select className="form-select" name="trending" value={formData.trending} onChange={handleChange} disabled={disabled}>
+                      {YES_NO.map((o) => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </Field>
+                  <Field col="col-md-4" label="Emergency service">
+                    <select className="form-select" name="emergency" value={formData.emergency} onChange={handleChange} disabled={disabled}>
+                      {YES_NO.map((o) => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </Field>
+                </div>
+              </section>
+            )}
 
-              <div className="col-md-4 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Base price (optional)</label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  className="form-control radius-8"
-                  name="basePrice"
-                  value={formData.basePrice}
-                  onChange={handleChange}
-                  disabled={disabled}
-                  placeholder="e.g. 499"
-                  autoComplete="off"
-                />
-              </div>
-              <div className="col-md-4 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Price type</label>
-                <select className="form-control radius-8 form-select" name="priceType" value={formData.priceType} onChange={handleChange} disabled={disabled}>
-                  {PRICE_TYPES.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="col-md-4 mb-20">
-                <label className="form-label fw-semibold text-primary-light text-sm mb-8">Duration (optional)</label>
-                <input
-                  type="text"
-                  className="form-control radius-8"
-                  name="duration"
-                  value={formData.duration}
-                  onChange={handleChange}
-                  disabled={disabled}
-                  maxLength={64}
-                  placeholder="e.g. 1 hour, 2 hours"
-                />
-              </div>
-            </div>
+            {activeTab === "pricing" && (
+              <section className="p4u-service-form-box">
+                <h5><Icon icon="mdi:currency-inr" className="me-1" /> Base Pricing</h5>
+                <div className="row g-12">
+                  <Field col="col-md-4" label="Base Price (₹)">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      className="form-control"
+                      name="basePrice"
+                      value={formData.basePrice}
+                      onChange={handleChange}
+                      disabled={disabled}
+                      placeholder="e.g. 499"
+                    />
+                  </Field>
+                  <Field col="col-md-4" label="Price type">
+                    <select className="form-select" name="priceType" value={formData.priceType} onChange={handleChange} disabled={disabled}>
+                      {PRICE_TYPES.map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field col="col-md-4" label="Duration">
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="duration"
+                      value={formData.duration}
+                      onChange={handleChange}
+                      disabled={disabled}
+                      maxLength={64}
+                      placeholder="e.g. 1-2 hours"
+                    />
+                  </Field>
+                </div>
+              </section>
+            )}
 
-            <div className="d-flex align-items-center justify-content-between mt-24">
-              <button
-                type="button"
-                onClick={isView ? onCancel || (() => navigate(-1)) : handleReset}
-                className="btn border border-danger-600 text-danger-600 bg-hover-danger-200 text-md px-56 py-12 radius-8 d-flex align-items-center gap-2"
-              >
-                <Icon icon="mdi:close-circle-outline" className="text-xl" /> {isView ? "Back" : "Reset"}
-              </button>
-              {!isView && (
-                <button type="submit" disabled={disabled} className="btn btn-primary text-md px-56 py-12 radius-8 d-flex align-items-center gap-2">
-                  <Icon icon="lucide:save" className="text-xl" /> {submitting ? "Saving..." : isEdit ? "Update" : "Save"}
+            {activeTab === "descriptions" && (
+              <section className="p4u-service-form-box">
+                <Field col="col-md-12" label="Description">
+                  <textarea
+                    className="form-control"
+                    name="description"
+                    rows={6}
+                    value={formData.description}
+                    onChange={handleChange}
+                    disabled={disabled}
+                    placeholder="Service description..."
+                  />
+                </Field>
+              </section>
+            )}
+
+            {inModal ? (
+              <div className="p4u-service-modal__foot">
+                {isEdit && onDelete && !isView ? (
+                  <button type="button" onClick={onDelete} className="p4u-services-btn-primary" style={{ marginRight: "auto", background: "#dc2626" }}>
+                    <Icon icon="mdi:trash-can-outline" /> Delete
+                  </button>
+                ) : null}
+                <button type="button" onClick={cancelAction} className="p4u-services-btn-outline">Cancel</button>
+                {!isView && (
+                  <button type="submit" disabled={disabled} className="p4u-services-btn-primary">
+                    {submitting ? "Saving..." : isEdit ? "Save" : "Create Service"}
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="d-flex align-items-center justify-content-between mt-24">
+                <button type="button" onClick={cancelAction} className="btn border border-danger-600 text-danger-600 radius-8 px-20">
+                  {isView ? "Back" : "Reset"}
                 </button>
-              )}
-            </div>
+                {!isView && (
+                  <button type="submit" disabled={disabled} className="btn btn-primary radius-8 px-20">
+                    {submitting ? "Saving..." : isEdit ? "Update" : "Save"}
+                  </button>
+                )}
+              </div>
+            )}
           </form>
         )}
       </div>
     </div>
   );
 };
+
+const Tab = ({ active, label, onClick }) => (
+  <button type="button" onClick={onClick} className={active ? "is-active" : ""}>{label}</button>
+);
+
+const Field = ({ col, label, children }) => (
+  <div className={col}>
+    <label className="form-label">{label}</label>
+    {children}
+  </div>
+);
 
 export default ServiceFormLayer;

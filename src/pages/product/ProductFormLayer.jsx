@@ -131,7 +131,7 @@ const emptyForm = () => ({
   bannerUrls: [],
 });
 
-const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess, onCancel }) => {
+const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess, onCancel, onDelete }) => {
   const [formData, setFormData] = useState(emptyForm);
   const [activeTab, setActiveTab] = useState("general");
   const [isReadonly, setIsReadonly] = useState(Boolean(isView));
@@ -453,6 +453,7 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
 
   const disabled = isReadonly || submitting || refsLoading || entityLoading;
   const showSkeleton = Boolean(productId) && entityLoading;
+  const inModal = Boolean(onCancel);
   const productImageUrls = useMemo(
     () => collectProductImageUrls(formData.thumbnailUrl, formData.bannerUrls),
     [formData.thumbnailUrl, formData.bannerUrls],
@@ -460,112 +461,72 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
   const vendorName = vendors.find((v) => v.id === formData.vendorId)?.businessName || "—";
   const categoryName = categories.find((c) => c.id === formData.categoryId)?.name || "—";
 
+  const modalTitle = () => {
+    const name = formData.name?.trim();
+    if (isEdit && name) return `Edit: ${name}`;
+    if (isEdit) return "Edit Product";
+    return "New Product";
+  };
+
   return (
-    <div className='card h-100 p-0 radius-16 border-0'>
-      <div className='card-body p-20'>
-        {loadError && <div className='alert alert-danger radius-12 mb-16'>{loadError}</div>}
+    <div className={inModal ? "p4u-product-modal" : "card h-100 p-0 radius-16 border-0"}>
+      <div className={inModal ? "" : "card-body p-20"}>
+        {loadError && <div className="alert alert-danger radius-12 mb-16">{loadError}</div>}
         {showSkeleton ? (
-          <p className='text-secondary-light mb-0'>Loading product...</p>
+          <p className="text-secondary-light mb-0">Loading product...</p>
         ) : (
           <form onSubmit={handleSubmit}>
-            <div className='d-flex align-items-center gap-12 mb-16'>
-              <span className='w-48-px h-48-px rounded-3 bg-warning-100 text-warning-700 d-flex align-items-center justify-content-center'>
-                <Icon icon='mdi:package-variant-closed' className='text-xl' />
+            <div className="p4u-product-modal__head">
+              <span className="p4u-product-modal__icon">
+                <Icon icon="mdi:package-variant-closed" />
               </span>
               <div>
-                <h4 className='mb-0 fw-bold'>{formData.name || "Product"}</h4>
-                <p className='mb-0 text-secondary-light'>{formData.productRef || "—"}</p>
+                <h4 className="p4u-product-modal__title">{modalTitle()}</h4>
+                {formData.productRef ? <p className="p4u-product-modal__ref">{formData.productRef}</p> : null}
               </div>
             </div>
 
-            <div className='d-flex flex-wrap align-items-center gap-8 mb-16'>
-              <span className='px-12 py-4 rounded-pill bg-success-focus text-success-main fw-semibold text-sm'>{formData.statusLabel}</span>
-              <span className='px-12 py-4 rounded-pill bg-neutral-200 text-secondary-light fw-semibold text-sm'>{formData.productType}</span>
-              <span className='text-secondary-light'><Icon icon='mdi:tag-outline' className='me-4' />{categoryName}</span>
-              <span className='text-secondary-light'><Icon icon='mdi:store-outline' className='me-4' />{vendorName}</span>
-            </div>
+            {!inModal && (
+              <div className="d-flex flex-wrap align-items-center gap-8 mb-16">
+                <span className="px-12 py-4 rounded-pill bg-success-focus text-success-main fw-semibold text-sm">{formData.statusLabel}</span>
+                <span className="px-12 py-4 rounded-pill bg-neutral-200 text-secondary-light fw-semibold text-sm">{formData.productType}</span>
+                <span className="text-secondary-light"><Icon icon="mdi:tag-outline" className="me-4" />{categoryName}</span>
+                <span className="text-secondary-light"><Icon icon="mdi:store-outline" className="me-4" />{vendorName}</span>
+              </div>
+            )}
 
-            <div className='bg-primary-50 radius-12 p-6 d-flex gap-6 mb-16'>
-              <Tab active={activeTab === "general"} label='General' onClick={() => setActiveTab("general")} />
-              <Tab active={activeTab === "pricing"} label='Pricing' onClick={() => setActiveTab("pricing")} />
-              <Tab active={activeTab === "attributes"} label='Attributes' onClick={() => setActiveTab("attributes")} />
+            <div className="p4u-product-tabs">
+              <Tab active={activeTab === "general"} label="General" onClick={() => setActiveTab("general")} />
+              <Tab active={activeTab === "pricing"} label="Pricing" onClick={() => setActiveTab("pricing")} />
+              <Tab active={activeTab === "attributes"} label="Attributes" onClick={() => setActiveTab("attributes")} />
               {formData.productType === "variable" ? (
-                <Tab active={activeTab === "variations"} label='Variations' onClick={() => setActiveTab("variations")} />
+                <Tab active={activeTab === "variations"} label="Variations" onClick={() => setActiveTab("variations")} />
               ) : null}
-              <Tab active={activeTab === "seo"} label='SEO' onClick={() => setActiveTab("seo")} />
+              <Tab active={activeTab === "seo"} label="SEO" onClick={() => setActiveTab("seo")} />
             </div>
 
             {activeTab === "general" && (
-              <section className='d-flex flex-column gap-14'>
-                <div className='bg-primary-25 radius-12 p-14'>
-                  <div className='row g-12'>
-                    <Field col='col-md-6' label='Title *'><input className='form-control radius-10' name='name' value={formData.name} onChange={handleChange} disabled={disabled} /></Field>
-                    <Field col='col-md-6' label='SKU'><input className='form-control radius-10' name='sku' value={formData.sku} onChange={handleChange} disabled={disabled} /></Field>
-                    <Field col='col-md-4' label='Vendor'>
-                      <select className='form-select radius-10' name='vendorId' value={formData.vendorId} onChange={handleChange} disabled={disabled}>
-                        <option value=''>Select vendor</option>
-                        {vendors.map((v) => <option key={v.id} value={v.id}>{v.businessName || v.ownerName}</option>)}
-                      </select>
-                    </Field>
-                    <Field col='col-md-4' label='Category'>
-                      <select
-                        className='form-select radius-10'
-                        name='parentCategoryId'
-                        value={formData.parentCategoryId}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setFormData((prev) => ({ ...prev, parentCategoryId: value, categoryId: "" }));
-                        }}
-                        disabled={disabled}
-                      >
-                        <option value=''>Select category</option>
-                        {rootCategories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                      </select>
-                    </Field>
-                    <Field col='col-md-4' label={subcategories.length > 0 ? "Subcategory *" : "Subcategory"}>
-                      {subcategories.length === 0 && formData.parentCategoryId ? (
-                        <p className="text-secondary-light text-xs mb-8">No subcategories for this category — product links to the category directly.</p>
-                      ) : null}
-                      <select
-                        className='form-select radius-10'
-                        name='categoryId'
-                        value={formData.categoryId}
-                        onChange={handleChange}
-                        disabled={disabled || !formData.parentCategoryId || subcategories.length === 0}
-                      >
-                        <option value=''>
-                          {!formData.parentCategoryId
-                            ? "Select category first"
-                            : subcategories.length === 0
-                              ? "N/A"
-                              : "Select subcategory"}
-                        </option>
-                        {subcategories.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                      </select>
-                    </Field>
-                    <Field col='col-md-4' label='Product type'>
-                      <select className='form-select radius-10' name='productType' value={formData.productType} onChange={handleChange} disabled={disabled}>
-                        <option value='simple'>Simple</option>
-                        <option value='variable'>Variable</option>
-                      </select>
-                    </Field>
-                    <Field col='col-md-4' label='Quantity'>
-                      <input
-                        type='number'
-                        min='0'
-                        className='form-control radius-10'
-                        name='quantity'
-                        value={formData.quantity}
-                        onChange={handleChange}
-                        disabled={disabled}
-                        placeholder='Available stock'
-                      />
-                    </Field>
-                  </div>
+              <section className="d-flex flex-column gap-14">
+                <div className="p4u-product-type-grid">
+                  {[
+                    { value: "simple", label: "Simple", icon: "mdi:layers-outline" },
+                    { value: "variable", label: "Variable", icon: "mdi:layers-triple-outline" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      disabled={disabled}
+                      className={`p4u-product-type-card ${formData.productType === opt.value ? "is-active" : ""}`}
+                      onClick={() => setFormData((prev) => ({ ...prev, productType: opt.value }))}
+                    >
+                      <Icon icon={opt.icon} className="text-xl" />
+                      {opt.label}
+                    </button>
+                  ))}
                 </div>
 
-                <div className='bg-primary-25 radius-12 p-14'>
-                  <h6 className='mb-10 fw-semibold'>Product Images</h6>
+                <div className="p4u-product-form-box">
+                  <h6>Product Images</h6>
                   {!isReadonly && (
                     <ImageUploadField
                       disabled={disabled}
@@ -608,78 +569,141 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
                   </div>
                 </div>
 
-                <div className='row g-12'>
-                  <Field col='col-md-6' label='Short Description'><textarea className='form-control radius-10' name='shortDescription' rows={3} value={formData.shortDescription} onChange={handleChange} disabled={disabled} /></Field>
-                  <Field col='col-md-6' label='Long Description'><textarea className='form-control radius-10' name='longDescription' rows={3} value={formData.longDescription} onChange={handleChange} disabled={disabled} /></Field>
-                </div>
-                <div className='bg-warning-50 radius-12 p-14 d-flex align-items-center justify-content-between'>
-                  <div>
-                    <h6 className='mb-4 fw-semibold'>Deal of the Day</h6>
-                    <p className='mb-0 text-secondary-light text-sm'>Featured in homepage "Deals of the Day"</p>
+                <div className="p4u-product-form-box">
+                  <div className="row g-12">
+                    <Field col="col-md-6" label="Title *"><input className="form-control" name="name" value={formData.name} onChange={handleChange} disabled={disabled} placeholder="Product name" /></Field>
+                    <Field col="col-md-6" label="SKU"><input className="form-control" name="sku" value={formData.sku} onChange={handleChange} disabled={disabled} placeholder="SKU-001" /></Field>
+                    <Field col="col-md-4" label="Vendor">
+                      <select className="form-select" name="vendorId" value={formData.vendorId} onChange={handleChange} disabled={disabled}>
+                        <option value="">Select vendor</option>
+                        {vendors.map((v) => <option key={v.id} value={v.id}>{v.businessName || v.ownerName}</option>)}
+                      </select>
+                    </Field>
+                    <Field col="col-md-4" label="Category">
+                      <select
+                        className="form-select"
+                        name="parentCategoryId"
+                        value={formData.parentCategoryId}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setFormData((prev) => ({ ...prev, parentCategoryId: value, categoryId: "" }));
+                        }}
+                        disabled={disabled}
+                      >
+                        <option value="">Select category</option>
+                        {rootCategories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </Field>
+                    <Field col="col-md-4" label={subcategories.length > 0 ? "Subcategory *" : "Subcategory"}>
+                      {subcategories.length === 0 && formData.parentCategoryId ? (
+                        <p className="text-secondary-light text-xs mb-8">No subcategories for this category — product links to the category directly.</p>
+                      ) : null}
+                      <select
+                        className="form-select"
+                        name="categoryId"
+                        value={formData.categoryId}
+                        onChange={handleChange}
+                        disabled={disabled || !formData.parentCategoryId || subcategories.length === 0}
+                      >
+                        <option value="">
+                          {!formData.parentCategoryId
+                            ? "Select category first"
+                            : subcategories.length === 0
+                              ? "N/A"
+                              : "Select subcategory"}
+                        </option>
+                        {subcategories.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                      </select>
+                    </Field>
+                    <Field col="col-md-4" label="Quantity">
+                      <input
+                        type="number"
+                        min="0"
+                        className="form-control"
+                        name="quantity"
+                        value={formData.quantity}
+                        onChange={handleChange}
+                        disabled={disabled}
+                        placeholder="Available stock"
+                      />
+                    </Field>
                   </div>
-                  <select className='form-select radius-10' style={{ width: 140 }} name='dealOfDay' value={formData.dealOfDay} onChange={handleChange} disabled={disabled}>
-                    <option value='No'>No</option>
-                    <option value='Yes'>Yes</option>
+                </div>
+
+                <div className="row g-12">
+                  <Field col="col-md-6" label="Short Description"><textarea className="form-control" name="shortDescription" rows={3} value={formData.shortDescription} onChange={handleChange} disabled={disabled} placeholder="Brief one-liner" /></Field>
+                  <Field col="col-md-6" label="Long Description"><textarea className="form-control" name="longDescription" rows={3} value={formData.longDescription} onChange={handleChange} disabled={disabled} placeholder="Detailed product description..." /></Field>
+                </div>
+                <div className="p4u-product-deal-box">
+                  <div>
+                    <h6><Icon icon="mdi:star-outline" className="me-1" /> Deal of the Day</h6>
+                    <p>Featured in homepage &quot;Deals of the Day&quot;</p>
+                  </div>
+                  <select className="form-select" style={{ width: 140 }} name="dealOfDay" value={formData.dealOfDay} onChange={handleChange} disabled={disabled}>
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
                   </select>
                 </div>
               </section>
             )}
 
             {activeTab === "pricing" && (
-              <section className='d-flex flex-column gap-14'>
-                <div className='bg-primary-25 radius-12 p-14'>
-                  <h5 className='fw-bold mb-12'><Icon icon='mdi:currency-usd' className='me-6' />Pricing</h5>
-                  <div className='row g-12'>
-                    <Field col='col-md-6' label='MRP (₹)'><input className='form-control radius-10' name='sellPrice' value={formData.sellPrice} onChange={handleChange} disabled={disabled} /></Field>
-                    <Field col='col-md-6' label='Tax Slab'>
-                      <select className='form-select radius-10' name='taxConfigurationId' value={formData.taxConfigurationId} onChange={handleChange} disabled={disabled}>
-                        <option value=''>Select tax</option>
+              <section className="d-flex flex-column gap-14">
+                <div className="p4u-product-form-box">
+                  <h5><Icon icon="mdi:currency-inr" className="me-1" /> Pricing</h5>
+                  <div className="row g-12">
+                    <Field col="col-md-6" label="MRP (₹)"><input className="form-control" name="sellPrice" value={formData.sellPrice} onChange={handleChange} disabled={disabled} /></Field>
+                    <Field col="col-md-6" label="Tax Slab">
+                      <select className="form-select" name="taxConfigurationId" value={formData.taxConfigurationId} onChange={handleChange} disabled={disabled}>
+                        <option value="">Select tax</option>
                         {taxItems.map((t) => <option key={t.id} value={t.id}>{t.title || t.code} ({t.percentage}%)</option>)}
                       </select>
                     </Field>
-                    <Field col='col-md-6' label='HSN Code'><input className='form-control radius-10' name='hsnCode' value={formData.hsnCode} onChange={handleChange} disabled={disabled} /></Field>
-                    <Field col='col-md-6' label='Tax Amount (auto)'><input className='form-control radius-10' name='taxAmount' value={formData.taxAmount} onChange={handleChange} disabled={disabled} /></Field>
-                    <Field col='col-md-6' label='Discount Type'>
-                      <select className='form-select radius-10' name='discountType' value={formData.discountType} onChange={handleChange} disabled={disabled}>
-                        <option value='Fixed'>Fixed</option>
-                        <option value='Percent'>Percent</option>
+                    <Field col="col-md-6" label="HSN Code"><input className="form-control" name="hsnCode" value={formData.hsnCode} onChange={handleChange} disabled={disabled} placeholder="e.g. 84713010" /></Field>
+                    <Field col="col-md-6" label="Tax Amount (auto)"><input className="form-control" name="taxAmount" value={formData.taxAmount} onChange={handleChange} disabled={disabled} /></Field>
+                    <Field col="col-md-6" label="Discount Type">
+                      <select className="form-select" name="discountType" value={formData.discountType} onChange={handleChange} disabled={disabled}>
+                        <option value="Fixed">Fixed (₹)</option>
+                        <option value="Percent">Percent</option>
                       </select>
                     </Field>
-                    <Field col='col-md-6' label='Discount (₹)'><input className='form-control radius-10' name='discountAmount' value={formData.discountAmount} onChange={handleChange} disabled={disabled} /></Field>
+                    <Field col="col-md-6" label="Discount (₹)"><input className="form-control" name="discountAmount" value={formData.discountAmount} onChange={handleChange} disabled={disabled} /></Field>
                   </div>
-                  <div className='border-top mt-14 pt-12 d-flex justify-content-between align-items-center'>
-                    <h5 className='mb-0 fw-bold'>Selling Price</h5>
-                    <h3 className='mb-0 fw-bold'>₹{formData.finalPrice || formData.sellPrice || 0}</h3>
+                  <div className="p4u-product-pricing-summary">
+                    <h5 className="mb-0 fw-bold">Selling Price</h5>
+                    <h3 className="mb-0 fw-bold">₹{formData.finalPrice || formData.sellPrice || 0}</h3>
                   </div>
                 </div>
 
-                <div className='bg-warning-50 radius-12 p-14'>
-                  <div className='row g-12'>
-                    <Field col='col-md-4' label='Max Points Redeemable'><input className='form-control radius-10' name='maxPointsRedeemable' value={formData.maxPointsRedeemable} onChange={handleChange} disabled={disabled} /></Field>
-                    <Field col='col-md-4' label='Max User Redemption %'><input className='form-control radius-10' name='maxUserRedemptionPercent' value={formData.maxUserRedemptionPercent} onChange={handleChange} disabled={disabled} /></Field>
-                    <Field col='col-md-4' label='Vendor to P4U Commission'><input className='form-control radius-10' name='vendorCommissionLabel' value={formData.vendorCommissionLabel} onChange={handleChange} disabled={disabled} /></Field>
-                    <Field col='col-md-4' label='Commission Override % (this product)'>
+                <div className="p4u-product-commission-box">
+                  <div className="row g-12">
+                    <Field col="col-md-4" label="Max Points Redeemable"><input className="form-control" name="maxPointsRedeemable" value={formData.maxPointsRedeemable} onChange={handleChange} disabled={disabled} /></Field>
+                    <Field col="col-md-4" label="Max User Redemption %"><input className="form-control" name="maxUserRedemptionPercent" value={formData.maxUserRedemptionPercent} onChange={handleChange} disabled={disabled} /></Field>
+                    <Field col="col-md-4" label="Vendor to P4U Commission"><input className="form-control" name="vendorCommissionLabel" value={formData.vendorCommissionLabel} onChange={handleChange} disabled={disabled} /></Field>
+                    <Field col="col-md-4" label="Commission Override % (this product)">
                       <input
-                        type='number'
-                        min='0'
-                        max='100'
-                        step='0.01'
-                        className='form-control radius-10'
-                        name='commissionOverridePercent'
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        className="form-control"
+                        name="commissionOverridePercent"
                         value={formData.commissionOverridePercent}
                         onChange={handleChange}
                         disabled={disabled}
-                        placeholder='Leave blank to use category/vendor/plan'
+                        placeholder="Leave blank to use category/vendor/plan"
                       />
                     </Field>
                   </div>
+                  <p className="text-secondary-light text-sm mb-0 mt-8">Product-level values override vendor-level, which overrides plan-level.</p>
                 </div>
               </section>
             )}
 
             {activeTab === "attributes" && (
-              <section className='bg-primary-25 radius-12 p-14'>
-                <h5 className='fw-bold mb-12'>Attributes</h5>
+              <section className="p4u-product-form-box">
+                <h5 className="fw-bold mb-12">Attributes</h5>
+                <p className="text-secondary-light text-sm mb-16">Select attribute values for this product. For variable products, variants will be generated from selected combinations.</p>
                 {formData.productType === "variable" ? (
                   <div className='d-flex flex-wrap align-items-center justify-content-between gap-8 mb-16 p-12 rounded-12 border border-primary-200 bg-primary-50'>
                     <p className='mb-0 text-sm text-secondary-light'>Select values, then generate SKU rows on the Variations tab.</p>
@@ -709,7 +733,7 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
                                     type='button'
                                     onClick={() => toggleSelectAttribute(attr.name, opt)}
                                     disabled={disabled}
-                                    className={`btn radius-pill border d-inline-flex align-items-center gap-8 px-12 py-6 ${active ? "bg-primary-50 border-primary-300 text-primary-700" : "bg-white border-neutral-200 text-primary-light"}`}
+                                    className={`p4u-product-attr-chip ${active ? "is-active" : ""}`}
                                   >
                                     {hex ? (
                                       <span
@@ -794,25 +818,44 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
             )}
 
             {activeTab === "seo" && (
-              <section className='bg-primary-25 radius-12 p-14'>
-                <div className='row g-12'>
-                  <Field col='col-md-12' label='SEO Title'><input className='form-control radius-10' name='seoTitle' value={formData.seoTitle} onChange={handleChange} disabled={disabled} /></Field>
-                  <Field col='col-md-12' label='SEO Description'><textarea className='form-control radius-10' rows={4} name='seoDescription' value={formData.seoDescription} onChange={handleChange} disabled={disabled} /></Field>
+              <section className="p4u-product-form-box">
+                <div className="row g-12">
+                  <Field col="col-md-12" label="SEO Title"><input className="form-control" name="seoTitle" value={formData.seoTitle} onChange={handleChange} disabled={disabled} placeholder="SEO title (max 60 chars)" /></Field>
+                  <Field col="col-md-12" label="SEO Description"><textarea className="form-control" rows={4} name="seoDescription" value={formData.seoDescription} onChange={handleChange} disabled={disabled} placeholder="SEO description (max 160 chars)" /></Field>
                 </div>
               </section>
             )}
 
-            <div className='d-flex justify-content-end gap-10 mt-20'>
-              <button type='button' onClick={onCancel} className='btn btn-light border radius-10 px-20'>Close</button>
-              {isView && isReadonly && (
-                <button type='button' onClick={() => setIsReadonly(false)} className='btn btn-primary radius-10 px-20'>Edit</button>
-              )}
-              {!isReadonly && (
-                <button type='submit' disabled={submitting || refsLoading} className='btn btn-primary radius-10 px-20'>
-                  {submitting ? "Saving..." : "Save"}
-                </button>
-              )}
-            </div>
+            {inModal ? (
+              <div className="p4u-product-modal__foot">
+                {isEdit && onDelete && !isReadonly ? (
+                  <button type="button" onClick={onDelete} className="p4u-products-btn-primary" style={{ marginRight: "auto", background: "#dc2626" }}>
+                    <Icon icon="mdi:trash-can-outline" /> Delete
+                  </button>
+                ) : null}
+                <button type="button" onClick={onCancel} className="p4u-products-btn-outline">Cancel</button>
+                {isView && isReadonly && (
+                  <button type="button" onClick={() => setIsReadonly(false)} className="p4u-products-btn-primary">Edit</button>
+                )}
+                {!isReadonly && (
+                  <button type="submit" disabled={submitting || refsLoading} className="p4u-products-btn-primary">
+                    {submitting ? "Saving..." : isEdit ? "Save" : "Create Product"}
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="d-flex justify-content-end gap-10 mt-20">
+                <button type="button" onClick={onCancel} className="btn btn-light border radius-10 px-20">Close</button>
+                {isView && isReadonly && (
+                  <button type="button" onClick={() => setIsReadonly(false)} className="btn btn-primary radius-10 px-20">Edit</button>
+                )}
+                {!isReadonly && (
+                  <button type="submit" disabled={submitting || refsLoading} className="btn btn-primary radius-10 px-20">
+                    {submitting ? "Saving..." : "Save"}
+                  </button>
+                )}
+              </div>
+            )}
           </form>
         )}
       </div>
@@ -821,14 +864,14 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
 };
 
 const Tab = ({ active, label, onClick }) => (
-  <button type='button' onClick={onClick} className={`btn border-0 radius-10 px-20 py-8 ${active ? "bg-white text-primary-600 fw-semibold" : "bg-transparent text-secondary-light"}`}>
+  <button type="button" onClick={onClick} className={active ? "is-active" : ""}>
     {label}
   </button>
 );
 
 const Field = ({ col, label, children }) => (
   <div className={col}>
-    <label className='form-label fw-semibold text-primary-light text-sm mb-8'>{label}</label>
+    <label className="form-label">{label}</label>
     {children}
   </div>
 );

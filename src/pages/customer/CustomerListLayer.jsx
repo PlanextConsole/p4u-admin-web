@@ -2,10 +2,9 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { toast } from "react-toastify";
-import { createCustomer, deleteCustomer, listCustomers, listOccupations } from "../../lib/api/adminApi";
+import { createCustomer, listCustomers, listOccupations } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import FormModal from "../../components/admin/FormModal";
-import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 import CustomerFormLayer from "./CustomerFormLayer";
 
 const STATUS_OPTIONS = ["All", "active", "inactive", "suspended"];
@@ -60,16 +59,6 @@ const CustomerListLayer = () => {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this customer?")) return;
-    try {
-      await deleteCustomer(id);
-      await load();
-    } catch (e) {
-      window.alert(e instanceof ApiError ? e.message : String(e));
-    }
-  };
-
   const filtered = customers.filter((c) => {
     const s = String(c.status || "").toLowerCase();
     if (statusTab === "deactivated" && !["inactive", "suspended", "deactivated"].includes(s)) return false;
@@ -102,8 +91,24 @@ const CustomerListLayer = () => {
   const formatDate = (d) => {
     if (!d) return "—";
     const dt = new Date(d);
-    if (isNaN(dt)) return "—";
-    return dt.toISOString().replace("T", " ").substring(0, 19);
+    if (Number.isNaN(dt.getTime())) return "—";
+    const day = dt.toLocaleString("en-IN", { day: "numeric" });
+    const mon = dt.toLocaleString("en-IN", { month: "short" });
+    const yr = String(dt.getFullYear()).slice(-2);
+    const time = dt.toLocaleString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+    return `${day} ${mon} ${yr}, ${time}`;
+  };
+
+  const customerRef = (id) => {
+    const raw = String(id || "").replace(/-/g, "").toUpperCase();
+    return raw ? `CUST-${raw.slice(0, 8)}` : "—";
+  };
+
+  const statusPill = (status) => {
+    const s = String(status || "").toLowerCase();
+    if (s === "active") return { label: "Active", cls: "p4u-customer-pill is-active" };
+    const label = status ? String(status).charAt(0).toUpperCase() + String(status).slice(1) : "—";
+    return { label, cls: "p4u-customer-pill is-inactive" };
   };
 
   const exportCsv = useCallback(() => {
@@ -154,165 +159,198 @@ const CustomerListLayer = () => {
   }, 0);
 
   return (
-    <div className="card h-100 p-0 radius-12">
-      <div className="card-body p-24">
-        <div className="mb-20">
-          <p className="text-secondary-light text-lg mb-0">{total.toLocaleString("en-IN")} registered customers</p>
-        </div>
-
-        <div className="d-flex flex-wrap gap-8 bg-neutral-100 p-8 radius-12 mb-20">
-          {STATUS_TABS.map((tab) => {
-            const count = tab.key === "deactivated" ? deactivatedCount : tab.key === "deleted" ? deletedCount : total;
-            const active = statusTab === tab.key;
-            return (
-              <button
-                key={tab.key}
-                type="button"
-                className={`btn border-0 radius-10 px-16 py-8 fw-medium ${active ? "bg-white text-primary-light shadow-sm" : "bg-transparent text-secondary-light"}`}
-                onClick={() => setStatusTab(tab.key)}
-              >
-                {tab.label}
-                {tab.key !== "all" ? ` (${count})` : ""}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="row g-16 mb-20">
-          <StatCard title="Total Customers" value={total.toLocaleString("en-IN")} icon="mdi:account-group-outline" cardCls="bg-primary-50" valueCls="text-primary-700" />
-          <StatCard title="Active" value={activeCount.toLocaleString("en-IN")} icon="mdi:account-check-outline" cardCls="bg-success-50" valueCls="text-success-700" />
-          <StatCard title="Inactive / Suspended" value={inactiveSuspendedCount.toLocaleString("en-IN")} icon="mdi:account-cancel-outline" cardCls="bg-danger-50" valueCls="text-danger-700" />
-          <StatCard title="Total Wallet Points" value={totalWalletPoints.toLocaleString("en-IN")} icon="mdi:star-circle-outline" cardCls="bg-warning-50" valueCls="text-warning-700" />
-        </div>
-
-        <div className="p4u-admin-filter-row gap-10 mb-20">
-          <div className="input-group radius-8 p4u-filter-search" style={{ minWidth: 160, maxWidth: 300 }}>
-            <span className="input-group-text bg-white border-end-0">
-              <Icon icon="mdi:magnify" className="text-secondary-light" />
-            </span>
-            <input
-              type="text"
-              className="form-control border-start-0 h-40-px"
-              placeholder="Search by name, email, mobile"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <select
-            className="form-select form-select-sm radius-8 h-40-px"
-            style={{ minWidth: 120 }}
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            {STATUS_OPTIONS.map((s) => (
-              <option key={s} value={s}>{s === "All" ? "All status" : s.charAt(0).toUpperCase() + s.slice(1)}</option>
-            ))}
-          </select>
-          <select
-            className="form-select form-select-sm radius-8 h-40-px"
-            style={{ minWidth: 140 }}
-            value={occupationFilter}
-            onChange={(e) => setOccupationFilter(e.target.value)}
-          >
-            <option value="">All occupation types</option>
-            {occupations.map((o) => (
-              <option key={o.id} value={String(o.id)}>{o.name || o.id}</option>
-            ))}
-          </select>
-          <input type="date" className="form-control radius-8 h-40-px" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} title="From date" />
-          <input type="date" className="form-control radius-8 h-40-px" value={dateTo} onChange={(e) => setDateTo(e.target.value)} title="To date" />
-          <div className="p4u-admin-filter-row__end gap-8">
-            <button type="button" className="btn btn-outline-secondary text-sm btn-sm px-14 py-8 radius-8 d-flex align-items-center gap-6" onClick={exportCsv}>
-              <Icon icon="mdi:download-outline" className="text-lg" />
-              Export CSV
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary text-sm btn-sm px-16 py-8 radius-8 d-flex align-items-center gap-6"
-              onClick={() => setModal({ mode: "add" })}
-            >
-              <Icon icon="ic:baseline-plus" className="text-lg" />
-              Add Customer
-            </button>
-          </div>
-        </div>
-        {error && <div className="alert alert-danger radius-12 mb-16" role="alert">{error}</div>}
-        {loading ? (
-          <p className="text-secondary-light mb-0">Loading customers...</p>
-        ) : (
-          <>
-            <div className="table-responsive scroll-sm" style={{ overflowX: "auto" }}>
-              <table className="table bordered-table sm-table mb-0 text-nowrap" style={{ minWidth: 1180 }}>
-                <thead>
-                  <tr>
-                    <th scope="col">ID</th>
-                    <th scope="col">Name</th>
-                    <th scope="col">Email</th>
-                    <th scope="col">Mobile</th>
-                    <th scope="col">Occupation</th>
-                    <th scope="col">Points</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Created</th>
-                    <th scope="col">Updated</th>
-                    <TableActionHeader />
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.length > 0 ? (
-                    filtered.map((customer, index) => {
-                      const meta = customer.metadata || {};
-                      return (
-                        <tr key={customer.id}>
-                          <td className="fw-medium">{`CUST-${String(customer.id || "").replace(/-/g, "").slice(0, 6).toUpperCase()}`}</td>
-                          <td><span className="text-md fw-normal text-secondary-light">{customer.fullName || "—"}</span></td>
-                          <td>{customer.email || "—"}</td>
-                          <td>{customer.phone || "—"}</td>
-                          <td>{occupationMap[customer.occupationId] || meta.occupation || "—"}</td>
-                          <td className="fw-semibold">{meta.wallet ?? meta.walletBalance ?? 0}</td>
-                          <td>
-                            <span className={`px-12 py-4 radius-pill fw-medium text-sm ${String(customer.status).toLowerCase() === "active" ? "bg-success-100 text-success-700" : "bg-danger-100 text-danger-700"}`}>
-                              {(customer.status || "—").charAt(0).toUpperCase() + String(customer.status || "—").slice(1)}
-                            </span>
-                          </td>
-                          <td>{formatDate(customer.createdAt)}</td>
-                          <td>{formatDate(customer.updatedAt)}</td>
-                          <TableActionCell
-                            actions={[
-                              { type: "view", onClick: () => setModal({ mode: "view", id: customer.id }) },
-                              { type: "edit", onClick: () => setModal({ mode: "edit", id: customer.id }) },
-                              { type: "delete", onClick: () => handleDelete(customer.id) },
-                            ]}
-                          />
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr><td colSpan="10" className="text-center py-4">No customers found.</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-            <div className="p4u-admin-filter-row align-items-center justify-content-between gap-2 mt-24">
-              <div className="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-8 gap-md-16">
-                <span>Showing {pageFrom} to {pageTo} of {total} entries</span>
-                <span className="text-secondary-light text-sm">
-                  <Link to="/occupations" className="text-primary-600 hover-text-decoration-underline">Occupations</Link>
-                  {" — edit the list used when assigning a customer's occupation."}
-                </span>
-              </div>
-              <div className="d-flex gap-2 align-items-center">
-                <button type="button" className="page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px text-md" disabled={!canPrev} onClick={() => setOffset(Math.max(0, offset - limit))}>
-                  <Icon icon="ep:d-arrow-left" />
-                </button>
-                <span className="page-link fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px text-md bg-primary-600 text-white mb-0">{Math.floor(offset / limit) + 1}</span>
-                <button type="button" className="page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px text-md" disabled={!canNext} onClick={() => setOffset(offset + limit)}>
-                  <Icon icon="ep:d-arrow-right" />
-                </button>
-              </div>
-            </div>
-          </>
-        )}
+    <div className="p4u-customers-page">
+      <div className="p4u-customers-hero">
+        <h3>Customers</h3>
+        <p>{total.toLocaleString("en-IN")} registered customers</p>
       </div>
+
+      <div className="p4u-customers-tabs">
+        {STATUS_TABS.map((tab) => {
+          const count = tab.key === "deactivated" ? deactivatedCount : tab.key === "deleted" ? deletedCount : null;
+          const active = statusTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              className={active ? "is-active" : ""}
+              onClick={() => setStatusTab(tab.key)}
+            >
+              {tab.label}{count != null ? ` (${count})` : ""}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="p4u-customers-stats">
+        <div className="p4u-customers-stat is-total">
+          <span className="p4u-customers-stat__icon"><Icon icon="mdi:account-group-outline" /></span>
+          <div>
+            <p className="p4u-customers-stat__label">Total Customers</p>
+            <p className="p4u-customers-stat__value">{total.toLocaleString("en-IN")}</p>
+          </div>
+        </div>
+        <div className="p4u-customers-stat is-active">
+          <span className="p4u-customers-stat__icon"><Icon icon="mdi:account-check-outline" /></span>
+          <div>
+            <p className="p4u-customers-stat__label">Active</p>
+            <p className="p4u-customers-stat__value">{activeCount.toLocaleString("en-IN")}</p>
+          </div>
+        </div>
+        <div className="p4u-customers-stat is-inactive">
+          <span className="p4u-customers-stat__icon"><Icon icon="mdi:account-cancel-outline" /></span>
+          <div>
+            <p className="p4u-customers-stat__label">Inactive / Suspended</p>
+            <p className="p4u-customers-stat__value">{inactiveSuspendedCount.toLocaleString("en-IN")}</p>
+          </div>
+        </div>
+        <div className="p4u-customers-stat is-points">
+          <span className="p4u-customers-stat__icon"><Icon icon="mdi:star-circle-outline" /></span>
+          <div>
+            <p className="p4u-customers-stat__label">Total Wallet Points</p>
+            <p className="p4u-customers-stat__value">{totalWalletPoints.toLocaleString("en-IN")}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="p4u-customers-toolbar">
+        <label className="p4u-customers-search">
+          <Icon icon="mdi:magnify" className="text-secondary-light" />
+          <input
+            type="text"
+            placeholder="Search by name, email, mobile, occupation..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </label>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} aria-label="Filter status">
+          {STATUS_OPTIONS.map((s) => (
+            <option key={s} value={s}>{s === "All" ? "Status" : s.charAt(0).toUpperCase() + s.slice(1)}</option>
+          ))}
+        </select>
+        <select value={occupationFilter} onChange={(e) => setOccupationFilter(e.target.value)} aria-label="Filter occupation">
+          <option value="">Occupation</option>
+          {occupations.map((o) => (
+            <option key={o.id} value={String(o.id)}>{o.name || o.id}</option>
+          ))}
+        </select>
+        <label className="p4u-customers-date">
+          <Icon icon="mdi:calendar-outline" />
+          <span>From Date</span>
+          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+        </label>
+        <label className="p4u-customers-date">
+          <Icon icon="mdi:calendar-outline" />
+          <span>To Date</span>
+          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+        </label>
+        <div className="p4u-customers-toolbar__actions">
+          <button
+            type="button"
+            className="p4u-customers-btn-primary"
+            onClick={() => setModal({ mode: "add" })}
+          >
+            <Icon icon="ic:baseline-plus" /> Add Customer
+          </button>
+          <button type="button" className="p4u-customers-btn-outline" onClick={exportCsv}>
+            <Icon icon="mdi:download-outline" /> Export CSV
+          </button>
+        </div>
+      </div>
+
+      {error && <div className="alert alert-danger radius-12 mb-16" role="alert">{error}</div>}
+      {loading ? (
+        <p className="text-secondary-light mb-0">Loading customers...</p>
+      ) : (
+        <>
+          <div className="p4u-customers-table-wrap">
+            <table className="p4u-customers-table">
+              <thead>
+                <tr>
+                  <th scope="col" style={{ width: 36 }} />
+                  <th scope="col">ID</th>
+                  <th scope="col">Name</th>
+                  <th scope="col">Email</th>
+                  <th scope="col">Mobile</th>
+                  <th scope="col">Occupation</th>
+                  <th scope="col">Points</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Created</th>
+                  <th scope="col">Updated</th>
+                  <th scope="col">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length > 0 ? (
+                  filtered.map((customer) => {
+                    const meta = customer.metadata || {};
+                    const pill = statusPill(customer.status);
+                    return (
+                      <tr key={customer.id}>
+                        <td>
+                          <input type="checkbox" className="form-check-input" aria-label={`Select ${customer.fullName}`} readOnly />
+                        </td>
+                        <td>{customerRef(customer.id)}</td>
+                        <td><span className="cust-name">{customer.fullName || "—"}</span></td>
+                        <td>{customer.email || "—"}</td>
+                        <td>{customer.phone || "—"}</td>
+                        <td>{occupationMap[customer.occupationId] || meta.occupation || "—"}</td>
+                        <td className="fw-semibold">{meta.wallet ?? meta.walletBalance ?? 0}</td>
+                        <td><span className={pill.cls}>{pill.label}</span></td>
+                        <td>{formatDate(customer.createdAt)}</td>
+                        <td>{formatDate(customer.updatedAt)}</td>
+                        <td>
+                          <div className="d-flex gap-2">
+                            <button
+                              type="button"
+                              className="p4u-customers-action-btn"
+                              onClick={() => setModal({ mode: "view", id: customer.id })}
+                              aria-label="View"
+                              title="View"
+                            >
+                              <Icon icon="majesticons:eye-line" />
+                            </button>
+                            <button
+                              type="button"
+                              className="p4u-customers-action-btn"
+                              onClick={() => setModal({ mode: "edit", id: customer.id })}
+                              aria-label="Edit"
+                              title="Edit"
+                            >
+                              <Icon icon="mdi:pencil-outline" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr><td colSpan={11} className="text-center py-4">No customers found.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="p4u-customers-pagination">
+            <div>
+              <span>Showing {pageFrom} to {pageTo} of {total} entries</span>
+              <span className="d-block mt-1 text-sm">
+                <Link to="/occupations" className="text-primary-600">Occupations</Link>
+                {" — edit the list used when assigning a customer's occupation."}
+              </span>
+            </div>
+            <div className="p4u-customers-pagination__controls">
+              <button type="button" disabled={!canPrev} onClick={() => setOffset(Math.max(0, offset - limit))} aria-label="Previous page">
+                <Icon icon="ep:d-arrow-left" />
+              </button>
+              <span className="p4u-customers-pagination__page">{Math.floor(offset / limit) + 1}</span>
+              <button type="button" disabled={!canNext} onClick={() => setOffset(offset + limit)} aria-label="Next page">
+                <Icon icon="ep:d-arrow-right" />
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {modal && modal.id && (
         <FormModal onClose={() => setModal(null)} size="xl">
@@ -476,21 +514,5 @@ function CustomerCreateForm({ occupations, onSuccess, onCancel }) {
     </div>
   );
 }
-
-const StatCard = ({ title, value, icon, cardCls = "", valueCls = "" }) => (
-  <div className="col-sm-6 col-xl-3">
-    <div className={`radius-12 p-16 ${cardCls}`}>
-      <div className="d-flex align-items-center gap-12">
-        <span className="w-40-px h-40-px radius-8 d-flex align-items-center justify-content-center bg-white">
-          <Icon icon={icon} className="text-xl text-secondary-light" />
-        </span>
-        <div>
-          <div className="text-secondary-light text-sm">{title}</div>
-          <div className={`h5 fw-bold mb-0 ${valueCls}`}>{value}</div>
-        </div>
-      </div>
-    </div>
-  </div>
-);
 
 export default CustomerListLayer;

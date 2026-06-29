@@ -3,10 +3,8 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { toast } from "react-toastify";
 import { deleteProduct, listProducts, listVendors, listCategoriesForProducts, updateProduct } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
-import { formatDateTime } from "../../lib/formatters";
 import { resolveAdminProductUnitPrice } from "../../lib/resolveProductPrice";
 import FormModal from "../../components/admin/FormModal";
-import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 import ProductFormLayer from "./ProductFormLayer";
 
 function toCsv(rows) {
@@ -19,6 +17,30 @@ function toCsv(rows) {
 
 function isPendingModeration(p) {
   return String(p.moderationStatus || "").toLowerCase() === "pending";
+}
+
+function parseMeta(p) {
+  const raw = p.metadata || p.metaJson;
+  if (!raw) return {};
+  if (typeof raw === "object") return raw;
+  try { return JSON.parse(raw) || {}; } catch { return {}; }
+}
+
+function formatProductDateTime(value) {
+  if (!value) return "—";
+  const dt = new Date(value);
+  if (Number.isNaN(dt.getTime())) return "—";
+  const day = dt.toLocaleString("en-IN", { day: "2-digit" });
+  const mon = dt.toLocaleString("en-IN", { month: "short" });
+  const yr = String(dt.getFullYear()).slice(-2);
+  const time = dt.toLocaleString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+  return `${day} ${mon} ${yr}, ${time}`;
+}
+
+function productTypeLabel(p) {
+  const meta = parseMeta(p);
+  const t = String(meta.productType || "simple");
+  return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
 const ProductListLayer = () => {
@@ -79,6 +101,7 @@ const ProductListLayer = () => {
     try {
       await deleteProduct(id);
       toast.success("Product deleted.");
+      if (modal?.id === id) setModal(null);
       await load();
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : String(e));
@@ -102,8 +125,10 @@ const ProductListLayer = () => {
         if (Number.isNaN(d.getTime()) || d > end) return false;
       }
       if (!q) return true;
+      const ref = (p.productRef || "").toLowerCase();
       return (
         (p.name || "").toLowerCase().includes(q) ||
+        ref.includes(q) ||
         (categoryMap[p.categoryId] || "").toLowerCase().includes(q) ||
         (vendorMap[p.vendorId] || "").toLowerCase().includes(q)
       );
@@ -112,7 +137,6 @@ const ProductListLayer = () => {
 
   const stats = useMemo(() => {
     const totalProducts = products.length;
-    const pendingApprovalCount = products.filter(isPendingModeration).length;
     const activeCount = products.filter((p) => !isPendingModeration(p) && (p.availability || p.isActive)).length;
     const catalogForAvg = products.filter((p) => !isPendingModeration(p));
     const avgPrice = catalogForAvg.length
@@ -120,16 +144,16 @@ const ProductListLayer = () => {
           catalogForAvg.reduce((sum, p) => sum + resolveAdminProductUnitPrice(p), 0) / catalogForAvg.length,
         )
       : 0;
-    return { totalProducts, activeCount, avgPrice, pendingApprovalCount };
+    return { totalProducts, activeCount, avgPrice };
   }, [products]);
 
   const exportCsv = () => {
     const metaVolume = (p) => {
-      const m = p.metadata && typeof p.metadata === "object" ? p.metadata : {};
+      const m = parseMeta(p);
       return m.specVolume ?? p.specVolume ?? "";
     };
     const csvRows = [
-      ["ID", "Product", "Vendor", "Price", "Discount", "Volume", "Status", "Created"],
+      ["ID", "Product", "Vendor", "Price", "Discount", "Volume", "Status", "Created", "Updated"],
       ...filtered.map((p) => [
         p.productRef || p.id || "",
         p.name || "",
@@ -139,6 +163,7 @@ const ProductListLayer = () => {
         metaVolume(p),
         isPendingModeration(p) ? "pending_approval" : (p.availability || p.isActive) ? "active" : "inactive",
         p.createdAt || "",
+        p.updatedAt || "",
       ]),
     ];
     const csv = toCsv(csvRows);
@@ -151,137 +176,181 @@ const ProductListLayer = () => {
     URL.revokeObjectURL(url);
   };
 
+  const statusPill = (pendingMod, active) => {
+    if (pendingMod) return { label: "Pending approval", cls: "p4u-product-pill is-pending" };
+    if (active) return { label: "Active", cls: "p4u-product-pill is-active" };
+    return { label: "Inactive", cls: "p4u-product-pill is-inactive" };
+  };
+
   return (
-    <div className='card h-100 p-0 radius-16 border-0 shadow-sm'>
-      <div className='card-body p-24'>
-        <div className='mb-20'>
-          <h3 className='fw-bold mb-4'>Products</h3>
-          <p className='text-secondary-light mb-0'>{stats.totalProducts} rows · {stats.pendingApprovalCount} awaiting catalog approval</p>
-        </div>
-
-        <div className='bg-primary-50 radius-12 p-6 d-flex gap-6 mb-16' style={{ maxWidth: 420 }}>
-          <button type='button' className={`btn border-0 radius-10 px-20 py-8 ${tab === "pending" ? "bg-white text-primary-600 fw-semibold" : "bg-transparent text-secondary-light"}`} onClick={() => setTab("pending")}>
-            Pending Approval
-          </button>
-          <button type='button' className={`btn border-0 radius-10 px-20 py-8 ${tab === "all" ? "bg-white text-primary-600 fw-semibold" : "bg-transparent text-secondary-light"}`} onClick={() => setTab("all")}>
-            All Products
-          </button>
-        </div>
-
-        <div className='row g-12 mb-16'>
-          <MetricCard title='Total (loaded)' value={stats.totalProducts} icon='mdi:package-variant-closed' color='info' />
-          <MetricCard title='Pending approval' value={stats.pendingApprovalCount} icon='mdi:clock-outline' color='primary' />
-          <MetricCard title='Published & active' value={stats.activeCount} icon='mdi:trending-up' color='success' />
-          <MetricCard title='Avg price (published)' value={`₹${stats.avgPrice}`} icon='mdi:currency-inr' color='primary' />
-        </div>
-
-        <div className='card radius-12 border-0 mb-16'>
-          <div className='card-body p-16 p4u-admin-filter-row gap-10 align-items-center'>
-            <div className='input-group radius-10 p4u-filter-search' style={{ minWidth: 160, maxWidth: 300 }}>
-              <span className='input-group-text bg-white border-end-0'><Icon icon='mdi:magnify' /></span>
-              <input
-                type='text'
-                className='form-control border-start-0 h-40-px'
-                placeholder='Search products...'
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-            <input type='date' className='form-control radius-10 h-40-px' value={fromDate} onChange={(e) => setFromDate(e.target.value)} title='From date' />
-            <input type='date' className='form-control radius-10 h-40-px' value={toDate} onChange={(e) => setToDate(e.target.value)} title='To date' />
-            <div className='p4u-admin-filter-row__end gap-8'>
-              <button type='button' onClick={() => setModal({ mode: "add" })} className='btn btn-primary radius-10 px-20 d-flex align-items-center gap-8'>
-                <Icon icon='ic:baseline-plus' /> Add Product
-              </button>
-              <button type='button' onClick={exportCsv} className='btn btn-outline-secondary radius-10 d-flex align-items-center gap-8'>
-                <Icon icon='mdi:download-outline' /> Export CSV
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {error && <div className='alert alert-danger radius-12 mb-16' role='alert'>{error}</div>}
-        {loading ? (
-          <p className='text-secondary-light mb-0'>Loading products...</p>
-        ) : (
-          <div className='table-responsive scroll-sm' style={{ overflowX: "auto" }}>
-              <table className='table bordered-table sm-table mb-0 text-nowrap' style={{ minWidth: 980 }}>
-                <thead>
-                  <tr>
-                    <th></th>
-                    <th>ID</th>
-                    <th>PRODUCT</th>
-                    <th>VENDOR</th>
-                    <th>PRICE</th>
-                    <th>DISCOUNT</th>
-                    <th>STATUS</th>
-                    <th>CREATED</th>
-                    <TableActionHeader />
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.length > 0 ? (
-                    filtered.map((product) => {
-                      const price = resolveAdminProductUnitPrice(product);
-                      const discount = Number(product.discountAmount || 0) || 0;
-                      const pendingMod = isPendingModeration(product);
-                      const active = !pendingMod && Boolean(product.availability || product.isActive);
-                      const ref = product.productRef || `PRD-${String(product.id || "").slice(-6)}`;
-                      return (
-                        <tr key={product.id}>
-                          <td><span className='w-18-px h-18-px rounded-circle border d-inline-block' /></td>
-                          <td>{ref}</td>
-                          <td>
-                            <div className='fw-semibold text-primary-light'>{product.name || "—"}</div>
-                            <div className='text-secondary-light text-sm'>{categoryMap[product.categoryId] || "—"}</div>
-                          </td>
-                          <td>{vendorMap[product.vendorId] || "—"}</td>
-                          <td className='fw-bold'>₹{price}</td>
-                          <td>{discount > 0 ? `₹${discount}` : "—"}</td>
-                          <td>
-                            <span className={`px-12 py-4 rounded-pill text-xs fw-semibold ${
-                              pendingMod
-                                ? "bg-warning-focus text-warning-main"
-                                : active
-                                  ? "bg-success-focus text-success-main"
-                                  : "bg-neutral-200 text-secondary-light"
-                            }`}>
-                              {pendingMod ? "Pending approval" : active ? "Published" : "Inactive"}
-                            </span>
-                          </td>
-                          <td>{formatDateTime(product.createdAt)}</td>
-                          <TableActionCell className='text-center'>
-                            <div className='d-flex align-items-center gap-10 justify-content-center flex-wrap'>
-                              {pendingMod ? (
-                                <button
-                                  type='button'
-                                  onClick={() => void handleApproveProduct(product.id)}
-                                  className='btn btn-sm btn-success radius-8 px-12 py-6'
-                                  title='Approve and publish to catalog'
-                                >
-                                  Approve
-                                </button>
-                              ) : null}
-                              <TableActionButtons
-                                actions={[
-                                  { type: "view", onClick: () => setModal({ mode: "view", id: product.id }) },
-                                  { type: "edit", onClick: () => setModal({ mode: "edit", id: product.id }) },
-                                  { type: "delete", onClick: () => handleDelete(product.id) },
-                                ]}
-                              />
-                            </div>
-                          </TableActionCell>
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr><td colSpan='9' className='text-center py-4'>No products found.</td></tr>
-                  )}
-                </tbody>
-              </table>
-          </div>
-        )}
+    <div className="p4u-products-page">
+      <div className="p4u-products-hero">
+        <h3>Products</h3>
+        <p>{stats.totalProducts} products across all vendors</p>
       </div>
+
+      <div className="p4u-products-tabs">
+        <button type="button" className={tab === "pending" ? "is-active" : ""} onClick={() => setTab("pending")}>
+          Pending Approval
+        </button>
+        <button type="button" className={tab === "all" ? "is-active" : ""} onClick={() => setTab("all")}>
+          All Products
+        </button>
+      </div>
+
+      <div className="p4u-products-stats">
+        <div className="p4u-products-stat is-total">
+          <span className="p4u-products-stat__icon"><Icon icon="mdi:package-variant-closed" /></span>
+          <div>
+            <p className="p4u-products-stat__label">Total Products</p>
+            <p className="p4u-products-stat__value">{stats.totalProducts}</p>
+          </div>
+        </div>
+        <div className="p4u-products-stat is-active">
+          <span className="p4u-products-stat__icon"><Icon icon="mdi:trending-up" /></span>
+          <div>
+            <p className="p4u-products-stat__label">Active</p>
+            <p className="p4u-products-stat__value">{stats.activeCount}</p>
+          </div>
+        </div>
+        <div className="p4u-products-stat is-price">
+          <span className="p4u-products-stat__icon"><Icon icon="mdi:currency-inr" /></span>
+          <div>
+            <p className="p4u-products-stat__label">Avg Price</p>
+            <p className="p4u-products-stat__value">₹{stats.avgPrice}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="p4u-products-toolbar">
+        <label className="p4u-products-search">
+          <Icon icon="mdi:magnify" className="text-secondary-light" />
+          <input
+            type="text"
+            placeholder="Search products..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </label>
+        <label className="p4u-products-date">
+          <Icon icon="mdi:calendar-outline" />
+          <span>From Date</span>
+          <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+        </label>
+        <label className="p4u-products-date">
+          <Icon icon="mdi:calendar-outline" />
+          <span>To Date</span>
+          <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+        </label>
+        <div className="p4u-products-toolbar__actions">
+          <button type="button" onClick={() => setModal({ mode: "add" })} className="p4u-products-btn-primary">
+            <Icon icon="ic:baseline-plus" /> Add Product
+          </button>
+          <button type="button" onClick={exportCsv} className="p4u-products-btn-outline">
+            <Icon icon="mdi:download-outline" /> Export CSV
+          </button>
+        </div>
+      </div>
+
+      {error && <div className="alert alert-danger radius-12 mb-16" role="alert">{error}</div>}
+
+      {loading ? (
+        <p className="text-secondary-light mb-0">Loading products...</p>
+      ) : (
+        <div className="p4u-products-table-wrap">
+          <table className="p4u-products-table">
+            <thead>
+              <tr>
+                <th scope="col" style={{ width: 36 }} />
+                <th scope="col">ID</th>
+                <th scope="col">Product</th>
+                <th scope="col">Vendor</th>
+                <th scope="col">Price</th>
+                <th scope="col">Discount</th>
+                <th scope="col">Status</th>
+                <th scope="col">Created</th>
+                <th scope="col">Updated</th>
+                <th scope="col">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length > 0 ? (
+                filtered.map((product) => {
+                  const price = resolveAdminProductUnitPrice(product);
+                  const discount = Number(product.discountAmount || 0) || 0;
+                  const pendingMod = isPendingModeration(product);
+                  const active = !pendingMod && Boolean(product.availability || product.isActive);
+                  const ref = product.productRef || `PRD-${String(product.id || "").slice(-6)}`;
+                  const pill = statusPill(pendingMod, active);
+                  const categoryName = categoryMap[product.categoryId] || "—";
+                  const typeLabel = productTypeLabel(product);
+                  return (
+                    <tr key={product.id}>
+                      <td>
+                        <input type="checkbox" className="form-check-input" aria-label={`Select ${product.name}`} readOnly />
+                      </td>
+                      <td>{ref}</td>
+                      <td>
+                        <div className="product-name">{product.name || "—"}</div>
+                        <div className="product-meta">{categoryName} • {typeLabel}</div>
+                      </td>
+                      <td>{vendorMap[product.vendorId] || "—"}</td>
+                      <td className="fw-bold">₹{price}</td>
+                      <td>{discount > 0 ? `₹${discount}` : "—"}</td>
+                      <td><span className={pill.cls}>{pill.label}</span></td>
+                      <td>{formatProductDateTime(product.createdAt)}</td>
+                      <td>{formatProductDateTime(product.updatedAt)}</td>
+                      <td>
+                        <div className="d-flex align-items-center gap-2 flex-wrap">
+                          {pendingMod ? (
+                            <button
+                              type="button"
+                              onClick={() => void handleApproveProduct(product.id)}
+                              className="p4u-products-btn-approve"
+                              title="Approve and publish to catalog"
+                            >
+                              Approve
+                            </button>
+                          ) : null}
+                          <button
+                            type="button"
+                            className="p4u-products-action-btn"
+                            onClick={() => setModal({ mode: "view", id: product.id })}
+                            aria-label="View"
+                            title="View"
+                          >
+                            <Icon icon="majesticons:eye-line" />
+                          </button>
+                          <button
+                            type="button"
+                            className="p4u-products-action-btn"
+                            onClick={() => setModal({ mode: "edit", id: product.id })}
+                            aria-label="Edit"
+                            title="Edit"
+                          >
+                            <Icon icon="mdi:pencil-outline" />
+                          </button>
+                          <button
+                            type="button"
+                            className="p4u-products-action-btn is-danger"
+                            onClick={() => handleDelete(product.id)}
+                            aria-label="Delete"
+                            title="Delete"
+                          >
+                            <Icon icon="mdi:trash-can-outline" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr><td colSpan={10} className="text-center py-4">No products found.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {modal && (
         <FormModal onClose={() => setModal(null)} size="xl">
@@ -291,32 +360,10 @@ const ProductListLayer = () => {
             productId={modal.id}
             onSuccess={() => { setModal(null); load(); }}
             onCancel={() => setModal(null)}
+            onDelete={modal.mode === "edit" && modal.id ? () => handleDelete(modal.id) : undefined}
           />
         </FormModal>
       )}
-    </div>
-  );
-};
-
-const MetricCard = ({ title, value, icon, color }) => {
-  const colors = {
-    info: "bg-info-50 text-info-600",
-    success: "bg-success-50 text-success-600",
-    primary: "bg-primary-50 text-primary-600",
-  };
-  return (
-    <div className='col-sm-6 col-xl-4'>
-      <div className='radius-12 p-16 bg-neutral-50 border'>
-        <div className='d-flex align-items-center gap-10'>
-          <span className={`w-40-px h-40-px rounded-circle d-flex align-items-center justify-content-center ${colors[color]}`}>
-            <Icon icon={icon} className='text-xl' />
-          </span>
-          <div>
-            <div className='text-sm text-secondary-light'>{title}</div>
-            <h4 className='mb-0 fw-bold'>{value}</h4>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
