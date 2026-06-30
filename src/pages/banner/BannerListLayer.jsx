@@ -163,7 +163,6 @@ const BannerListLayer = () => {
           <table className='p4u-banner-table'>
             <thead>
               <tr>
-                <th>ID</th>
                 <th>Preview</th>
                 <th>Banner</th>
                 <th>Link</th>
@@ -177,11 +176,11 @@ const BannerListLayer = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan='9' className='p4u-banner-empty'>Loading...</td>
+                  <td colSpan='8' className='p4u-banner-empty'>Loading...</td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan='9' className='p4u-banner-empty'>No banners found.</td>
+                  <td colSpan='8' className='p4u-banner-empty'>No banners found.</td>
                 </tr>
               ) : (
                 filtered.map((banner) => {
@@ -189,7 +188,6 @@ const BannerListLayer = () => {
                   const preview = meta.desktopImageUrl || banner.imageUrl;
                   return (
                     <tr key={banner.id}>
-                      <td className='p4u-banner-id' title={banner.id}>{banner.id}</td>
                       <td>
                         {preview ? (
                           <img

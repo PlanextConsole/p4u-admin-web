@@ -23,6 +23,10 @@ const normalizePages = (meta) => {
 
 const csvEscape = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
 
+function campaignCountLabel(count) {
+  return `${count} ad campaign${count === 1 ? "" : "s"}`;
+}
+
 const AdvertisementListLayer = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -121,7 +125,7 @@ const AdvertisementListLayer = () => {
       <section className='p4u-ads-hero'>
         <div>
           <h1>Advertisements</h1>
-          <p>{filtered.length} ad campaigns</p>
+          <p>{campaignCountLabel(filtered.length)}</p>
         </div>
         <button type='button' className='p4u-ads-new-btn' onClick={openNew}>
           <Icon icon='ic:round-plus' />
@@ -175,7 +179,6 @@ const AdvertisementListLayer = () => {
           <table className='p4u-ads-table'>
             <thead>
               <tr>
-                <th>ID</th>
                 <th>Campaign</th>
                 <th>Link</th>
                 <th>Pages</th>
@@ -191,9 +194,9 @@ const AdvertisementListLayer = () => {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan='12' className='p4u-ads-empty'>Loading...</td></tr>
+                <tr><td colSpan='11' className='p4u-ads-empty'>Loading...</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan='12' className='p4u-ads-empty'>No advertisements found.</td></tr>
+                <tr><td colSpan='11' className='p4u-ads-empty'>No advertisements found.</td></tr>
               ) : (
                 filtered.map((ad) => {
                   const meta = ad.metadata || {};
@@ -201,7 +204,6 @@ const AdvertisementListLayer = () => {
                   const type = meta.type || meta.postType || (pages.includes("socio") ? "Sponsored" : "Banner");
                   return (
                     <tr key={ad.id}>
-                      <td className='p4u-ads-id' title={ad.id}>{ad.id}</td>
                       <td>
                         <div className='p4u-ads-campaign' title={ad.title || "Untitled"}>{ad.title || "Untitled"}</div>
                         {meta.advertiser ? <div className='p4u-ads-advertiser' title={meta.advertiser}>{meta.advertiser}</div> : null}

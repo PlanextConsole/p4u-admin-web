@@ -158,7 +158,6 @@ const PopupBannerListLayer = () => {
           <table className='p4u-popup-table'>
             <thead>
               <tr>
-                <th>ID</th>
                 <th>Image</th>
                 <th>Title</th>
                 <th>Link</th>
@@ -172,15 +171,14 @@ const PopupBannerListLayer = () => {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={10} className='p4u-popup-empty'>Loading...</td></tr>
+                <tr><td colSpan={9} className='p4u-popup-empty'>Loading...</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={10} className='p4u-popup-empty'>No popup banners found.</td></tr>
+                <tr><td colSpan={9} className='p4u-popup-empty'>No popup banners found.</td></tr>
               ) : (
                 filtered.map((item, index) => {
                   const link = popupLink(item);
                   return (
                     <tr key={item.id} className={index === 0 ? 'is-featured' : ''}>
-                      <td className='p4u-popup-id' title={popupId(item, index)}>{popupId(item, index)}</td>
                       <td>
                         <div className='p4u-popup-thumb'>
                           {item.imageUrl ? (
