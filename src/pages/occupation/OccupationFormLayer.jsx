@@ -1,5 +1,4 @@
 ﻿import React, { useCallback, useEffect, useState } from "react";
-import { Icon } from "@iconify/react/dist/iconify.js";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { createOccupation, getOccupation, updateOccupation } from "../../lib/api/adminApi";
@@ -78,9 +77,6 @@ export default function OccupationFormLayer({ isEdit = false, occupationId, onSu
 
   return (
     <div className="p4u-ref-modal p4u-occupation-modal">
-      <button type="button" className="p4u-ref-modal-close" onClick={() => (onCancel ? onCancel() : navigate(-1))} aria-label="Close">
-        <Icon icon="mdi:close" />
-      </button>
       <h2>{isEdit ? "Edit Occupation" : "New Occupation"}</h2>
       {loading ? <div className="p4u-ref-empty">Loading...</div> : (
         <form onSubmit={onSubmit}>

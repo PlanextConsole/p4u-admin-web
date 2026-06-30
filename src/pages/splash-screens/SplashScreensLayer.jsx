@@ -33,7 +33,6 @@ function SplashModal({ screen, onClose, onSave }) {
 
   return (
     <div className="p4u-ref-modal p4u-splash-modal">
-      <button type="button" className="p4u-ref-modal-close" onClick={onClose} aria-label="Close"><Icon icon="mdi:close" /></button>
       <h2>{isEdit ? "Edit Splash Screen" : "Add Splash Screen"}</h2>
       <form onSubmit={submit}>
         <div className="p4u-ref-form-grid">

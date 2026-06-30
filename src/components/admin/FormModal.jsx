@@ -25,7 +25,7 @@ const FormModal = ({ onClose, size = "lg", children }) => {
       role="presentation"
     >
       <div
-        className="bg-base radius-12 shadow-lg position-relative text-primary-light d-flex flex-column"
+        className="p4u-form-modal-portal bg-base radius-12 shadow-lg position-relative text-primary-light d-flex flex-column"
         style={{
           width: `min(${width}px, 95vw)`,
           maxHeight: "min(92vh, calc(100vh - 64px))",
@@ -44,8 +44,8 @@ const FormModal = ({ onClose, size = "lg", children }) => {
           <Icon icon="mdi:close" className="text-2xl" />
         </button>
         <div
-          className="flex-grow-1 overflow-auto"
-          style={{ padding: "48px 20px 20px", minHeight: 0 }}
+          className="p4u-form-modal-body flex-grow-1 overflow-auto"
+          style={{ padding: "40px 20px 20px", minHeight: 0 }}
         >
           {children}
         </div>

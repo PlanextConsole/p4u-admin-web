@@ -7681,12 +7681,12 @@ button.fw-semibold {
 }
 
 .p4u-banner-modal h2 {
-  margin: -18px 0 28px;
-  color: #001b36;
-  font-size: 22px;
-  line-height: 1.2;
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  margin: 0 0 1rem;
+  color: #334155;
+  font-size: 1rem;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .p4u-banner-field,
@@ -8205,12 +8205,12 @@ button.fw-semibold {
 }
 
 .p4u-ad-modal h2 {
-  margin: -18px 0 30px;
-  color: #001b36;
-  font-size: 22px;
-  line-height: 1.2;
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  margin: 0 0 1rem;
+  color: #334155;
+  font-size: 1rem;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .p4u-ad-grid {
@@ -8743,4 +8743,180 @@ body .dashboard-main-body .p4u-popup-table .p4u-action-buttons,
 body .dashboard-main-body .p4u-file-row-actions {
   white-space: nowrap !important;
   flex-wrap: nowrap !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   P4U global compact typography — pages + portaled modals (FormModal)
+   WowDash theme headings use clamp() with !important; modals render on body.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Heading scale — all P4U surfaces */
+body .dashboard-main-body :is(h1, .h1),
+body [class*="p4u-"] :is(h1, .h1),
+body .p4u-form-modal-portal :is(h1, .h1) {
+  font-size: 1.25rem !important;
+  line-height: 1.35 !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.02em !important;
+  color: #334155 !important;
+}
+
+body .dashboard-main-body :is(h2, .h2),
+body [class*="p4u-"] :is(h2, .h2),
+body .p4u-form-modal-portal :is(h2, .h2) {
+  font-size: 1rem !important;
+  line-height: 1.3 !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+  color: #334155 !important;
+}
+
+body .dashboard-main-body :is(h3, .h3),
+body [class*="p4u-"] :is(h3, .h3),
+body .p4u-form-modal-portal :is(h3, .h3) {
+  font-size: 0.9375rem !important;
+  line-height: 1.35 !important;
+  font-weight: 600 !important;
+  color: #334155 !important;
+}
+
+body .dashboard-main-body :is(h4, .h4),
+body [class*="p4u-"] :is(h4, .h4),
+body .p4u-form-modal-portal :is(h4, .h4) {
+  font-size: 0.875rem !important;
+  line-height: 1.35 !important;
+  font-weight: 600 !important;
+  color: #334155 !important;
+}
+
+body .dashboard-main-body :is(h5, .h5),
+body [class*="p4u-"] :is(h5, .h5),
+body .p4u-form-modal-portal :is(h5, .h5) {
+  font-size: 0.8125rem !important;
+  line-height: 1.35 !important;
+  font-weight: 600 !important;
+  color: #334155 !important;
+}
+
+body .p4u-splash-preview h2 {
+  font-size: 1.125rem !important;
+  color: #fff !important;
+}
+
+/* Form labels */
+body .dashboard-main-body .form-label,
+body .dashboard-main-body label,
+body [class*="p4u-"] [class*="-field"] > span,
+body [class*="p4u-"] [class*="-drop-field"] > span,
+body [class*="p4u-"] [class*="-pages"] > span,
+body [class*="p4u-"] [class*="-upload"] > span,
+body [class*="p4u-"] .p4u-ref-field > span,
+body [class*="p4u-"] .p4u-cms-field > span,
+body [class*="p4u-"] .p4u-classified-field > span,
+body .p4u-form-modal-portal .form-label,
+body .p4u-form-modal-portal label {
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  color: #475569 !important;
+}
+
+/* Form inputs */
+body .dashboard-main-body .form-control,
+body .dashboard-main-body .form-select,
+body [class*="p4u-"] [class*="-field"] input,
+body [class*="p4u-"] [class*="-field"] select,
+body [class*="p4u-"] [class*="-field"] textarea,
+body [class*="p4u-"] .p4u-ref-field input,
+body [class*="p4u-"] .p4u-ref-field select,
+body [class*="p4u-"] .p4u-cms-field input,
+body [class*="p4u-"] .p4u-cms-field select,
+body [class*="p4u-"] .p4u-classified-field input,
+body [class*="p4u-"] .p4u-classified-field select,
+body [class*="p4u-"] .p4u-ad-search-product,
+body [class*="p4u-"] .p4u-ad-editor textarea,
+body [class*="p4u-"] .p4u-cms-editor textarea,
+body [class*="p4u-"] .p4u-classified-editor textarea,
+body .p4u-form-modal-portal .form-control,
+body .p4u-form-modal-portal .form-select,
+body .p4u-form-modal-portal textarea {
+  font-size: 0.875rem !important;
+  line-height: 1.4 !important;
+}
+
+body [class*="p4u-"] [class*="-field"] input,
+body [class*="p4u-"] [class*="-field"] select,
+body [class*="p4u-"] .p4u-ref-field input,
+body [class*="p4u-"] .p4u-ref-field select,
+body [class*="p4u-"] .p4u-cms-field input,
+body [class*="p4u-"] .p4u-classified-field input,
+body [class*="p4u-"] .p4u-ad-search-product {
+  min-height: 40px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Toolbar / action buttons */
+body [class*="p4u-"][class*="-hero"] button,
+body [class*="p4u-"][class*="-new-btn"],
+body [class*="p4u-"][class*="-add-btn"],
+body [class*="p4u-"][class*="-export"],
+body [class*="p4u-"][class*="-primary"],
+body [class*="p4u-"][class*="-outline"],
+body [class*="p4u-"][class*="-submit"],
+body [class*="p4u-"][class*="-cancel"],
+body [class*="p4u-"] .p4u-ads-tabs button {
+  font-size: 0.875rem !important;
+}
+
+/* Upload zones & helper text */
+body [class*="p4u-"] [class*="-upload"] span,
+body [class*="p4u-"] .p4u-ad-upload span {
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+}
+
+body [class*="p4u-"] [class*="-upload"] small,
+body [class*="p4u-"] .p4u-ad-upload small {
+  font-size: 0.6875rem !important;
+}
+
+/* Card headers in legacy list/form layouts */
+body .dashboard-main-body .card-header h4,
+body .dashboard-main-body .card-header h5 {
+  font-size: 0.9375rem !important;
+  font-weight: 600 !important;
+}
+
+/* Breadcrumb / filter row text */
+body .dashboard-main-body .text-md,
+body .dashboard-main-body .p4u-admin-filter-row,
+body .dashboard-main-body .navbar-search input {
+  font-size: 0.875rem !important;
+}
+
+/* ── Portaled modal titles (beats WowDash h1–h4 clamp + module 22px rules) ── */
+body .p4u-form-modal-portal .p4u-form-modal-body form > :is(h2, h3):first-child,
+body .p4u-form-modal-portal .p4u-form-modal-body .p4u-ref-modal > h2,
+body .p4u-form-modal-portal .p4u-form-modal-body .p4u-home-cms-modal__title :is(h2, h3),
+body .p4u-form-modal-portal .p4u-form-modal-body [class*="p4u-"][class*="-modal"] > :is(h2, h3):first-child,
+body .p4u-form-modal-portal .p4u-form-modal-body :is(h2, h3).p4u-modal-title {
+  font-size: 1rem !important;
+  line-height: 1.3 !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+  color: #334155 !important;
+  margin-top: 0 !important;
+  margin-bottom: 1rem !important;
+}
+
+body .p4u-form-modal-portal .p4u-form-modal-body .text-lg,
+body .p4u-form-modal-portal .p4u-form-modal-body .text-xl,
+body .p4u-form-modal-portal .p4u-form-modal-body .text-2xl {
+  font-size: 1rem !important;
+  line-height: 1.3 !important;
+}
+
+/* FormModal already provides a close button — hide legacy in-modal X icons */
+body .p4u-form-modal-portal .p4u-ref-modal-close {
+  display: none !important;
 }
