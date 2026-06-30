@@ -180,7 +180,7 @@ const PopupBannerListLayer = () => {
                   const link = popupLink(item);
                   return (
                     <tr key={item.id} className={index === 0 ? 'is-featured' : ''}>
-                      <td className='p4u-popup-id'>{popupId(item, index)}</td>
+                      <td className='p4u-popup-id' title={popupId(item, index)}>{popupId(item, index)}</td>
                       <td>
                         <div className='p4u-popup-thumb'>
                           {item.imageUrl ? (
@@ -191,10 +191,10 @@ const PopupBannerListLayer = () => {
                         </div>
                       </td>
                       <td>
-                        <div className='p4u-popup-title'>{item.title || "-"}</div>
-                        <div className='p4u-popup-subtitle'>{popupSubtitle(item)}</div>
+                        <div className='p4u-popup-title' title={item.title || "-"}>{item.title || "-"}</div>
+                        <div className='p4u-popup-subtitle' title={popupSubtitle(item)}>{popupSubtitle(item)}</div>
                       </td>
-                      <td><span className='p4u-popup-link'>{link}</span></td>
+                      <td><span className='p4u-popup-link' title={link}>{link}</span></td>
                       <td>{dateOnly(startDate(item))}</td>
                       <td>{dateOnly(endDate(item))}</td>
                       <td><span className={item.isActive !== false ? 'p4u-popup-pill is-active' : 'p4u-popup-pill is-inactive'}>{statusText(item)}</span></td>

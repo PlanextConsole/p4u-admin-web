@@ -201,17 +201,17 @@ const AdvertisementListLayer = () => {
                   const type = meta.type || meta.postType || (pages.includes("socio") ? "Sponsored" : "Banner");
                   return (
                     <tr key={ad.id}>
-                      <td className='p4u-ads-id'>{ad.id}</td>
+                      <td className='p4u-ads-id' title={ad.id}>{ad.id}</td>
                       <td>
-                        <div className='p4u-ads-campaign'>{ad.title || "Untitled"}</div>
-                        {meta.advertiser ? <div className='p4u-ads-advertiser'>{meta.advertiser}</div> : null}
+                        <div className='p4u-ads-campaign' title={ad.title || "Untitled"}>{ad.title || "Untitled"}</div>
+                        {meta.advertiser ? <div className='p4u-ads-advertiser' title={meta.advertiser}>{meta.advertiser}</div> : null}
                       </td>
                       <td><span className='p4u-ads-chip'>{meta.linkLabel || meta.linkType || (ad.redirectUrl ? "Custom" : "Product")}</span></td>
-                      <td className='p4u-ads-pages'>{pages.join(", ")}</td>
+                      <td className='p4u-ads-pages' title={pages.join(", ")}>{pages.join(", ")}</td>
                       <td><span className='p4u-ads-chip'>{type}</span></td>
                       <td>{Number(meta.impressions ?? 0).toLocaleString("en-IN")}</td>
                       <td>{Number(meta.clicks ?? 0).toLocaleString("en-IN")}</td>
-                      <td className='p4u-ads-period'>{meta.startDate || "--"} &rarr; {meta.endDate || "--"}</td>
+                      <td className='p4u-ads-period' title={`${meta.startDate || "--"} → ${meta.endDate || "--"}`}>{meta.startDate || "--"} &rarr; {meta.endDate || "--"}</td>
                       <td><span className={`p4u-ads-pill ${String(ad.status || "active").toLowerCase() === "active" ? "is-active" : "is-paused"}`}>{prettyStatus(ad.status)}</span></td>
                       <td className='p4u-ads-muted'>{formatDateTime(ad.createdAt)}</td>
                       <td className='p4u-ads-muted'>{formatDateTime(ad.updatedAt)}</td>

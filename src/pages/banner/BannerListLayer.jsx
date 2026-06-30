@@ -189,7 +189,7 @@ const BannerListLayer = () => {
                   const preview = meta.desktopImageUrl || banner.imageUrl;
                   return (
                     <tr key={banner.id}>
-                      <td className='p4u-banner-id'>{banner.id}</td>
+                      <td className='p4u-banner-id' title={banner.id}>{banner.id}</td>
                       <td>
                         {preview ? (
                           <img
@@ -203,11 +203,11 @@ const BannerListLayer = () => {
                         )}
                       </td>
                       <td>
-                        <div className='p4u-banner-title'>{banner.title || "Untitled"}</div>
-                        {meta.subtitle ? <div className='p4u-banner-subtitle'>{meta.subtitle}</div> : null}
+                        <div className='p4u-banner-title' title={banner.title || "Untitled"}>{banner.title || "Untitled"}</div>
+                        {meta.subtitle ? <div className='p4u-banner-subtitle' title={meta.subtitle}>{meta.subtitle}</div> : null}
                       </td>
                       <td>
-                        <span className='p4u-banner-link'>{banner.redirectUrl || "/app/browse"}</span>
+                        <span className='p4u-banner-link' title={banner.redirectUrl || "/app/browse"}>{banner.redirectUrl || "/app/browse"}</span>
                       </td>
                       <td className='p4u-banner-priority'>#{banner.sortOrder ?? 0}</td>
                       <td>

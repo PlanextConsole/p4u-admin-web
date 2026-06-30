@@ -100,7 +100,7 @@ const PushNotificationsLayer = () => {
     <div className='p4u-push-page'>
       <div className='p4u-push-grid'>
         <section className='p4u-push-card'>
-          <h1><Icon icon='mdi:bell-outline' /> Send Notification</h1>
+          <h2 className='p4u-module-card-title'><Icon icon='mdi:bell-outline' /> Send Notification</h2>
 
           <form onSubmit={handleSend} className='p4u-push-form'>
             <div className='p4u-push-field p4u-push-audience-wrap'>
@@ -167,7 +167,7 @@ const PushNotificationsLayer = () => {
         </section>
 
         <section className='p4u-push-card p4u-push-recent'>
-          <h1>Recent Sends</h1>
+          <h2 className='p4u-module-card-title'>Recent Sends</h2>
           {error && <div className='p4u-push-alert'>{error}</div>}
           {loadingRecent ? (
             <p>Loading...</p>

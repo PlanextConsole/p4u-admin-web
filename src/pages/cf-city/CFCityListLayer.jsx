@@ -54,7 +54,7 @@ const CFCityListLayer = () => {
 
   return (
     <div className='card h-100 p-0 radius-12'>
-      <div className='card-header border-bottom bg-base py-16 px-24 p4u-admin-filter-row align-items-center gap-3 justify-content-between'>
+      <div className='card-header border-bottom bg-base py-16 px-24 p4u-admin-filter-row align-items-center gap-3'>
         <div className='p4u-admin-filter-row align-items-center gap-3'>
           <span className='text-md fw-medium text-secondary-light mb-0'>Show</span>
           <select className='form-select form-select-sm w-auto ps-12 py-6 radius-12 h-40-px' defaultValue='10'>
@@ -73,10 +73,6 @@ const CFCityListLayer = () => {
             <Icon icon='ion:search-outline' className='icon' />
           </form>
         </div>
-        <button type='button' onClick={() => setModal({ mode: "add" })} className='btn btn-primary text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2'>
-          <Icon icon='ic:baseline-plus' className='icon text-xl line-height-1' />
-          Add City
-        </button>
       </div>
       <div className='card-body p-24'>
         {error && (
