@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+﻿import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import ProtectedRouteLayout from "./components/ProtectedRouteLayout";
 import Dashboard from "./pages/dashboard/DashoardLayout";
 import HomePageTwo from "./pages/HomePageTwo";
@@ -156,8 +156,11 @@ import HomepageCmsPage from './pages/homepage-cms/HomepageCmsPage';
 import PushNotificationsPage from './pages/push-notifications/PushNotificationsPage';
 import MediaLibraryPage from './pages/media-library/MediaLibraryPage';
 import FileUploadsPage from './pages/file-uploads/FileUploadsPage';
+import OnboardingScreensPage from './pages/onboarding-screens/OnboardingScreensPage';
 import PopupBannersListPage from './pages/popupbanner/PopupBannersListPage';
 import AdvertisementsListPage from './pages/advertisement/AdvertisementsListPage';
+import CmsPagesPage from './pages/cms-pages/CmsPagesPage';
+import SplashScreensPage from './pages/splash-screens/SplashScreensPage';
 import VendorPlansPage from './pages/vendor-plan/VendorPlansPage';
 import VendorPortalPage from './pages/vendor-portal/VendorPortalPage';
 
@@ -203,7 +206,7 @@ function App() {
         <Route exact path='/product' element={<ProductListPage />} />
         <Route exact path='/product-attributes' element={<ProductAttributesListPage />} />
 
-{/* CATEGORY — product vs service use separate tables */}
+{/* CATEGORY â€” product vs service use separate tables */}
 <Route exact path='/service-categories' element={<CategoryListPage />} />
 <Route exact path='/service-subcategories' element={<ServiceSubcategoryListPage />} />
 <Route exact path='/product-categories' element={<ProductCategoryListPage />} />
@@ -254,9 +257,12 @@ function App() {
 <Route exact path='/notifications' element={<PushNotificationsPage />} />
 <Route exact path='/media-library' element={<MediaLibraryPage />} />
 <Route exact path='/file-uploads' element={<FileUploadsPage />} />
+<Route exact path='/onboarding-screens' element={<OnboardingScreensPage />} />
 <Route exact path='/banners' element={<BannerListPage />} />
 <Route exact path='/popup-banners' element={<PopupBannersListPage />} />
 <Route exact path='/advertisements' element={<AdvertisementsListPage />} />
+<Route exact path='/cms-pages' element={<CmsPagesPage />} />
+<Route exact path='/splash-screens' element={<SplashScreensPage />} />
 
 {/* REPORTS */}
 <Route exact path='/reports' element={<ReportsHubPage />} />
@@ -403,3 +409,6 @@ function App() {
 }
 
 export default App;
+
+
+

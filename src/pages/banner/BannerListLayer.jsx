@@ -1,14 +1,18 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+﻿import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import {
-  deleteBanner,
-  listBanners,
-} from "../../lib/api/adminApi";
+import { deleteBanner, listBanners } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import FormModal from "../../components/admin/FormModal";
-import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 import BannerFormLayer from "./BannerFormLayer";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
+import { formatDateTime } from "../../lib/formatters";
+
+const isStandaloneBanner = (banner) => {
+  const meta = banner.metadata || {};
+  return meta.homepageCMS !== true && meta.onboardingCMS !== true;
+};
+
+const csvEscape = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
 
 const BannerListLayer = () => {
   const [items, setItems] = useState([]);
@@ -22,7 +26,7 @@ const BannerListLayer = () => {
     setError("");
     try {
       const res = await listBanners();
-      setItems(res.items || []);
+      setItems((res.items || []).filter(isStandaloneBanner));
     } catch (e) {
       setError(e instanceof ApiError ? e.message : String(e));
     } finally {
@@ -37,14 +41,28 @@ const BannerListLayer = () => {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return items;
-    return items.filter(
-      (r) =>
-        (r.title || "").toLowerCase().includes(q) ||
-        ((r.metadata && r.metadata.bannerRoute) || "").toLowerCase().includes(q),
-    );
+    return items.filter((banner) => {
+      const meta = banner.metadata || {};
+      return [
+        banner.id,
+        banner.title,
+        meta.subtitle,
+        banner.redirectUrl,
+        meta.desktopImageUrl,
+        meta.mobileImageUrl,
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(q));
+    });
   }, [items, search]);
 
-  const rowForId = (id) => items.find((b) => b.id === id) || null;
+  const stats = useMemo(() => {
+    const total = items.length;
+    const active = items.filter((banner) => banner.isActive !== false).length;
+    return { total, active, inactive: total - active };
+  }, [items]);
+
+  const rowForId = (id) => items.find((banner) => banner.id === id) || null;
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this banner?")) return;
@@ -56,121 +74,173 @@ const BannerListLayer = () => {
     }
   };
 
-  return (
-    <div className='card h-100 p-0 radius-12'>
-      <div className='card-header border-bottom bg-base py-16 px-24 p4u-admin-filter-row align-items-center gap-3 justify-content-between'>
-        <div className='p4u-admin-filter-row align-items-center gap-3'>
-          <span className='text-md fw-medium text-secondary-light mb-0'>Show</span>
-          <select className='form-select form-select-sm w-auto ps-12 py-6 radius-12 h-40-px' defaultValue='10'>
-            <option value='10'>10</option>
-            <option value='20'>20</option>
-          </select>
-          <form className='navbar-search' onSubmit={(e) => e.preventDefault()}>
-            <input
-              type='text'
-              className='bg-base h-40-px w-auto'
-              name='search'
-              placeholder='Search Banner...'
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <Icon icon='ion:search-outline' className='icon' />
-          </form>
-        </div>
-        <button type='button' onClick={() => setModal({ mode: "add" })} className='btn btn-primary text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2'>
-          <Icon icon='ic:baseline-plus' className='icon text-xl line-height-1' />
-          Add Banner
-        </button>
-      </div>
-      <div className='card-body p-24'>
-        {error && (
-          <div className='alert alert-danger radius-12 mb-16' role='alert'>
-            {error}
-          </div>
-        )}
-        {loading ? (
-          <p className='text-secondary-light mb-0'>Loading...</p>
-        ) : (
-          <div className='table-responsive scroll-sm'>
-            <table className='table bordered-table sm-table mb-0 text-nowrap'>
-              <thead>
-                <tr>
-                  <th scope='col'>S.No</th>
-                  <th scope='col'>Banner</th>
-                  <th scope='col'>Title</th>
-                  <th scope='col'>Route</th>
-                  <th scope='col'>Placement</th>
-                  <th scope='col'>Type</th>
-                  <th scope='col'>Application</th>
-                  <th scope='col' className='text-center'>Active</th>
-                  <TableActionHeader />
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan='9' className='text-center py-4'>No banners found.</td>
-                  </tr>
-                ) : (
-                  filtered.map((banner, index) => {
-                    const meta = banner.metadata || {};
-                    return (
-                      <tr key={banner.id}>
-                        <td>{index + 1}</td>
-                        <td>
-                          <div className='d-flex align-items-center'>
-                            {banner.imageUrl ? (
-                              <img
-                                src={resolveMediaUrl(banner.imageUrl)}
-                                alt='Banner Preview'
-                                className='w-64-px h-40-px radius-8 object-fit-cover me-12'
-                                onError={(e) => { e.target.style.display = 'none'; }}
-                              />
-                            ) : (
-                              <span className='text-secondary-light'>—</span>
-                            )}
-                          </div>
-                        </td>
-                        <td className='fw-medium text-primary-light'>{banner.title || "—"}</td>
-                        <td>{meta.bannerRoute || "—"}</td>
-                        <td>{meta.bannerPlacement || "—"}</td>
-                        <td>
-                          {meta.bannerType ? (
-                            <span className={`px-12 py-4 radius-4 fw-medium text-sm ${meta.bannerType === 'VIDEO' ? 'bg-purple-focus text-purple-600' : 'bg-info-focus text-info-600'}`}>
-                              <Icon icon={meta.bannerType === 'VIDEO' ? 'mdi:video-outline' : 'mdi:image-outline'} className='me-4' />
-                              {meta.bannerType}
-                            </span>
-                          ) : "—"}
-                        </td>
-                        <td>{meta.broadcastApplication || "—"}</td>
-                        <td className='text-center'>
-                          <span className={`px-12 py-4 radius-4 fw-medium text-sm ${banner.isActive !== false ? 'bg-success-focus text-success-600 border border-success-main' : 'bg-danger-focus text-danger-600 border border-danger-main'}`}>
-                            {banner.isActive !== false ? "Yes" : "No"}
-                          </span>
-                        </td>
-                        <TableActionCell
-                          actions={[
-                            { type: "view", onClick: () => setModal({ mode: "view", id: banner.id }) },
-                            { type: "edit", onClick: () => setModal({ mode: "edit", id: banner.id }) },
-                            { type: "delete", onClick: () => handleDelete(banner.id) },
-                          ]}
-                        />
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+  const exportCsv = () => {
+    const rows = filtered.map((banner) => {
+      const meta = banner.metadata || {};
+      return [
+        banner.id,
+        banner.title,
+        meta.subtitle || "",
+        banner.redirectUrl || "",
+        banner.sortOrder ?? 0,
+        banner.isActive !== false ? "Active" : "Inactive",
+        banner.createdAt || "",
+        banner.updatedAt || "",
+      ];
+    });
+    const csv = [
+      ["ID", "Title", "Subtitle", "Link", "Priority", "Status", "Created", "Updated"],
+      ...rows,
+    ]
+      .map((row) => row.map(csvEscape).join(","))
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "banners.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
-        <div className='p4u-admin-filter-row align-items-center justify-content-between gap-2 mt-24'>
-          <span>Showing 1 to {filtered.length} of {filtered.length} entries</span>
+  return (
+    <div className='p4u-banner-page'>
+      <section className='p4u-banner-hero'>
+        <h1>Banners</h1>
+        <p>{items.length} banners configured &mdash; these appear on the home page carousel</p>
+      </section>
+
+      <section className='p4u-banner-stats' aria-label='Banner summary'>
+        <article className='p4u-banner-stat-card is-total'>
+          <Icon icon='mdi:image-outline' />
+          <div>
+            <span>Total Banners</span>
+            <strong>{stats.total}</strong>
+          </div>
+        </article>
+        <article className='p4u-banner-stat-card is-active'>
+          <Icon icon='mdi:check-circle-outline' />
+          <div>
+            <span>Active</span>
+            <strong>{stats.active}</strong>
+          </div>
+        </article>
+        <article className='p4u-banner-stat-card is-inactive'>
+          <Icon icon='mdi:clock-outline' />
+          <div>
+            <span>Inactive</span>
+            <strong>{stats.inactive}</strong>
+          </div>
+        </article>
+      </section>
+
+      <section className='p4u-banner-card'>
+        <div className='p4u-banner-toolbar'>
+          <label className='p4u-banner-search'>
+            <Icon icon='ion:search-outline' />
+            <input
+              type='search'
+              placeholder='Search...'
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </label>
+          <div className='p4u-banner-toolbar-actions'>
+            <button type='button' className='p4u-banner-add-btn' onClick={() => setModal({ mode: "add" })}>
+              <Icon icon='ic:round-plus' />
+              Add New
+            </button>
+            <button type='button' className='p4u-banner-export-btn' onClick={exportCsv}>
+              <Icon icon='lucide:download' />
+              Export CSV
+            </button>
+          </div>
         </div>
-      </div>
+
+        {error && <div className='p4u-banner-error'>{error}</div>}
+
+        <div className='p4u-banner-table-wrap'>
+          <table className='p4u-banner-table'>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Preview</th>
+                <th>Banner</th>
+                <th>Link</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Updated</th>
+                <th aria-label='Actions' />
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan='9' className='p4u-banner-empty'>Loading...</td>
+                </tr>
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan='9' className='p4u-banner-empty'>No banners found.</td>
+                </tr>
+              ) : (
+                filtered.map((banner) => {
+                  const meta = banner.metadata || {};
+                  const preview = meta.desktopImageUrl || banner.imageUrl;
+                  return (
+                    <tr key={banner.id}>
+                      <td className='p4u-banner-id'>{banner.id}</td>
+                      <td>
+                        {preview ? (
+                          <img
+                            className='p4u-banner-thumb'
+                            src={resolveMediaUrl(preview)}
+                            alt={banner.title || "Banner preview"}
+                            onError={(event) => { event.currentTarget.style.visibility = "hidden"; }}
+                          />
+                        ) : (
+                          <span className='p4u-banner-thumb is-empty' />
+                        )}
+                      </td>
+                      <td>
+                        <div className='p4u-banner-title'>{banner.title || "Untitled"}</div>
+                        {meta.subtitle ? <div className='p4u-banner-subtitle'>{meta.subtitle}</div> : null}
+                      </td>
+                      <td>
+                        <span className='p4u-banner-link'>{banner.redirectUrl || "/app/browse"}</span>
+                      </td>
+                      <td className='p4u-banner-priority'>#{banner.sortOrder ?? 0}</td>
+                      <td>
+                        <span className={`p4u-banner-pill ${banner.isActive !== false ? "is-active" : "is-inactive"}`}>
+                          {banner.isActive !== false ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                      <td className='p4u-banner-muted'>{formatDateTime(banner.createdAt)}</td>
+                      <td className='p4u-banner-muted'>{formatDateTime(banner.updatedAt)}</td>
+                      <td>
+                        <div className='p4u-banner-row-actions'>
+                          <button type='button' aria-label='View banner' onClick={() => setModal({ mode: "view", id: banner.id })}>
+                            <Icon icon='lucide:eye' />
+                          </button>
+                          <button type='button' aria-label='Edit banner' onClick={() => setModal({ mode: "edit", id: banner.id })}>
+                            <Icon icon='lucide:pencil' />
+                          </button>
+                          <button type='button' aria-label='Delete banner' className='is-danger' onClick={() => handleDelete(banner.id)}>
+                            <Icon icon='lucide:trash-2' />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       {modal && (
-        <FormModal onClose={() => setModal(null)} size='lg'>
+        <FormModal onClose={() => setModal(null)} size='md'>
           <BannerFormLayer
             isEdit={modal.mode === "edit"}
             isView={modal.mode === "view"}

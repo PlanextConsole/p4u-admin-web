@@ -1,5 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+﻿import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { toast } from "react-toastify";
 import { deleteOccupation, getPlatformVariableByKey, listOccupations, OCCUPATION_ADMIN_CREATE_ENABLED_KEY } from "../../lib/api/adminApi";
@@ -7,32 +6,30 @@ import { ApiError } from "../../lib/api/client";
 import { isPlatformVariableRowAllowingAction } from "../../lib/platformVariableValue";
 import { formatDateTime } from "../../lib/formatters";
 import FormModal from "../../components/admin/FormModal";
-import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 import OccupationFormLayer from "./OccupationFormLayer";
 
-/** Display ID like OCC0000023 (7-digit suffix from 1-based index in sorted list). */
 function formatOccDisplayId(index) {
   return `OCC${String(index + 1).padStart(7, "0")}`;
 }
 
-function exportOccupationsCsv(rows) {
+function exportOccupationsCsv(rows, sorted) {
+  const displayIndexById = new Map();
+  sorted.forEach((row, i) => displayIndexById.set(row.id, i));
   const esc = (v) => {
     const s = v == null ? "" : String(v);
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
-  const header = ["ID", "Occupation", "Customers", "Status", "Created", "Updated"];
-  const lines = [header.join(",")];
-  rows.forEach((row, i) => {
-    lines.push(
-      [
-        esc(formatOccDisplayId(i)),
-        esc(row.name),
-        esc(row.customerCount ?? 0),
-        esc(row.isActive !== false ? "Active" : "Inactive"),
-        esc(formatDateTime(row.createdAt)),
-        esc(formatDateTime(row.updatedAt)),
-      ].join(",")
-    );
+  const lines = [["ID", "Occupation", "Customers", "Status", "Created", "Updated"].join(",")];
+  rows.forEach((row) => {
+    const idx = displayIndexById.get(row.id) ?? 0;
+    lines.push([
+      esc(formatOccDisplayId(idx)),
+      esc(row.name),
+      esc(row.customerCount ?? 0),
+      esc(row.isActive !== false ? "Active" : "Inactive"),
+      esc(formatDateTime(row.createdAt)),
+      esc(formatDateTime(row.updatedAt)),
+    ].join(","));
   });
   const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
@@ -43,18 +40,12 @@ function exportOccupationsCsv(rows) {
   URL.revokeObjectURL(url);
 }
 
-const StatCard = ({ title, value, icon, cardCls = "", valueCls = "" }) => (
-  <div className="col-sm-6 col-xl-4">
-    <div className={`radius-12 p-16 ${cardCls}`}>
-      <div className="d-flex align-items-center gap-12">
-        <span className="w-40-px h-40-px radius-8 d-flex align-items-center justify-content-center bg-white">
-          <Icon icon={icon} className="text-xl text-secondary-light" />
-        </span>
-        <div>
-          <div className="text-secondary-light text-sm">{title}</div>
-          <div className={`h5 fw-bold mb-0 ${valueCls}`}>{value}</div>
-        </div>
-      </div>
+const MetricCard = ({ title, value, icon, tone = "teal" }) => (
+  <div className={`p4u-ref-metric p4u-ref-metric--${tone}`}>
+    <Icon icon={icon} />
+    <div>
+      <span>{title}</span>
+      <strong>{value}</strong>
     </div>
   </div>
 );
@@ -94,9 +85,7 @@ export default function OccupationListLayer() {
     (async () => {
       try {
         const res = await getPlatformVariableByKey(OCCUPATION_ADMIN_CREATE_ENABLED_KEY);
-        if (!cancelled) {
-          setOccupationAddAllowed(isPlatformVariableRowAllowingAction(res?.item, true));
-        }
+        if (!cancelled) setOccupationAddAllowed(isPlatformVariableRowAllowingAction(res?.item, true));
       } catch {
         if (!cancelled) setOccupationAddAllowed(true);
       }
@@ -106,13 +95,11 @@ export default function OccupationListLayer() {
     };
   }, []);
 
-  const sorted = useMemo(() => {
-    return [...items].sort((a, b) => {
-      const so = (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
-      if (so !== 0) return so;
-      return String(a.name || "").localeCompare(String(b.name || ""));
-    });
-  }, [items]);
+  const sorted = useMemo(() => [...items].sort((a, b) => {
+    const so = (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
+    if (so !== 0) return so;
+    return String(a.name || "").localeCompare(String(b.name || ""));
+  }), [items]);
 
   const filtered = useMemo(() => {
     let rows = sorted;
@@ -143,89 +130,45 @@ export default function OccupationListLayer() {
   }
 
   return (
-    <div className="card border-0 shadow-sm radius-16 p-0">
-      <div className="card-body p-24">
-        <div className="d-flex flex-wrap align-items-start justify-content-between gap-12 mb-20">
-          <div>
-            <p className="text-secondary-light text-lg mb-0">
-              {items.length.toLocaleString("en-IN")} occupation type{items.length === 1 ? "" : "s"}
-            </p>
-            <p className="text-sm text-secondary-light mb-0 mt-4">
-              <Link to="/customers" className="text-primary-600 hover-text-decoration-underline">Customers</Link>
-              {" — assign occupations when editing a customer profile."}
-            </p>
-          </div>
-        </div>
+    <div className="p4u-ref-page p4u-occupations-page">
+      <div className="p4u-ref-heading">
+        <h1>Occupations</h1>
+        <p>{items.length.toLocaleString("en-IN")} occupation type{items.length === 1 ? "" : "s"}</p>
+      </div>
 
-        <div className="row g-16 mb-24">
-          <StatCard title="Total occupations" value={items.length.toLocaleString("en-IN")} icon="mdi:briefcase-outline" cardCls="bg-primary-50" valueCls="text-primary-700" />
-          <StatCard title="Active" value={activeCount.toLocaleString("en-IN")} icon="mdi:check-circle-outline" cardCls="bg-success-50" valueCls="text-success-700" />
-          <StatCard title="Total customers" value={totalCustomers.toLocaleString("en-IN")} icon="mdi:account-group-outline" cardCls="bg-neutral-100" valueCls="text-primary-light" />
-        </div>
+      <div className="p4u-ref-metric-grid p4u-ref-metric-grid--3">
+        <MetricCard title="Total Occupations" value={items.length.toLocaleString("en-IN")} icon="mdi:briefcase-outline" />
+        <MetricCard title="Active" value={activeCount.toLocaleString("en-IN")} icon="mdi:check-circle-outline" tone="green" />
+        <MetricCard title="Total Customers" value={totalCustomers.toLocaleString("en-IN")} icon="mdi:account-group-outline" tone="blue" />
+      </div>
 
-        {!occupationAddAllowed && (
-          <div className="alert alert-warning radius-12 mb-20" role="status">
-            <span className="fw-medium">Add occupation is disabled.</span>{" "}
-            Platform variable <code className="text-xs">OCCUPATION_ADMIN_CREATE_ENABLED</code> is off or its value is 0.
-            You can still view, edit, or delete existing types. Change it under{" "}
-            <Link to="/platform-variables" className="alert-link">Platform Variables</Link>.
-          </div>
-        )}
-
-        <div className="p4u-admin-filter-row flex-wrap gap-10 mb-20">
-          <div className="input-group radius-8 p4u-filter-search" style={{ minWidth: 160, maxWidth: 320 }}>
-            <span className="input-group-text bg-white border-end-0">
-              <Icon icon="mdi:magnify" className="text-secondary-light" />
-            </span>
-            <input
-              type="text"
-              className="form-control border-start-0 h-40-px"
-              placeholder="Search occupations…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <select className="form-select form-select-sm radius-8 h-40-px" style={{ minWidth: 140 }} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-            <option value="all">All status</option>
+      <div className="p4u-ref-table-card">
+        <div className="p4u-ref-toolbar">
+          <label className="p4u-ref-search">
+            <Icon icon="mdi:magnify" />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search occupations..." />
+          </label>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <option value="all">Status</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
-          <div className="p4u-admin-filter-row__end gap-8 ms-auto">
-            <button type="button" className="btn btn-outline-secondary text-sm btn-sm px-14 py-8 radius-8 d-flex align-items-center gap-6" onClick={() => exportOccupationsCsv(filtered)}>
-              <Icon icon="mdi:download-outline" className="text-lg" />
-              Export CSV
+          <div className="p4u-ref-toolbar-actions">
+            <button className="p4u-ref-primary" type="button" disabled={!occupationAddAllowed} onClick={() => occupationAddAllowed && setModal({ mode: "add" })}>
+              <Icon icon="ic:baseline-plus" /> Add Occupation
             </button>
-            <button
-              type="button"
-              className="btn btn-primary text-sm btn-sm px-16 py-8 radius-8 d-flex align-items-center gap-6"
-              disabled={!occupationAddAllowed}
-              title={
-                occupationAddAllowed
-                  ? undefined
-                  : "Disabled by OCCUPATION_ADMIN_CREATE_ENABLED (Platform Variables)."
-              }
-              onClick={() => {
-                if (!occupationAddAllowed) return;
-                setModal({ mode: "add" });
-              }}
-            >
-              <Icon icon="ic:baseline-plus" className="text-lg" />
-              Add occupation
+            <button className="p4u-ref-outline" type="button" onClick={() => exportOccupationsCsv(filtered, sorted)}>
+              <Icon icon="mdi:download-outline" /> Export CSV
             </button>
           </div>
         </div>
 
-        {error && (
-          <div className="alert alert-danger radius-12 mb-16" role="alert">
-            {error}
-          </div>
-        )}
-
+        {error && <div className="p4u-ref-alert">{error}</div>}
         {loading ? (
-          <p className="text-secondary-light mb-0">Loading occupations…</p>
+          <div className="p4u-ref-empty">Loading occupations...</div>
         ) : (
-          <div className="table-responsive scroll-sm">
-            <table className="table bordered-table sm-table mb-0 text-nowrap">
+          <div className="p4u-ref-table-wrap">
+            <table className="p4u-ref-table">
               <thead>
                 <tr>
                   <th>ID</th>
@@ -234,44 +177,31 @@ export default function OccupationListLayer() {
                   <th>Status</th>
                   <th>Created</th>
                   <th>Updated</th>
-                  <TableActionHeader />
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="text-center py-4 text-secondary-light">
-                      No occupations match your filters.
-                    </td>
-                  </tr>
-                ) : (
-                  filtered.map((row) => {
-                    const idx = displayIndexById.get(row.id) ?? 0;
-                    const displayId = formatOccDisplayId(idx);
-                    const cnt = row.customerCount ?? 0;
-                    return (
-                      <tr key={row.id}>
-                        <td className="fw-medium">{displayId}</td>
-                        <td className="fw-semibold">{row.name || "—"}</td>
-                        <td>{cnt.toLocaleString("en-IN")}</td>
-                        <td>
-                          <span className={`px-12 py-4 radius-pill fw-medium text-sm ${row.isActive !== false ? "bg-success-100 text-success-700" : "bg-neutral-200 text-secondary-light"}`}>
-                            {row.isActive !== false ? "Active" : "Inactive"}
-                          </span>
-                        </td>
-                        <td>{formatDateTime(row.createdAt)}</td>
-                        <td>{formatDateTime(row.updatedAt)}</td>
-                        <TableActionCell
-                          actions={[
-                            { type: "view", onClick: () => setModal({ mode: "view", id: row.id }) },
-                            { type: "edit", onClick: () => setModal({ mode: "edit", id: row.id }) },
-                            { type: "delete", onClick: () => onDelete(row.id) },
-                          ]}
-                        />
-                      </tr>
-                    );
-                  })
-                )}
+                  <tr><td colSpan={7} className="p4u-ref-empty">No occupations match your filters.</td></tr>
+                ) : filtered.map((row) => {
+                  const idx = displayIndexById.get(row.id) ?? 0;
+                  return (
+                    <tr key={row.id}>
+                      <td>{formatOccDisplayId(idx)}</td>
+                      <td>{row.name || "-"}</td>
+                      <td>{Number(row.customerCount ?? 0).toLocaleString("en-IN")}</td>
+                      <td><span className={`p4u-ref-status ${row.isActive !== false ? "is-active" : "is-inactive"}`}>{row.isActive !== false ? "Active" : "Inactive"}</span></td>
+                      <td>{formatDateTime(row.createdAt)}</td>
+                      <td>{formatDateTime(row.updatedAt)}</td>
+                      <td>
+                        <div className="p4u-ref-row-actions">
+                          <button type="button" onClick={() => setModal({ mode: "edit", id: row.id })} aria-label="Edit"><Icon icon="mdi:pencil-outline" /></button>
+                          <button type="button" className="danger" onClick={() => onDelete(row.id)} aria-label="Delete"><Icon icon="mdi:trash-can-outline" /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -282,12 +212,8 @@ export default function OccupationListLayer() {
         <FormModal onClose={() => setModal(null)} size="md">
           <OccupationFormLayer
             isEdit={modal.mode === "edit"}
-            isView={modal.mode === "view"}
             occupationId={modal.id}
-            onSuccess={() => {
-              setModal(null);
-              load();
-            }}
+            onSuccess={() => { setModal(null); load(); }}
             onCancel={() => setModal(null)}
           />
         </FormModal>

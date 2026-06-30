@@ -1,132 +1,197 @@
-import React, { useEffect, useRef, useState } from "react";
+﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { toast } from "react-toastify";
-import {
-  createAdvertisement,
-  updateAdvertisement,
-  uploadFile,
-} from "../../lib/api/adminApi";
+import { createAdvertisement, listProducts, updateAdvertisement, uploadFile } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
-import { IMAGE_OR_VIDEO_ACCEPT, IMAGE_ACCEPT } from "../../lib/acceptImages";
+import { IMAGE_ACCEPT } from "../../lib/acceptImages";
 
-const empty = () => ({
+const pageOptions = [
+  { value: "all", label: "All Pages" },
+  { value: "home", label: "Home Page" },
+  { value: "product_listing", label: "Product Listing" },
+  { value: "product_detail", label: "Product Detail" },
+  { value: "services", label: "Services" },
+  { value: "classifieds", label: "Classifieds" },
+  { value: "socio", label: "Socio Feed" },
+];
+
+const empty = (isSocioDefault = false) => ({
   title: "",
-  caption: "",
-  buttonTitle: "",
+  advertiser: "",
+  description: "",
+  desktopImageUrl: "",
+  mobileImageUrl: "",
+  linkType: isSocioDefault ? "Product" : "Custom URL",
   redirectUrl: "",
+  categoryFilter: "",
+  productSearch: "",
+  selectedProductId: "",
+  pages: isSocioDefault ? ["socio"] : ["all"],
+  type: isSocioDefault ? "Sponsored Post" : "Banner",
+  status: "active",
+  startDate: "",
+  endDate: "",
   sortOrder: 0,
-  isActive: true,
-  postType: "",
-  imageUrl: "",
-  bannerUrl: "",
 });
 
-const AdvertisementFormLayer = ({ isEdit = false, isView = false, initialData = null, onSuccess, onCancel }) => {
-  const [form, setForm] = useState(empty);
-  const [pendingLogo, setPendingLogo] = useState(null);
-  const [pendingBanner, setPendingBanner] = useState(null);
+const normalizePages = (meta, isSocioDefault = false) => {
+  const raw = meta?.pages;
+  if (Array.isArray(raw) && raw.length) return raw;
+  if (typeof raw === "string" && raw.trim()) return raw.split(",").map((x) => x.trim()).filter(Boolean);
+  return meta?.isSocioAd || isSocioDefault ? ["socio"] : ["all"];
+};
+
+const toDateInput = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value).slice(0, 10);
+  return date.toISOString().slice(0, 10);
+};
+
+const AdvertisementFormLayer = ({ isEdit = false, isView = false, isSocioDefault = false, initialData = null, onSuccess, onCancel }) => {
+  const [form, setForm] = useState(() => empty(isSocioDefault));
+  const [products, setProducts] = useState([]);
+  const [desktopFile, setDesktopFile] = useState(null);
+  const [mobileFile, setMobileFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const pendingLogoRef = useRef(null);
-  const pendingBannerRef = useRef(null);
+  const desktopRef = useRef(null);
+  const mobileRef = useRef(null);
+
+  useEffect(() => {
+    let alive = true;
+    listProducts({ limit: 80, offset: 0 }).then((res) => {
+      if (alive) setProducts(res.items || []);
+    }).catch(() => {
+      if (alive) setProducts([]);
+    });
+    return () => { alive = false; };
+  }, []);
 
   useEffect(() => {
     if (initialData) {
       const meta = initialData.metadata || {};
       setForm({
         title: initialData.title || "",
-        caption: meta.caption || "",
-        buttonTitle: meta.buttonTitle || "",
+        advertiser: meta.advertiser || "",
+        description: meta.caption || meta.description || "",
+        desktopImageUrl: meta.desktopImageUrl || initialData.imageUrl || "",
+        mobileImageUrl: meta.mobileImageUrl || "",
+        linkType: meta.linkType || (initialData.redirectUrl ? "Custom URL" : "Product"),
         redirectUrl: initialData.redirectUrl || "",
+        categoryFilter: meta.categoryFilter || "",
+        productSearch: "",
+        selectedProductId: meta.selectedProductId || "",
+        pages: normalizePages(meta, isSocioDefault),
+        type: meta.type || meta.postType || (meta.isSocioAd ? "Sponsored Post" : "Banner"),
+        status: String(initialData.status || "active").toLowerCase() === "inactive" ? "paused" : String(initialData.status || "active").toLowerCase(),
+        startDate: toDateInput(meta.startDate),
+        endDate: toDateInput(meta.endDate),
         sortOrder: initialData.sortOrder ?? 0,
-        isActive: initialData.status !== "inactive",
-        postType: meta.postType || "",
-        imageUrl: initialData.imageUrl || "",
-        bannerUrl: meta.bannerUrl || "",
       });
     } else {
-      setForm(empty());
+      setForm(empty(isSocioDefault));
     }
-    setPendingLogo(null);
-    setPendingBanner(null);
-    pendingLogoRef.current = null;
-    pendingBannerRef.current = null;
-  }, [initialData]);
+    setDesktopFile(null);
+    setMobileFile(null);
+    desktopRef.current = null;
+    mobileRef.current = null;
+  }, [initialData, isSocioDefault]);
 
-  const handleChange = (e) => {
-    if (isView) return;
-    const { name, value, type, checked } = e.target;
-    if (type === "checkbox") {
-      setForm((p) => ({ ...p, [name]: checked }));
-    } else if (name === "sortOrder") {
-      setForm((p) => ({ ...p, sortOrder: value === "" ? 0 : Number(value) }));
-    } else {
-      setForm((p) => ({ ...p, [name]: value }));
+  const disabled = isView || submitting;
+
+  const filteredProducts = useMemo(() => {
+    const q = form.productSearch.trim().toLowerCase();
+    const category = form.categoryFilter.trim().toLowerCase();
+    return products.filter((product) => {
+      const categoryText = [product.categoryName, product.category, product.categorySlug, product.vendorName].filter(Boolean).join(" ").toLowerCase();
+      const haystack = [product.name, product.title, product.productName, product.vendorName, product.id].filter(Boolean).join(" ").toLowerCase();
+      return (!q || haystack.includes(q)) && (!category || categoryText.includes(category));
+    }).slice(0, 6);
+  }, [form.categoryFilter, form.productSearch, products]);
+
+  const setField = (name, value) => {
+    if (disabled) return;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const togglePage = (page) => {
+    if (disabled) return;
+    setForm((prev) => {
+      if (page === "all") return { ...prev, pages: ["all"] };
+      const withoutAll = prev.pages.filter((value) => value !== "all");
+      const pages = withoutAll.includes(page)
+        ? withoutAll.filter((value) => value !== page)
+        : [...withoutAll, page];
+      return { ...prev, pages: pages.length ? pages : ["all"] };
+    });
+  };
+
+  const pickDesktop = (event) => {
+    if (disabled) return;
+    const file = event.target.files && event.target.files[0];
+    if (file) {
+      desktopRef.current = file;
+      setDesktopFile(file);
     }
   };
 
-  const handleLogo = (e) => {
-    if (isView) return;
-    const file = e.target.files && e.target.files[0];
-    if (file) { setPendingLogo(file); pendingLogoRef.current = file; }
+  const pickMobile = (event) => {
+    if (disabled) return;
+    const file = event.target.files && event.target.files[0];
+    if (file) {
+      mobileRef.current = file;
+      setMobileFile(file);
+    }
   };
 
-  const handleBanner = (e) => {
-    if (isView) return;
-    const file = e.target.files && e.target.files[0];
-    if (file) { setPendingBanner(file); pendingBannerRef.current = file; }
+  const uploadIfNeeded = async (file, fallback) => {
+    if (!file) return fallback;
+    const result = await uploadFile(file);
+    return result.url;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     if (isView) return;
 
     const title = form.title.trim();
-    if (!title) { toast.error("Name is required."); return; }
-
-    let imageUrl = form.imageUrl;
-    let bannerUrl = form.bannerUrl;
-
-    const logoFile = pendingLogoRef.current || pendingLogo;
-    if (logoFile) {
-      try {
-        const res = await uploadFile(logoFile);
-        imageUrl = res.url;
-      } catch (err) {
-        toast.error(err instanceof ApiError ? err.message : "Logo upload failed");
-        return;
-      }
+    if (!title) {
+      toast.error("Title is required.");
+      return;
     }
-
-    const bannerFile = pendingBannerRef.current || pendingBanner;
-    if (bannerFile) {
-      try {
-        const res = await uploadFile(bannerFile);
-        bannerUrl = res.url;
-      } catch (err) {
-        toast.error(err instanceof ApiError ? err.message : "Banner upload failed");
-        return;
-      }
-    }
-
-    const metadata = {
-      ...(form.caption.trim() ? { caption: form.caption.trim() } : {}),
-      ...(form.buttonTitle.trim() ? { buttonTitle: form.buttonTitle.trim() } : {}),
-      ...(form.postType ? { postType: form.postType } : {}),
-      ...(bannerUrl ? { bannerUrl } : {}),
-    };
-
-    const body = {
-      title,
-      imageUrl: imageUrl || null,
-      redirectUrl: form.redirectUrl.trim() || null,
-      status: form.isActive ? "active" : "inactive",
-      sortOrder: Number.isFinite(form.sortOrder) ? form.sortOrder : 0,
-      metadata: Object.keys(metadata).length ? metadata : null,
-    };
 
     setSubmitting(true);
     try {
+      const desktopImageUrl = await uploadIfNeeded(desktopRef.current || desktopFile, form.desktopImageUrl);
+      const mobileImageUrl = await uploadIfNeeded(mobileRef.current || mobileFile, form.mobileImageUrl);
+      const metadata = {
+        advertiser: form.advertiser.trim(),
+        caption: form.description.trim(),
+        description: form.description.trim(),
+        desktopImageUrl,
+        mobileImageUrl,
+        linkType: form.linkType,
+        linkLabel: form.linkType === "Product" ? "Product" : "Custom",
+        categoryFilter: form.categoryFilter.trim(),
+        selectedProductId: form.selectedProductId,
+        pages: form.pages,
+        isSocioAd: form.pages.includes("socio"),
+        type: form.type,
+        postType: form.type,
+        startDate: form.startDate || null,
+        endDate: form.endDate || null,
+        impressions: initialData?.metadata?.impressions ?? 0,
+        clicks: initialData?.metadata?.clicks ?? 0,
+      };
+      const body = {
+        title,
+        imageUrl: desktopImageUrl || null,
+        redirectUrl: form.linkType === "Product" && form.selectedProductId ? `/app/product/${form.selectedProductId}` : (form.redirectUrl.trim() || null),
+        status: form.status === "paused" ? "inactive" : form.status,
+        sortOrder: Number.isFinite(form.sortOrder) ? form.sortOrder : 0,
+        metadata,
+      };
       if (isEdit && initialData?.id) {
         await updateAdvertisement(initialData.id, body);
         toast.success("Advertisement updated.");
@@ -142,102 +207,158 @@ const AdvertisementFormLayer = ({ isEdit = false, isView = false, initialData = 
     }
   };
 
-  const dis = isView || submitting;
+  const renderDropzone = ({ label, value, file, onChange }) => (
+    <label className='p4u-ad-upload'>
+      <input type='file' accept={IMAGE_ACCEPT} onChange={onChange} disabled={disabled} />
+      {value ? <img src={resolveMediaUrl(value)} alt={label} onError={(event) => { event.currentTarget.style.display = "none"; }} /> : null}
+      <Icon icon='lucide:image' />
+      <span>{file ? file.name : label}</span>
+      <small>Click to open Media Library</small>
+    </label>
+  );
 
   return (
-    <div className='card h-100 p-0 radius-12'>
-      <div className='card-header border-bottom bg-base py-16 px-24'>
-        <h4 className='text-lg fw-semibold mb-0'>
-          {isView ? "View Advertisement" : isEdit ? "Edit Advertisement" : "Add Advertisement"}
-        </h4>
+    <form className='p4u-ad-modal' onSubmit={handleSubmit}>
+      <h2>{isView ? "View Advertisement" : isEdit ? "Edit Advertisement" : "New Advertisement"}</h2>
+
+      <div className='p4u-ad-grid'>
+        <label className='p4u-ad-field'>
+          <span>Title *</span>
+          <input value={form.title} onChange={(event) => setField("title", event.target.value)} disabled={disabled} required autoFocus={!isView} />
+        </label>
+        <label className='p4u-ad-field'>
+          <span>Advertiser</span>
+          <input value={form.advertiser} onChange={(event) => setField("advertiser", event.target.value)} disabled={disabled} />
+        </label>
       </div>
-      <div className='card-body p-24'>
-        <form onSubmit={handleSubmit}>
-          <div className='row'>
-            <div className='col-md-6 mb-20'>
-              <label className='form-label fw-semibold text-primary-light text-sm mb-8'>
-                Advertisement Name <span className='text-danger-600'>*</span>
+
+      <div className='p4u-ad-field is-full'>
+        <span>Description</span>
+        <div className='p4u-ad-editor'>
+          <div className='p4u-ad-editor-tools'>
+            <Icon icon='mdi:format-bold' />
+            <Icon icon='mdi:format-italic' />
+            <Icon icon='mdi:format-underline' />
+            <Icon icon='mdi:format-list-bulleted' />
+            <Icon icon='mdi:format-list-numbered' />
+            <span />
+            <Icon icon='lucide:pencil' className='is-teal' />
+            <Icon icon='lucide:eye' />
+          </div>
+          <textarea value={form.description} onChange={(event) => setField("description", event.target.value)} disabled={disabled} placeholder='Advertisement description...' />
+        </div>
+      </div>
+
+      <div className='p4u-ad-grid'>
+        <div className='p4u-ad-drop-field'>
+          <span>Desktop Image</span>
+          {renderDropzone({ label: "Desktop", value: form.desktopImageUrl, file: desktopFile, onChange: pickDesktop })}
+        </div>
+        <div className='p4u-ad-drop-field'>
+          <span>Mobile Image</span>
+          {renderDropzone({ label: "Mobile", value: form.mobileImageUrl, file: mobileFile, onChange: pickMobile })}
+        </div>
+      </div>
+
+      <section className='p4u-ad-destination'>
+        <h3>Click Destination</h3>
+        <label className='p4u-ad-field is-full'>
+          <select value={form.linkType} onChange={(event) => setField("linkType", event.target.value)} disabled={disabled}>
+            <option>Custom URL</option>
+            <option>Product</option>
+            <option>Category</option>
+            <option>Service</option>
+            <option>No link</option>
+          </select>
+        </label>
+        {form.linkType === "Product" ? (
+          <>
+            <div className='p4u-ad-grid is-destination'>
+              <label className='p4u-ad-field'>
+                <select value={form.categoryFilter} onChange={(event) => setField("categoryFilter", event.target.value)} disabled={disabled}>
+                  <option value=''>Filter by category</option>
+                  <option value='combo offers'>Combo Offers</option>
+                  <option value='beauty'>Beauty & Personal Care</option>
+                  <option value='electronics'>Electronics & Gadgets</option>
+                  <option value='groceries'>Groceries</option>
+                </select>
               </label>
-              <input type='text' className='form-control radius-8' name='title' value={form.title} onChange={handleChange} required disabled={dis} maxLength={255} />
+              <label className='p4u-ad-search-product'>
+                <Icon icon='ion:search-outline' />
+                <input value={form.productSearch} onChange={(event) => setField("productSearch", event.target.value)} placeholder='Search product...' disabled={disabled} />
+              </label>
             </div>
-
-            <div className='col-md-6 mb-20'>
-              <label className='form-label fw-semibold text-primary-light text-sm mb-8'>Caption</label>
-              <input type='text' className='form-control radius-8' name='caption' value={form.caption} onChange={handleChange} disabled={dis} />
+            <div className='p4u-ad-product-list'>
+              {filteredProducts.length ? filteredProducts.map((product) => {
+                const name = product.name || product.title || product.productName || product.id;
+                const detail = [product.categoryName || product.category || product.categorySlug, product.vendorName || product.vendor?.businessName].filter(Boolean).join(" · ");
+                return (
+                  <button
+                    key={product.id}
+                    type='button'
+                    className={form.selectedProductId === product.id ? "is-selected" : ""}
+                    onClick={() => setField("selectedProductId", product.id)}
+                    disabled={disabled}
+                  >
+                    {name}{detail ? <span> ({detail})</span> : null}
+                  </button>
+                );
+              }) : <p>No products found.</p>}
             </div>
+          </>
+        ) : (
+          <label className='p4u-ad-field is-full'>
+            <span>Custom URL</span>
+            <input value={form.redirectUrl} onChange={(event) => setField("redirectUrl", event.target.value)} disabled={disabled || form.linkType === "No link"} placeholder='/app/browse or https://...' />
+          </label>
+        )}
+      </section>
 
-            <div className='col-md-6 mb-20'>
-              <label className='form-label fw-semibold text-primary-light text-sm mb-8'>Button Title</label>
-              <input type='text' className='form-control radius-8' name='buttonTitle' placeholder='e.g., Shop Now' value={form.buttonTitle} onChange={handleChange} disabled={dis} />
-            </div>
-
-            <div className='col-md-6 mb-20'>
-              <label className='form-label fw-semibold text-primary-light text-sm mb-8'>Redirect URL</label>
-              <input type='url' className='form-control radius-8' name='redirectUrl' placeholder='https://...' value={form.redirectUrl} onChange={handleChange} disabled={dis} />
-            </div>
-
-            <div className='col-md-4 mb-20'>
-              <label className='form-label fw-semibold text-primary-light text-sm mb-8'>Order Of Appearance</label>
-              <input type='number' min='0' className='form-control radius-8' name='sortOrder' value={form.sortOrder} onChange={handleChange} disabled={dis} />
-            </div>
-
-            <div className='col-md-4 mb-20'>
-              <label className='form-label fw-semibold text-primary-light text-sm mb-8'>Post Type</label>
-              <select className='form-control radius-8 form-select' name='postType' value={form.postType} onChange={handleChange} disabled={dis}>
-                <option value=''>Select...</option>
-                <option value='Image'>Image</option>
-                <option value='Video'>Video</option>
-                <option value='Text'>Text</option>
-              </select>
-            </div>
-
-            <div className='col-md-4 mb-20 d-flex align-items-end'>
-              <div className='form-check mb-12'>
-                <input type='checkbox' className='form-check-input' id='ad-active' name='isActive' checked={form.isActive} onChange={handleChange} disabled={dis} />
-                <label className='form-check-label' htmlFor='ad-active'>Active</label>
-              </div>
-            </div>
-
-            <div className='col-md-6 mb-20'>
-              <label className='form-label fw-semibold text-primary-light text-sm mb-8'>Logo Image</label>
-              {form.imageUrl && (
-                <div className='mb-12'>
-                  <img src={pendingLogo ? URL.createObjectURL(pendingLogo) : resolveMediaUrl(form.imageUrl)} alt='Logo' style={{ maxHeight: 80, objectFit: "cover", borderRadius: 6 }} onError={(e) => { e.target.style.display = 'none'; }} />
-                </div>
-              )}
-              {!isView && (
-                <input type='file' className='form-control radius-8' name='logoImage' onChange={handleLogo} accept={IMAGE_ACCEPT} />
-              )}
-            </div>
-
-            <div className='col-md-6 mb-20'>
-              <label className='form-label fw-semibold text-primary-light text-sm mb-8'>Banner</label>
-              {form.bannerUrl && (
-                <div className='mb-12'>
-                  <img src={pendingBanner ? URL.createObjectURL(pendingBanner) : resolveMediaUrl(form.bannerUrl)} alt='Banner' style={{ maxHeight: 80, objectFit: "cover", borderRadius: 6 }} onError={(e) => { e.target.style.display = 'none'; }} />
-                </div>
-              )}
-              {!isView && (
-                <input type='file' className='form-control radius-8' name='banner' onChange={handleBanner} accept={IMAGE_OR_VIDEO_ACCEPT} />
-              )}
-            </div>
-          </div>
-
-          <div className='d-flex align-items-center justify-content-between mt-24'>
-            <button type='button' onClick={() => (onCancel ? onCancel() : window.history.back())} className='btn border border-danger-600 text-danger-600 bg-hover-danger-200 text-md px-56 py-12 radius-8 d-flex align-items-center gap-2'>
-              <Icon icon='mdi:close-circle-outline' className='text-xl' /> {isView ? "Back" : "Cancel"}
+      <section className='p4u-ad-pages'>
+        <span>Display on Pages</span>
+        <div>
+          {pageOptions.map((page) => (
+            <button key={page.value} type='button' className={form.pages.includes(page.value) ? "is-selected" : ""} onClick={() => togglePage(page.value)} disabled={disabled}>
+              <i>{form.pages.includes(page.value) ? <Icon icon='lucide:check' /> : null}</i>
+              {page.label}
             </button>
+          ))}
+        </div>
+      </section>
 
-            {!isView && (
-              <button type='submit' disabled={dis} className='btn btn-primary text-md px-56 py-12 radius-8 d-flex align-items-center gap-2'>
-                <Icon icon='lucide:save' className='text-xl' />
-                {submitting ? "Saving..." : isEdit ? "Update" : "Save"}
-              </button>
-            )}
-          </div>
-        </form>
+      <div className='p4u-ad-grid is-four'>
+        <label className='p4u-ad-field'>
+          <span>Type</span>
+          <select value={form.type} onChange={(event) => setField("type", event.target.value)} disabled={disabled}>
+            <option>Banner</option>
+            <option>Sidebar</option>
+            <option>Sponsored Post</option>
+            <option>Strip</option>
+          </select>
+        </label>
+        <label className='p4u-ad-field'>
+          <span>Status</span>
+          <select value={form.status} onChange={(event) => setField("status", event.target.value)} disabled={disabled}>
+            <option value='active'>Active</option>
+            <option value='paused'>Paused</option>
+            <option value='inactive'>Inactive</option>
+          </select>
+        </label>
+        <label className='p4u-ad-field'>
+          <span>Start Date</span>
+          <input type='date' value={form.startDate} onChange={(event) => setField("startDate", event.target.value)} disabled={disabled} />
+        </label>
+        <label className='p4u-ad-field'>
+          <span>End Date</span>
+          <input type='date' value={form.endDate} onChange={(event) => setField("endDate", event.target.value)} disabled={disabled} />
+        </label>
       </div>
-    </div>
+
+      <div className='p4u-ad-footer'>
+        <button type='button' className='p4u-ad-cancel' onClick={() => (onCancel ? onCancel() : window.history.back())}>{isView ? "Back" : "Cancel"}</button>
+        {!isView && <button type='submit' className='p4u-ad-submit' disabled={disabled}>{submitting ? "Saving..." : isEdit ? "Save" : "Create"}</button>}
+      </div>
+    </form>
   );
 };
 

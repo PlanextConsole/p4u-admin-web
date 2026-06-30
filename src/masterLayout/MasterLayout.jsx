@@ -1,4 +1,4 @@
-/* eslint-disable react/prop-types */
+﻿/* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
@@ -246,36 +246,36 @@ const MasterLayout = ({ children }) => {
               </NavLink>
             </li>
 
-            {/* CLASSIFIED (CF) MANAGEMENT */}
-            <li className='sidebar-menu-group-title'>Classified (CF) Management</li>
-            <li>
-              <NavLink to='/cf-vendors' className={sidebarNavClass}>
-                <Icon icon='mdi:store-check-outline' className='menu-icon' />
-                <span title='Classified listings separate from catalog marketplace vendors'>CF vendors (classified)</span>
+            {/* CLASSIFIED (CF) CONFIGURATION */}
+            <li className='sidebar-menu-group-title p4u-sidebar-classified-title'>Configuration</li>
+            <li className='p4u-sidebar-classified-item'>
+              <NavLink to='/cf-cities' className={({ isActive }) => `p4u-sidebar-classified-link ${isActive ? "active-page" : ""}`}>
+                <Icon icon='mdi:map-marker-outline' className='menu-icon' />
+                <span>CF City</span>
               </NavLink>
             </li>
-            <li>
-              <NavLink to='/cf-categories' className={sidebarNavClass}>
-                <Icon icon='mdi:shape-plus-outline' className='menu-icon' />
+            <li className='p4u-sidebar-classified-item'>
+              <Link to='/cf-cities' className='p4u-sidebar-classified-link'>
+                <Icon icon='mdi:map-outline' className='menu-icon' />
+                <span>CF Area</span>
+              </Link>
+            </li>
+            <li className='p4u-sidebar-classified-item'>
+              <NavLink to='/cf-categories' className={({ isActive }) => `p4u-sidebar-classified-link ${isActive ? "active-page" : ""}`}>
+                <Icon icon='mdi:tag-outline' className='menu-icon' />
                 <span>CF Categories</span>
               </NavLink>
             </li>
-            <li>
-              <NavLink to='/cf-products' className={sidebarNavClass}>
-                <Icon icon='mdi:package-variant' className='menu-icon' />
-                <span>CF Products</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to='/cf-services' className={sidebarNavClass}>
-                <Icon icon='mdi:toolbox-outline' className='menu-icon' />
+            <li className='p4u-sidebar-classified-item'>
+              <NavLink to='/cf-services' className={({ isActive }) => `p4u-sidebar-classified-link ${isActive ? "active-page" : ""}`}>
+                <Icon icon='mdi:wrench-outline' className='menu-icon' />
                 <span>CF Services</span>
               </NavLink>
             </li>
-            <li>
-              <NavLink to='/cf-cities' className={sidebarNavClass}>
-                <Icon icon='mdi:city-variant-outline' className='menu-icon' />
-                <span>CF City Locations</span>
+            <li className='p4u-sidebar-classified-item'>
+              <NavLink to='/cf-products' className={({ isActive }) => `p4u-sidebar-classified-link ${isActive ? "active-page" : ""}`}>
+                <Icon icon='mdi:cube-outline' className='menu-icon' />
+                <span>CF Products</span>
               </NavLink>
             </li>
 
@@ -366,6 +366,11 @@ const MasterLayout = ({ children }) => {
               </NavLink>
             </li>
             <li>
+              <NavLink to='/onboarding-screens' className={sidebarNavClass}>
+                <Icon icon='mdi:monitor-screenshot' className='menu-icon' />
+                <span>Onboarding Screens</span>
+              </NavLink>
+            </li>            <li>
               <NavLink to='/banners' className={sidebarNavClass}>
                 <Icon icon='mdi:view-carousel-outline' className='menu-icon' />
                 <span>Banners</span>
@@ -381,6 +386,18 @@ const MasterLayout = ({ children }) => {
               <NavLink to='/advertisements' className={sidebarNavClass}>
                 <Icon icon='mdi:bullhorn-outline' className='menu-icon' />
                 <span>Advertisements</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to='/cms-pages' className={sidebarNavClass}>
+                <Icon icon='mdi:file-document-outline' className='menu-icon' />
+                <span>CMS Pages</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to='/splash-screens' className={sidebarNavClass}>
+                <Icon icon='mdi:cellphone-screenshot' className='menu-icon' />
+                <span>Splash Screens</span>
               </NavLink>
             </li>
 
@@ -467,3 +484,5 @@ const MasterLayout = ({ children }) => {
 };
 
 export default MasterLayout;
+
+

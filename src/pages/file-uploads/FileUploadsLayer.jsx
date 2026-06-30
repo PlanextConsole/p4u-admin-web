@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+﻿import React, { useCallback, useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { toast } from "react-toastify";
 import {
@@ -27,35 +27,15 @@ function typeLabel(t) {
 function statusBadge(status) {
   const s = String(status || "").toLowerCase();
   if (s === "completed") {
-    return (
-      <span className='d-inline-flex align-items-center gap-4 text-success'>
-        <Icon icon='mdi:check-circle-outline' className='text-xl' />
-        Completed
-      </span>
-    );
+    return <span className='p4u-file-status is-completed'><Icon icon='mdi:check-circle-outline' />Completed</span>;
   }
   if (s === "partial") {
-    return (
-      <span className='d-inline-flex align-items-center gap-4 text-warning'>
-        <Icon icon='mdi:alert-outline' className='text-xl' />
-        Partial
-      </span>
-    );
+    return <span className='p4u-file-status is-partial'><Icon icon='mdi:alert-outline' />Partial</span>;
   }
   if (s === "failed") {
-    return (
-      <span className='d-inline-flex align-items-center gap-4 text-danger'>
-        <Icon icon='mdi:close-circle-outline' className='text-xl' />
-        Failed
-      </span>
-    );
+    return <span className='p4u-file-status is-failed'><Icon icon='mdi:close-circle-outline' />Failed</span>;
   }
-  return (
-    <span className='d-inline-flex align-items-center gap-4 text-secondary-light'>
-      <Icon icon='mdi:progress-clock' className='text-xl' />
-      Processing
-    </span>
-  );
+  return <span className='p4u-file-status is-processing'><Icon icon='mdi:progress-clock' />Processing</span>;
 }
 
 const FileUploadsLayer = () => {
@@ -133,81 +113,72 @@ const FileUploadsLayer = () => {
   };
 
   const helpProduct = uploadType === "product";
+  const sampleLabel = uploadType === "product" ? "Sample product CSV" : uploadType === "customer" ? "Sample customer CSV" : "Sample vendor CSV";
 
   return (
-    <div className='d-flex flex-column gap-24'>
-      <div className='card border-0 shadow-sm radius-16 p-24'>
-        <form onSubmit={handleSubmit} className='d-flex flex-column gap-16'>
-          <div className='row g-16'>
-            <div className='col-md-4'>
-              <label className='form-label fw-semibold text-sm'>Upload Type</label>
-              <select className='form-select radius-10' value={uploadType} onChange={(e) => setUploadType(e.target.value)}>
-                {UPLOAD_TYPES.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
+    <div className='p4u-file-page'>
+      <header className='p4u-file-hero'>
+        <h1>File Uploads</h1>
+        <p>Bulk upload products, customers, and vendors via CSV. Leave ID blank to create, provide existing ID to update.</p>
+      </header>
+
+      <section className='p4u-file-upload-card'>
+        <form onSubmit={handleSubmit}>
+          <div className='p4u-file-upload-row'>
+            <label className='p4u-file-field p4u-file-type'>
+              <span>Upload Type</span>
+              <select value={uploadType} onChange={(e) => setUploadType(e.target.value)}>
+                {UPLOAD_TYPES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
-            </div>
-            <div className='col-md-8'>
-              <label className='form-label fw-semibold text-sm'>CSV File</label>
-              <div className='d-flex flex-wrap align-items-center gap-12'>
-                <label className='btn btn-primary radius-10 mb-0'>
-                  <input type='file' accept='.csv,text/csv' className='d-none' onChange={(e) => setFile(e.target.files?.[0] || null)} />
+            </label>
+
+            <div className='p4u-file-field p4u-file-picker'>
+              <span>CSV File</span>
+              <div>
+                <label>
+                  <input type='file' accept='.csv,text/csv' onChange={(e) => setFile(e.target.files?.[0] || null)} />
                   Choose file
                 </label>
-                <span className='text-secondary-light text-sm'>{file ? file.name : "No file chosen"}</span>
+                <em>{file ? file.name : "No file chosen"}</em>
               </div>
             </div>
+
+            <div className='p4u-file-actions'>
+              <button type='button' onClick={handleSample} className='p4u-file-outline-btn'>
+                <Icon icon='mdi:download-outline' />
+                <span>{sampleLabel}</span>
+              </button>
+              <button type='button' onClick={() => loadJobs()} disabled={loadingJobs} className='p4u-file-ghost-btn'>
+                <Icon icon='mdi:refresh' />
+                <span>Refresh</span>
+              </button>
+              <button type='submit' disabled={uploading} className='p4u-file-upload-btn'>
+                <Icon icon='mdi:upload-outline' />
+                <span>{uploading ? "Uploading..." : "Upload & process"}</span>
+              </button>
+            </div>
           </div>
-          <div className='d-flex flex-wrap gap-8'>
-            <button type='button' className='btn btn-outline-primary radius-10 d-inline-flex align-items-center gap-8' onClick={handleSample}>
-              <Icon icon='mdi:download' className='text-xl' />
-              {uploadType === "product" ? "Sample product CSV" : uploadType === "customer" ? "Sample customer CSV" : "Sample vendor CSV"}
-            </button>
-            <button type='button' className='btn btn-outline-secondary radius-10 d-inline-flex align-items-center gap-8' onClick={() => loadJobs()} disabled={loadingJobs}>
-              <Icon icon='mdi:refresh' className='text-xl' />
-              Refresh
-            </button>
-            <button type='submit' className='btn btn-primary radius-10 ms-auto' disabled={uploading}>
-              {uploading ? "Uploading…" : "Upload & process"}
-            </button>
+
+          <div className='p4u-file-help'>
+            {helpProduct ? (
+              <>
+                <p><strong>Product CSV supports:</strong> All product fields including images, SEO, pricing, and up to 5 attribute name/value pairs.</p>
+                <p><strong>Create vs Update:</strong> Leave <code>id</code> empty to create. Provide existing ID to update.</p>
+                <p><strong>Attributes:</strong> Attribute names must exist in the Attributes master. Use pipe (<code>|</code>) to separate multiple image URLs.</p>
+              </>
+            ) : uploadType === "customer" ? (
+              <p><strong>Customers:</strong> Leave <code>id</code> empty to create. Provide <code>id</code> to update. Supported columns include full name, email, phone, status, occupation, and Keycloak user ID.</p>
+            ) : (
+              <p><strong>Vendors:</strong> Leave <code>id</code> empty to create. Provide <code>id</code> to update. Include business name and vendor kind as product or service.</p>
+            )}
           </div>
         </form>
-      </div>
+      </section>
 
-      <div className='card border-0 shadow-sm radius-16 p-20 bg-neutral-50'>
-        {helpProduct ? (
-          <>
-            <p className='mb-8 text-sm'>
-              <strong>Product CSV supports:</strong> All product fields including images, SEO, pricing, and up to 5 attribute name/value pairs (
-              <code>attr1_name</code> / <code>attr1_value</code> … <code>attr5_*</code>).
-            </p>
-            <p className='mb-8 text-sm'>
-              <strong>Create vs update:</strong> Leave <code>id</code> empty to create. Provide an existing product <code>id</code> to update.
-            </p>
-            <p className='mb-0 text-sm'>
-              <strong>Images:</strong> Use <code>image_urls</code> with pipe (<code>|</code>) to separate multiple image URLs. If <code>thumbnail_url</code> is empty, the first URL is used as the thumbnail.
-            </p>
-          </>
-        ) : uploadType === "customer" ? (
-          <p className='mb-0 text-sm'>
-            <strong>Customers:</strong> Leave <code>id</code> empty to create (requires <code>full_name</code>). Provide <code>id</code> to update. Columns:{" "}
-            <code>full_name</code>, <code>email</code>, <code>phone</code>, <code>status</code>, <code>occupation_id</code>, <code>keycloak_user_id</code>.
-          </p>
-        ) : (
-          <p className='mb-0 text-sm'>
-            <strong>Vendors:</strong> Leave <code>id</code> empty to create (requires <code>business_name</code> and <code>vendor_kind</code> as{" "}
-            <code>product</code> or <code>service</code>). Provide <code>id</code> to update.
-          </p>
-        )}
-      </div>
-
-      <div className='card border-0 shadow-sm radius-16 p-0 overflow-hidden'>
-        <div className='p-20 border-bottom'>
-          <h5 className='fw-bold mb-0'>Upload history</h5>
-        </div>
-        <div className='table-responsive'>
-          <table className='table align-middle mb-0'>
-            <thead className='bg-neutral-50'>
+      <section className='p4u-file-table-card'>
+        <div className='p4u-file-table-wrap'>
+          <table className='p4u-file-table'>
+            <thead>
               <tr>
                 <th>File</th>
                 <th>Type</th>
@@ -216,43 +187,31 @@ const FileUploadsLayer = () => {
                 <th>Success</th>
                 <th>Errors</th>
                 <th>Uploaded</th>
-                <th className='text-end'>Actions</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {loadingJobs ? (
-                <tr>
-                  <td colSpan={8} className='text-secondary-light py-24 text-center'>Loading…</td>
-                </tr>
+                <tr><td colSpan={8} className='p4u-file-empty'>Loading...</td></tr>
               ) : jobs.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className='text-secondary-light py-24 text-center'>No uploads yet.</td>
-                </tr>
+                <tr><td colSpan={8} className='p4u-file-empty'>No uploads yet.</td></tr>
               ) : (
                 jobs.map((j) => (
                   <tr key={j.id}>
-                    <td className='text-truncate' style={{ maxWidth: 200 }} title={j.originalFilename}>{j.originalFilename}</td>
-                    <td>
-                      <span className='badge bg-primary-50 text-primary-600 radius-8'>{typeLabel(j.uploadType)}</span>
-                    </td>
+                    <td className='p4u-file-name' title={j.originalFilename}>{j.originalFilename}</td>
+                    <td><span className='p4u-file-type-pill'>{typeLabel(j.uploadType)}</span></td>
                     <td>{statusBadge(j.status)}</td>
                     <td>{j.totalRows ?? 0}</td>
-                    <td className='text-success fw-medium'>{j.successCount ?? 0}</td>
-                    <td className='text-danger fw-medium'>{j.errorCount ?? 0}</td>
-                    <td className='text-nowrap text-sm text-secondary-light'>{formatDateTime(j.createdAt)}</td>
-                    <td className='text-end'>
-                      <button type='button' className='btn btn-sm btn-outline-secondary border-0 p-8' title='Download original' onClick={() => handleDownloadSource(j.id)}>
-                        <Icon icon='mdi:download' className='text-xl' />
-                      </button>
-                      <button
-                        type='button'
-                        className='btn btn-sm btn-outline-secondary border-0 p-8'
-                        title='Retry'
-                        disabled={retryingId === j.id}
-                        onClick={() => handleRetry(j.id)}
-                      >
-                        <Icon icon='mdi:refresh' className='text-xl' />
-                      </button>
+                    <td className='is-success'>{j.successCount ?? 0}</td>
+                    <td className='is-error'>{j.errorCount ?? 0}</td>
+                    <td className='p4u-file-date'>{formatDateTime(j.createdAt)}</td>
+                    <td>
+                      <div className='p4u-file-row-actions'>
+                        <button type='button' onClick={() => handleDownloadSource(j.id)}><Icon icon='mdi:download-outline' /> CSV</button>
+                        <button type='button' disabled={retryingId === j.id} onClick={() => handleRetry(j.id)}><Icon icon='mdi:refresh' /> Re-process</button>
+                        <button type='button' onClick={() => handleDownloadSource(j.id)}><Icon icon='mdi:download-outline' /> Full Report</button>
+                        {(j.errorCount ?? 0) > 0 && <button type='button' className='is-danger' onClick={() => handleDownloadSource(j.id)}><Icon icon='mdi:download-outline' /> Errors</button>}
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -260,7 +219,7 @@ const FileUploadsLayer = () => {
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
     </div>
   );
 };

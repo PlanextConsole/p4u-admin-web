@@ -1,13 +1,13 @@
 ﻿import React from "react";
 import MasterLayout from "../../masterLayout/MasterLayout";
-import BannerListLayer from "./BannerListLayer";
+import CmsPagesLayer from "./CmsPagesLayer";
 
-const BannerListPage = () => {
+const CmsPagesPage = () => {
   return (
     <MasterLayout>
-      <BannerListLayer />
+      <CmsPagesLayer />
     </MasterLayout>
   );
 };
 
-export default BannerListPage;
+export default CmsPagesPage;
