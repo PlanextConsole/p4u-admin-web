@@ -282,12 +282,7 @@ const MasterLayout = ({ children }) => {
 
             {/* P4U HOMES */}
             <li className='sidebar-menu-group-title'>P4U Homes</li>
-            <li>
-              <NavLink to='/homes/properties' className={sidebarNavClass}>
-                <Icon icon='mdi:home-outline' className='menu-icon' />
-                <span>All Properties</span>
-              </NavLink>
-            </li>
+
             <li>
               <NavLink to='/homes/moderation-queue' className={sidebarNavClass}>
                 <Icon icon='mdi:flag-outline' className='menu-icon' />

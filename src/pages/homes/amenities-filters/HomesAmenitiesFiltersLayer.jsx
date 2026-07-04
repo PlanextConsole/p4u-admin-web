@@ -63,8 +63,8 @@ function OptionModal({ initial, onClose, onSave }) {
         <h2>{form.id ? "Edit Filter Option" : "Add Filter Option"}</h2>
         <div className='p4u-haf-form'>
           <label><span>Filter Type *</span><select value={form.filterType || "property type"} onChange={(e) => setField("filterType", e.target.value)} autoFocus>{FILTER_TYPES.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
-          <label><span>Label *</span><input value={form.label || ""} onChange={(e) => setField("label", e.target.value)} placeholder='2 BHK' /></label>
-          <label><span>Value *</span><input value={form.value || ""} onChange={(e) => setField("value", e.target.value)} placeholder='2bhk' /></label>
+          <label><span>Label *</span><input value={form.label || ""} onChange={(e) => setField("label", e.target.value)} placeholder='Option label' /></label>
+          <label><span>Value *</span><input value={form.value || ""} onChange={(e) => setField("value", e.target.value)} placeholder='option_value' /></label>
           <label><span>Sort Order</span><input value={form.sortOrder ?? 0} onChange={(e) => setField("sortOrder", e.target.value)} /></label>
           <Toggle checked={form.isActive !== false} onChange={(value) => setField("isActive", value)} label='Active' />
           <button type='button' className='p4u-haf-save' onClick={() => onSave({ ...form, sortOrder: Number(form.sortOrder || 0) })}>Save</button>

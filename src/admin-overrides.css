@@ -9307,7 +9307,7 @@ body .p4u-form-modal-portal .p4u-ref-modal-close {
 .p4u-plans-pagination button svg { width: 24px; height: 24px; }
 .p4u-plans-pagination strong { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 14px; background: #00a8a5; color: #fff; font-size: 17px; }
 
-.p4u-plans-modal-backdrop { position: fixed; inset: 0; z-index: 1080; background: rgba(0,0,0,.72); display: flex; align-items: flex-start; justify-content: flex-start; padding: 8px 0 40px 18px; overflow-y: auto; }
+.p4u-plans-modal-backdrop { position: fixed; inset: 0; z-index: 1080; background: rgba(0,0,0,.72); display: flex; align-items: flex-start; justify-content: center; padding: 28px 16px 40px; overflow-y: auto; }
 .p4u-plans-modal { position: relative; width: min(565px, calc(100vw - 32px)); max-height: calc(100vh - 16px); overflow-y: auto; border: 1px solid #d5e4eb; border-radius: 18px; background: #fbfdfe; box-shadow: 0 24px 70px rgba(0,0,0,.24); padding: 28px 30px 30px; color: #001b36; }
 .p4u-plans-modal-close { position: absolute; top: 18px; right: 20px; border: 0; background: transparent; color: #405a75; padding: 0; }
 .p4u-plans-modal-close svg { width: 23px; height: 23px; }
@@ -9421,7 +9421,7 @@ body .p4u-form-modal-portal .p4u-ref-modal-close {
 .p4u-property-users-pagination button svg { width: 24px; height: 24px; }
 .p4u-property-users-pagination strong { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 14px; background: #00a8a5; color: #ffffff; font-size: 17px; }
 
-.p4u-property-users-modal-backdrop { position: fixed; inset: 0; z-index: 1080; background: rgba(0,0,0,.72); display: flex; align-items: flex-start; justify-content: flex-start; padding: 0 0 42px 20px; overflow-y: auto; }
+.p4u-property-users-modal-backdrop { position: fixed; inset: 0; z-index: 1080; background: rgba(0,0,0,.72); display: flex; align-items: flex-start; justify-content: center; padding: 28px 16px 42px; overflow-y: auto; }
 .p4u-property-users-modal { position: relative; width: min(646px, calc(100vw - 40px)); max-height: none; border: 1px solid #d5e4eb; border-radius: 18px; background: #fbfdfe; box-shadow: 0 24px 70px rgba(0,0,0,.24); padding: 28px 30px 30px; color: #001b36; }
 .p4u-property-users-close { position: absolute; top: 18px; right: 20px; width: 28px; height: 28px; border: 1px solid #00a8a5; border-radius: 50%; background: #f4fbfb; color: #405a75; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
 .p4u-property-users-close svg { width: 22px; height: 22px; }
@@ -9469,7 +9469,7 @@ body .p4u-form-modal-portal .p4u-ref-modal-close {
 .p4u-homes-cms-pagination button svg { width: 24px; height: 24px; }
 .p4u-homes-cms-pagination strong { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 14px; background: #00a8a5; color: #ffffff; font-size: 17px; }
 
-.p4u-homes-cms-modal-backdrop { position: fixed; inset: 0; z-index: 1080; background: rgba(0,0,0,.72); display: flex; align-items: flex-start; justify-content: flex-start; padding: 38px 0 42px 54px; overflow-y: auto; }
+.p4u-homes-cms-modal-backdrop { position: fixed; inset: 0; z-index: 1080; background: rgba(0,0,0,.72); display: flex; align-items: flex-start; justify-content: center; padding: 38px 16px 42px; overflow-y: auto; }
 .p4u-homes-cms-modal { position: relative; width: min(585px, calc(100vw - 70px)); max-height: calc(100vh - 44px); overflow-y: auto; border: 1px solid #d5e4eb; border-radius: 18px; background: #fbfdfe; box-shadow: 0 24px 70px rgba(0,0,0,.24); padding: 28px 30px 30px; color: #001b36; }
 .p4u-homes-cms-close { position: absolute; top: 18px; right: 20px; border: 0; background: transparent; color: #405a75; padding: 0; }
 .p4u-homes-cms-close svg { width: 23px; height: 23px; }
@@ -9546,7 +9546,7 @@ body .p4u-form-modal-portal .p4u-ref-modal-close {
 .p4u-food-list article > div:last-child { display: flex; align-items: center; gap: 10px; }
 .p4u-food-list button { border: 1px solid #d5e4eb; min-width: 64px; min-height: 36px; border-radius: 999px; background: #fbfdfe; color: #001b36; font-size: 12px; font-weight: 800; }
 .p4u-food-list button.danger { border: 0; background: transparent; color: #ff3152; min-width: auto; }
-.p4u-food-modal-backdrop { position: fixed; inset: 0; z-index: 1080; background: rgba(0,0,0,.72); display: flex; align-items: flex-start; justify-content: flex-start; padding: 12px 0 40px 20px; overflow-y: auto; }
+.p4u-food-modal-backdrop { position: fixed; inset: 0; z-index: 1080; background: rgba(0,0,0,.72); display: flex; align-items: flex-start; justify-content: center; padding: 28px 16px 40px; overflow-y: auto; }
 .p4u-food-modal { position: relative; width: min(850px, calc(100vw - 42px)); max-height: calc(100vh - 24px); overflow-y: auto; border: 1px solid #d5e4eb; border-radius: 18px; background: #fbfdfe; box-shadow: 0 24px 70px rgba(0,0,0,.24); padding: 28px 30px 30px; color: #001b36; }
 .p4u-food-close { position: absolute; top: 18px; right: 20px; border: 0; background: transparent; color: #405a75; padding: 0; }
 .p4u-food-close svg { width: 23px; height: 23px; }
@@ -9568,3 +9568,23 @@ body .p4u-form-modal-portal .p4u-ref-modal-close {
 .p4u-food-modal-actions .is-cancel { background: #ffffff; color: #001b36; border: 1px solid #d5e4eb; }
 .p4u-food-modal-actions .is-save { background: #00a8a5; color: #ffffff; }
 @media (max-width: 767px) { .p4u-food-page { padding: 24px 16px 36px; } .p4u-food-head { flex-direction: column; } .p4u-food-head button { width: 100%; } .p4u-food-modal-backdrop { padding: 14px; } .p4u-food-modal { width: 100%; max-height: none; padding: 24px 18px; } .p4u-food-grid, .p4u-food-toggle-row { grid-template-columns: 1fr; } .p4u-food-list article { flex-direction: column; align-items: flex-start; } }
+/* P4U Homes/Food modules: softer text tone */
+:where(.p4u-homes-moderation-page, .p4u-localities-page, .p4u-plans-page, .p4u-haf-page, .p4u-property-users-page, .p4u-homes-cms-page, .p4u-property-reports-page, .p4u-food-page) {
+  color: #2f465f;
+}
+
+:where(.p4u-homes-moderation-page, .p4u-localities-page, .p4u-plans-page, .p4u-haf-page, .p4u-property-users-page, .p4u-homes-cms-page, .p4u-property-reports-page, .p4u-food-page) :where(h1, h2, h3, th, strong, label > span) {
+  color: #17324d;
+}
+
+:where(.p4u-homes-moderation-page, .p4u-localities-page, .p4u-plans-page, .p4u-haf-page, .p4u-property-users-page, .p4u-homes-cms-page, .p4u-property-reports-page, .p4u-food-page) :where(td, p, span, small, input, textarea, select) {
+  color: #405a75;
+}
+
+:where(.p4u-homes-moderation-page, .p4u-localities-page, .p4u-plans-page, .p4u-haf-page, .p4u-property-users-page, .p4u-homes-cms-page, .p4u-property-reports-page, .p4u-food-page) :where(button, button span, .active, .active span) {
+  color: inherit;
+}
+
+:where(.p4u-homes-moderation-page, .p4u-localities-page, .p4u-plans-page, .p4u-haf-page, .p4u-property-users-page, .p4u-homes-cms-page, .p4u-property-reports-page, .p4u-food-page) :where(.p4u-homes-stat strong, .p4u-property-reports-metrics strong) {
+  color: #08233f;
+}
