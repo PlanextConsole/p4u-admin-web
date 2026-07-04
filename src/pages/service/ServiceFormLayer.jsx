@@ -233,6 +233,11 @@ const ServiceFormLayer = ({ isEdit = false, isView = false, serviceId, onSuccess
     else navigate(-1);
   };
 
+  const goToNextTab = () => {
+    if (activeTab === "general") setActiveTab("pricing");
+    else if (activeTab === "pricing") setActiveTab("descriptions");
+  };
+
   return (
     <div className={inModal ? "p4u-service-modal" : "card h-100 p-0 radius-12"}>
       {!inModal && (
@@ -341,7 +346,7 @@ const ServiceFormLayer = ({ isEdit = false, isView = false, serviceId, onSuccess
                       disabled={categorySelectDisabled}
                       required
                     >
-                      <option value="">{categoriesLoading ? "Loading categories…" : "Select category"}</option>
+                      <option value="">{categoriesLoading ? "Loading categoriesÃ¢â‚¬Â¦" : "Select category"}</option>
                       {rootCategories.map((c) => (
                         <option key={c.id} value={c.id}>{c.name}</option>
                       ))}
@@ -387,7 +392,7 @@ const ServiceFormLayer = ({ isEdit = false, isView = false, serviceId, onSuccess
               <section className="p4u-service-form-box">
                 <h5><Icon icon="mdi:currency-inr" className="me-1" /> Base Pricing</h5>
                 <div className="row g-12">
-                  <Field col="col-md-4" label="Base Price (₹)">
+                  <Field col="col-md-4" label="Base Price (Ã¢â€šÂ¹)">
                     <input
                       type="text"
                       inputMode="decimal"
@@ -446,7 +451,12 @@ const ServiceFormLayer = ({ isEdit = false, isView = false, serviceId, onSuccess
                   </button>
                 ) : null}
                 <button type="button" onClick={cancelAction} className="p4u-services-btn-outline">Cancel</button>
-                {!isView && (
+                {!isView && activeTab !== "descriptions" && (
+                  <button type="button" disabled={disabled} onClick={goToNextTab} className="p4u-services-btn-primary">
+                    Next
+                  </button>
+                )}
+                {!isView && activeTab === "descriptions" && (
                   <button type="submit" disabled={disabled} className="p4u-services-btn-primary">
                     {submitting ? "Saving..." : isEdit ? "Save" : "Create Service"}
                   </button>
@@ -457,7 +467,12 @@ const ServiceFormLayer = ({ isEdit = false, isView = false, serviceId, onSuccess
                 <button type="button" onClick={cancelAction} className="btn border border-danger-600 text-danger-600 radius-8 px-20">
                   {isView ? "Back" : "Reset"}
                 </button>
-                {!isView && (
+                {!isView && activeTab !== "descriptions" && (
+                  <button type="button" disabled={disabled} onClick={goToNextTab} className="btn btn-primary radius-8 px-20">
+                    Next
+                  </button>
+                )}
+                {!isView && activeTab === "descriptions" && (
                   <button type="submit" disabled={disabled} className="btn btn-primary radius-8 px-20">
                     {submitting ? "Saving..." : isEdit ? "Update" : "Save"}
                   </button>
