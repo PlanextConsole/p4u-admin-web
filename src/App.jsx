@@ -1,4 +1,4 @@
-﻿import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import ProtectedRouteLayout from "./components/ProtectedRouteLayout";
 import Dashboard from "./pages/dashboard/DashoardLayout";
 import HomePageTwo from "./pages/HomePageTwo";
@@ -179,6 +179,21 @@ import RevenueProfitReportPage from './pages/reports/RevenueProfitReportPage';
 import TaxInvoicesReportPage from './pages/reports/TaxInvoicesReportPage';
 import TaxReportPage from './pages/reports/TaxReportPage';
 import SocialDashboardPage from './pages/social/SocialDashboardPage';
+import AdminModulePlaceholderPage from './pages/placeholder/AdminModulePlaceholderPage';
+import HomesModerationQueuePage from './pages/homes/moderation-queue/HomesModerationQueuePage';
+import HomesLocalitiesPage from './pages/homes/localities/HomesLocalitiesPage';
+import HomesPlansPricingPage from './pages/homes/plans-pricing/HomesPlansPricingPage';
+import HomesAmenitiesFiltersPage from './pages/homes/amenities-filters/HomesAmenitiesFiltersPage';
+import HomesPropertyUsersPage from './pages/homes/property-users/HomesPropertyUsersPage';
+import HomesCmsPage from './pages/homes/cms/HomesCmsPage';
+import HomesPropertyReportsPage from './pages/homes/reports/HomesPropertyReportsPage';
+import FoodRestaurantsPage from './pages/food/FoodRestaurantsPage';
+import FoodRidersPage from './pages/food/FoodRidersPage';
+import FoodRiderKycPage from './pages/food/FoodRiderKycPage';
+import FoodRiderSettlementsPage from './pages/food/FoodRiderSettlementsPage';
+import FoodOrdersPage from './pages/food/FoodOrdersPage';
+import FoodCouponsPage from './pages/food/FoodCouponsPage';
+
 
 
 
@@ -206,7 +221,7 @@ function App() {
         <Route exact path='/product' element={<ProductListPage />} />
         <Route exact path='/product-attributes' element={<ProductAttributesListPage />} />
 
-{/* CATEGORY â€” product vs service use separate tables */}
+{/* CATEGORY ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â product vs service use separate tables */}
 <Route exact path='/service-categories' element={<CategoryListPage />} />
 <Route exact path='/service-subcategories' element={<ServiceSubcategoryListPage />} />
 <Route exact path='/product-categories' element={<ProductCategoryListPage />} />
@@ -245,6 +260,24 @@ function App() {
 <Route exact path='/cf-services' element={<CFServicesListPage />} />
 <Route exact path='/cf-cities' element={<CFCityListPage />} />
 
+
+{/* P4U HOMES */}
+<Route exact path='/homes/properties' element={<AdminModulePlaceholderPage section='P4U Homes' title='All Properties' />} />
+<Route exact path='/homes/moderation-queue' element={<HomesModerationQueuePage />} />
+<Route exact path='/homes/localities' element={<HomesLocalitiesPage />} />
+<Route exact path='/homes/plans-pricing' element={<HomesPlansPricingPage />} />
+<Route exact path='/homes/amenities-filters' element={<HomesAmenitiesFiltersPage />} />
+<Route exact path='/homes/property-users' element={<HomesPropertyUsersPage />} />
+<Route exact path='/homes/cms' element={<HomesCmsPage />} />
+<Route exact path='/homes/reports' element={<HomesPropertyReportsPage />} />
+
+{/* P4U FOOD */}
+<Route exact path='/food/restaurants' element={<FoodRestaurantsPage />} />
+<Route exact path='/food/riders' element={<FoodRidersPage />} />
+<Route exact path='/food/rider-kyc' element={<FoodRiderKycPage />} />
+<Route exact path='/food/rider-settlements' element={<FoodRiderSettlementsPage />} />
+<Route exact path='/food/orders' element={<FoodOrdersPage />} />
+<Route exact path='/food/coupons' element={<FoodCouponsPage />} />
 {/* SETTLEMENTS */}
 <Route exact path='/settlements' element={<SettlementsPage />} />
 

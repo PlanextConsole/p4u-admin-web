@@ -68,7 +68,7 @@ export function deleteVendor(id) {
   return api.delete(`/api/admin/vendors/${encodeURIComponent(id)}`);
 }
 
-/* ─── Vendor portal (used by vendor users in the same admin shell) ─── */
+/* â”€â”€â”€ Vendor portal (used by vendor users in the same admin shell) â”€â”€â”€ */
 const VENDOR_BASE = "/api/v1/vendor";
 
 export function getMyVendorPlan() {
@@ -140,7 +140,7 @@ export function deleteProduct(id) {
   return api.delete(`/api/admin/products/${encodeURIComponent(id)}`);
 }
 
-/** Vendor ↔ catalog service links (`catalog_vendor_services`). Requires vendorId, serviceId, or moderationStatus. */
+/** Vendor â†” catalog service links (`catalog_vendor_services`). Requires vendorId, serviceId, or moderationStatus. */
 export function listVendorServiceLinks(params) {
   return api.get("/api/admin/vendor-services", params);
 }
@@ -235,7 +235,7 @@ export async function listCategoriesForServices(params) {
   return { items };
 }
 
-// ─── Product categories (shop) ───
+// â”€â”€â”€ Product categories (shop) â”€â”€â”€
 export function listProductCategories(params) {
   return api.get("/api/admin/product-categories", params);
 }
@@ -256,7 +256,7 @@ export function deleteProductCategory(id) {
   return api.delete(`/api/admin/product-categories/${encodeURIComponent(id)}`);
 }
 
-// ─── Product subcategories ───
+// â”€â”€â”€ Product subcategories â”€â”€â”€
 export function listProductSubcategories(params) {
   return api.get("/api/admin/product-subcategories", params);
 }
@@ -277,7 +277,7 @@ export function deleteProductSubcategory(id) {
   return api.delete(`/api/admin/product-subcategories/${encodeURIComponent(id)}`);
 }
 
-// ─── Service categories (booking) ───
+// â”€â”€â”€ Service categories (booking) â”€â”€â”€
 export function listServiceCategories(params) {
   return api.get("/api/admin/service-categories", params);
 }
@@ -298,7 +298,7 @@ export function deleteServiceCategory(id) {
   return api.delete(`/api/admin/service-categories/${encodeURIComponent(id)}`);
 }
 
-// ─── Service subcategories ───
+// â”€â”€â”€ Service subcategories â”€â”€â”€
 export function listServiceSubcategories(params) {
   return api.get("/api/admin/service-subcategories", params);
 }
@@ -339,7 +339,7 @@ export function deleteCatalogService(id) {
   return api.delete(`/api/admin/services/${encodeURIComponent(id)}`);
 }
 
-/** Service bookings (`commerce_bookings`) — proxied via gateway to commerce-management-service. */
+/** Service bookings (`commerce_bookings`) â€” proxied via gateway to commerce-management-service. */
 export function listServiceBookings(params) {
   return api.get("/api/v1/commerce/bookings/admin", params);
 }
@@ -847,3 +847,118 @@ export function updateClassifiedProduct(id, body) {
 export function deleteClassifiedProduct(id) {
   return api.delete(`/api/admin/classifiedProducts/${encodeURIComponent(id)}`);
 }
+// P4U Homes admin APIs
+export function listHomesAmenities(params) {
+  return api.get("/api/admin/homes/amenities", params);
+}
+
+export function createHomesAmenity(body) {
+  return api.post("/api/admin/homes/amenities", body);
+}
+
+export function updateHomesAmenity(id, body) {
+  return api.patch(`/api/admin/homes/amenities/${encodeURIComponent(id)}`, body);
+}
+
+export function deleteHomesAmenity(id) {
+  return api.delete(`/api/admin/homes/amenities/${encodeURIComponent(id)}`);
+}
+
+export function listHomesFilterOptions(params) {
+  return api.get("/api/admin/homes/filter-options", params);
+}
+
+export function createHomesFilterOption(body) {
+  return api.post("/api/admin/homes/filter-options", body);
+}
+
+export function updateHomesFilterOption(id, body) {
+  return api.patch(`/api/admin/homes/filter-options/${encodeURIComponent(id)}`, body);
+}
+
+export function deleteHomesFilterOption(id) {
+  return api.delete(`/api/admin/homes/filter-options/${encodeURIComponent(id)}`);
+}
+
+export function listHomesLocalities(params) {
+  return api.get("/api/admin/homes/localities", params);
+}
+
+export function createHomesLocality(body) {
+  return api.post("/api/admin/homes/localities", body);
+}
+
+export function updateHomesLocality(id, body) {
+  return api.patch(`/api/admin/homes/localities/${encodeURIComponent(id)}`, body);
+}
+
+export function deleteHomesLocality(id) {
+  return api.delete(`/api/admin/homes/localities/${encodeURIComponent(id)}`);
+}
+
+export function listHomesPlans(params) {
+  return api.get("/api/admin/homes/plans", params);
+}
+
+export function createHomesPlan(body) {
+  return api.post("/api/admin/homes/plans", body);
+}
+
+export function updateHomesPlan(id, body) {
+  return api.patch(`/api/admin/homes/plans/${encodeURIComponent(id)}`, body);
+}
+
+export function deleteHomesPlan(id) {
+  return api.delete(`/api/admin/homes/plans/${encodeURIComponent(id)}`);
+}
+
+export function listHomesProperties(params) {
+  return api.get("/api/admin/homes/properties", params);
+}
+
+export function moderateHomesProperty(id, status) {
+  return api.post(`/api/admin/homes/properties/${encodeURIComponent(id)}/moderate`, { status });
+}
+
+export function listHomesPropertyUsers(params) {
+  return api.get("/api/admin/homes/property-users", params);
+}
+export function listHomesCmsContent(params) {
+  return api.get("/api/admin/homes/cms-content", params);
+}
+
+export function createHomesCmsContent(body) {
+  return api.post("/api/admin/homes/cms-content", body);
+}
+
+export function updateHomesCmsContent(id, body) {
+  return api.patch(`/api/admin/homes/cms-content/${encodeURIComponent(id)}`, body);
+}
+
+export function deleteHomesCmsContent(id) {
+  return api.delete(`/api/admin/homes/cms-content/${encodeURIComponent(id)}`);
+}
+export function getHomesPropertyAnalytics(params) {
+  return api.get("/api/admin/homes/reports/analytics", params);
+}
+export function listFoodRestaurants(params) { return api.get("/api/admin/food/restaurants", params); }
+export function createFoodRestaurant(body) { return api.post("/api/admin/food/restaurants", body); }
+export function updateFoodRestaurant(id, body) { return api.patch(`/api/admin/food/restaurants/${encodeURIComponent(id)}`, body); }
+export function deleteFoodRestaurant(id) { return api.delete(`/api/admin/food/restaurants/${encodeURIComponent(id)}`); }
+
+export function listFoodRiders(params) { return api.get("/api/admin/food/riders", params); }
+export function createFoodRider(body) { return api.post("/api/admin/food/riders", body); }
+export function updateFoodRider(id, body) { return api.patch(`/api/admin/food/riders/${encodeURIComponent(id)}`, body); }
+export function deleteFoodRider(id) { return api.delete(`/api/admin/food/riders/${encodeURIComponent(id)}`); }
+export function updateFoodRiderKyc(id, status) { return api.post(`/api/admin/food/riders/${encodeURIComponent(id)}/kyc`, { status }); }
+
+export function listFoodOrders(params) { return api.get("/api/admin/food/orders", params); }
+export function updateFoodOrder(id, body) { return api.patch(`/api/admin/food/orders/${encodeURIComponent(id)}`, body); }
+
+export function listFoodCoupons(params) { return api.get("/api/admin/food/coupons", params); }
+export function createFoodCoupon(body) { return api.post("/api/admin/food/coupons", body); }
+export function updateFoodCoupon(id, body) { return api.patch(`/api/admin/food/coupons/${encodeURIComponent(id)}`, body); }
+export function deleteFoodCoupon(id) { return api.delete(`/api/admin/food/coupons/${encodeURIComponent(id)}`); }
+
+export function listFoodRiderSettlements(params) { return api.get("/api/admin/food/rider-settlements", params); }
+export function payFoodRiderSettlement(id) { return api.post(`/api/admin/food/rider-settlements/${encodeURIComponent(id)}/pay`, {}); }

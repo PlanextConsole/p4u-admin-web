@@ -1,4 +1,4 @@
-﻿/* eslint-disable react/prop-types */
+/* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
@@ -279,6 +279,96 @@ const MasterLayout = ({ children }) => {
               </NavLink>
             </li>
 
+
+            {/* P4U HOMES */}
+            <li className='sidebar-menu-group-title'>P4U Homes</li>
+            <li>
+              <NavLink to='/homes/properties' className={sidebarNavClass}>
+                <Icon icon='mdi:home-outline' className='menu-icon' />
+                <span>All Properties</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to='/homes/moderation-queue' className={sidebarNavClass}>
+                <Icon icon='mdi:flag-outline' className='menu-icon' />
+                <span>Moderation Queue</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to='/homes/localities' className={sidebarNavClass}>
+                <Icon icon='mdi:map-marker-radius-outline' className='menu-icon' />
+                <span>Localities</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to='/homes/plans-pricing' className={sidebarNavClass}>
+                <Icon icon='mdi:crown-outline' className='menu-icon' />
+                <span>Plans & Pricing</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to='/homes/amenities-filters' className={sidebarNavClass}>
+                <Icon icon='mdi:filter-variant' className='menu-icon' />
+                <span>Amenities & Filters</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to='/homes/property-users' className={sidebarNavClass}>
+                <Icon icon='mdi:account-group-outline' className='menu-icon' />
+                <span>Property Users</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to='/homes/cms' className={sidebarNavClass}>
+                <Icon icon='mdi:palette-outline' className='menu-icon' />
+                <span>Homes CMS</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to='/homes/reports' className={sidebarNavClass}>
+                <Icon icon='mdi:chart-bar' className='menu-icon' />
+                <span>Property Reports</span>
+              </NavLink>
+            </li>
+
+            {/* P4U FOOD */}
+            <li className='sidebar-menu-group-title'>P4U Food</li>
+            <li>
+              <NavLink to='/food/restaurants' className={sidebarNavClass}>
+                <Icon icon='mdi:silverware-fork-knife' className='menu-icon' />
+                <span>Restaurants</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to='/food/riders' className={sidebarNavClass}>
+                <Icon icon='mdi:bike-fast' className='menu-icon' />
+                <span>Riders</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to='/food/rider-kyc' className={sidebarNavClass}>
+                <Icon icon='mdi:account-check-outline' className='menu-icon' />
+                <span>Rider KYC</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to='/food/rider-settlements' className={sidebarNavClass}>
+                <Icon icon='mdi:bike' className='menu-icon' />
+                <span>Rider Settlements</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to='/food/orders' className={sidebarNavClass}>
+                <Icon icon='mdi:cart-outline' className='menu-icon' />
+                <span>Food Orders</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to='/food/coupons' className={sidebarNavClass}>
+                <Icon icon='mdi:ticket-percent-outline' className='menu-icon' />
+                <span>Food Coupons</span>
+              </NavLink>
+            </li>
             {/* SALES & FINANCIALS */}
             <li className='sidebar-menu-group-title'>Finance</li>
             <li>
