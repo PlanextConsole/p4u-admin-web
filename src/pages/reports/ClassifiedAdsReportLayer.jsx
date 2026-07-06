@@ -184,6 +184,8 @@ const ClassifiedAdsReportLayer = () => {
   const [toDate, setToDate] = useState("");
   const [modal, setModal] = useState(null);
 
+  const [statusUpdatingId, setStatusUpdatingId] = useState("");
+
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -200,6 +202,23 @@ const ClassifiedAdsReportLayer = () => {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  const setAdStatus = useCallback(async (row, nextStatus) => {
+    setStatusUpdatingId(row.id);
+    try {
+      const meta = { ...parseMeta(row.metadata), approvalStatus: nextStatus, status: nextStatus };
+      await updateClassifiedProduct(row.id, {
+        metadata: meta,
+        isActive: nextStatus === "approved",
+      });
+      toast.success(nextStatus === "approved" ? "Ad approved." : "Ad rejected.");
+      await load();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : String(e));
+    } finally {
+      setStatusUpdatingId("");
+    }
+  }, [load]);
 
   const enriched = useMemo(() => products.map((row) => {
     const meta = parseMeta(row.metadata);
@@ -254,7 +273,7 @@ const ClassifiedAdsReportLayer = () => {
           <div><label className='p4u-classified-search'><Icon icon='ion:search-outline' /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder='Search ads...' /></label><label className='p4u-classified-select'><select value={status} onChange={(e) => setStatus(e.target.value)}><option value='all'>Status</option><option value='pending'>Pending</option><option value='approved'>Approved</option><option value='rejected'>Rejected</option></select><Icon icon='lucide:chevron-down' /></label></div>
           <div><label className='p4u-classified-date'><Icon icon='lucide:calendar-days' /><span>From Date</span><input type='date' value={fromDate} onChange={(e) => setFromDate(e.target.value)} /></label><label className='p4u-classified-date'><Icon icon='lucide:calendar-days' /><span>To Date</span><input type='date' value={toDate} onChange={(e) => setToDate(e.target.value)} /></label><button type='button' onClick={exportCsv}><Icon icon='lucide:download' />Export CSV</button></div>
         </div>
-        <div className='p4u-classified-table-wrap'><table className='p4u-classified-table'><thead><tr><th><i /></th><th>ID</th><th>Image</th><th>Title</th><th>Price</th><th>Location</th><th>Posted By</th><th>Status</th><th>Created</th><th>Updated</th><th /></tr></thead><tbody>{loading ? <tr><td colSpan='11' className='p4u-classified-empty'>Loading...</td></tr> : filtered.length === 0 ? <tr><td colSpan='11' className='p4u-classified-empty'>No classified ads found.</td></tr> : filtered.map((item) => <tr key={item.row.id}><td><i /></td><td>{item.id}</td><td>{item.image ? <img src={resolveMediaUrl(item.image)} alt={item.title} onError={(e) => { e.currentTarget.style.display = "none"; }} /> : <span className='p4u-classified-placeholder'><Icon icon='mdi:cube-outline' /></span>}</td><td><strong>{item.title}</strong><small>{item.category}</small></td><td>{formatInr(item.price)}</td><td>{[item.area, item.city].filter(Boolean).join(", ") || "--"}</td><td>{item.vendor}</td><td><span className={`p4u-classified-pill is-${item.status}`}>{item.status}</span></td><td>{formatDateTime(item.createdAt)}</td><td>{formatDateTime(item.updatedAt)}</td><td><div className='p4u-classified-actions'><button type='button' onClick={() => setModal({ mode: "view", id: item.row.id })}><Icon icon='lucide:eye' /></button><button type='button' onClick={() => setModal({ mode: "edit", id: item.row.id })}><Icon icon='lucide:pencil' /></button><button type='button' className='is-danger' onClick={() => setModal({ mode: "edit", id: item.row.id })}><Icon icon='lucide:x-circle' /></button></div></td></tr>)}</tbody></table></div>
+        <div className='p4u-classified-table-wrap'><table className='p4u-classified-table'><thead><tr><th><i /></th><th>ID</th><th>Image</th><th>Title</th><th>Price</th><th>Location</th><th>Posted By</th><th>Status</th><th>Created</th><th>Updated</th><th /></tr></thead><tbody>{loading ? <tr><td colSpan='11' className='p4u-classified-empty'>Loading...</td></tr> : filtered.length === 0 ? <tr><td colSpan='11' className='p4u-classified-empty'>No classified ads found.</td></tr> : filtered.map((item) => <tr key={item.row.id}><td><i /></td><td>{item.id}</td><td>{item.image ? <img src={resolveMediaUrl(item.image)} alt={item.title} onError={(e) => { e.currentTarget.style.display = "none"; }} /> : <span className='p4u-classified-placeholder'><Icon icon='mdi:cube-outline' /></span>}</td><td><strong>{item.title}</strong><small>{item.category}</small></td><td>{formatInr(item.price)}</td><td>{[item.area, item.city].filter(Boolean).join(", ") || "--"}</td><td>{item.vendor}</td><td><span className={`p4u-classified-pill is-${item.status}`}>{item.status}</span></td><td>{formatDateTime(item.createdAt)}</td><td>{formatDateTime(item.updatedAt)}</td><td><div className='p4u-classified-actions'>{item.status !== "approved" ? <button type='button' className='is-success' title='Approve' disabled={statusUpdatingId === item.row.id} onClick={() => setAdStatus(item.row, "approved")}><Icon icon='lucide:check-circle' /></button> : null}{item.status !== "rejected" ? <button type='button' className='is-danger' title='Reject' disabled={statusUpdatingId === item.row.id} onClick={() => setAdStatus(item.row, "rejected")}><Icon icon='lucide:x-circle' /></button> : null}<button type='button' title='View' onClick={() => setModal({ mode: "view", id: item.row.id })}><Icon icon='lucide:eye' /></button><button type='button' title='Edit' onClick={() => setModal({ mode: "edit", id: item.row.id })}><Icon icon='lucide:pencil' /></button></div></td></tr>)}</tbody></table></div>
       </section>
       {modal && selected ? <FormModal onClose={() => setModal(null)} size='md'><ClassifiedModal mode={modal.mode} row={selected.row} categoryName={selected.category} vendorName={selected.vendor} onClose={() => setModal(null)} onSaved={(nextMode) => { if (nextMode === "edit") setModal({ mode: "edit", id: selected.row.id }); else { setModal(null); load(); } }} onDeleted={() => { setModal(null); load(); }} /></FormModal> : null}
     </div>

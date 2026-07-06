@@ -247,7 +247,13 @@ const MasterLayout = ({ children }) => {
             </li>
 
             {/* CLASSIFIED (CF) CONFIGURATION */}
-            <li className='sidebar-menu-group-title p4u-sidebar-classified-title'>Configuration</li>
+            <li className='sidebar-menu-group-title p4u-sidebar-classified-title'>Classified</li>
+            <li className='p4u-sidebar-classified-item'>
+              <NavLink to='/reports/classified-ads' className={({ isActive }) => `p4u-sidebar-classified-link ${isActive ? "active-page" : ""}`}>
+                <Icon icon='lucide:megaphone' className='menu-icon' />
+                <span>Classified Ads</span>
+              </NavLink>
+            </li>
             <li className='p4u-sidebar-classified-item'>
               <NavLink to='/cf-cities' className={({ isActive }) => `p4u-sidebar-classified-link ${isActive ? "active-page" : ""}`}>
                 <Icon icon='mdi:map-marker-outline' className='menu-icon' />
