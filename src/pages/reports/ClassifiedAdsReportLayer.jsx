@@ -42,14 +42,14 @@ function adId(row) {
 }
 
 function formatDateTime(value) {
-  if (!value) return "—";
+  if (!value) return { date: "—", time: "" };
   const dt = new Date(value);
-  if (Number.isNaN(dt.getTime())) return "—";
+  if (Number.isNaN(dt.getTime())) return { date: "—", time: "" };
   const day = dt.toLocaleString("en-IN", { day: "2-digit" });
   const mon = dt.toLocaleString("en-IN", { month: "short" });
   const yr = String(dt.getFullYear()).slice(-2);
   const time = dt.toLocaleString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
-  return `${day} ${mon} ${yr}, ${time}`;
+  return { date: `${day} ${mon} ${yr}`, time };
 }
 
 function formatInr(value) {
@@ -284,22 +284,22 @@ const ClassifiedAdsReportLayer = () => {
               <tr>
                 <th className='col-image'>Image</th>
                 <th className='col-title'>Title</th>
-                <th className='col-id'>ID</th>
                 <th className='col-price'>Price</th>
                 <th className='col-location'>Location</th>
                 <th className='col-poster'>Posted By</th>
                 <th className='col-status'>Status</th>
                 <th className='col-date'>Created</th>
-                <th className='col-date'>Updated</th>
                 <TableActionHeader className='col-actions' />
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={10} className='p4u-classified-empty'>Loading...</td></tr>
+                <tr><td colSpan={8} className='p4u-classified-empty'>Loading...</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={10} className='p4u-classified-empty'>No classified ads found.</td></tr>
-              ) : filtered.map((item) => (
+                <tr><td colSpan={8} className='p4u-classified-empty'>No classified ads found.</td></tr>
+              ) : filtered.map((item) => {
+                const created = formatDateTime(item.createdAt);
+                return (
                 <tr key={item.row.id}>
                   <td className='col-image'>
                     {item.image ? (
@@ -310,53 +310,45 @@ const ClassifiedAdsReportLayer = () => {
                   </td>
                   <td className='col-title'>
                     <strong>{item.title}</strong>
-                    <small>{item.category}</small>
+                    <small>{item.category} · {item.id}</small>
                   </td>
-                  <td className='col-id'><span className='p4u-classified-id'>{item.id}</span></td>
                   <td className='col-price'>{formatInr(item.price)}</td>
                   <td className='col-location'>{[item.area, item.city].filter(Boolean).join(", ") || "—"}</td>
                   <td className='col-poster'>{item.vendor}</td>
                   <td className='col-status'>
                     <span className={`p4u-classified-pill is-${item.status}`}>{item.status}</span>
                   </td>
-                  <td className='col-date'>{formatDateTime(item.createdAt)}</td>
-                  <td className='col-date'>{formatDateTime(item.updatedAt)}</td>
+                  <td className='col-date'>
+                    <span className='p4u-classified-date'>{created.date}</span>
+                    {created.time ? <small className='p4u-classified-time'>{created.time}</small> : null}
+                  </td>
                   <TableActionCell className='col-actions'>
-                    <div className='d-flex align-items-center justify-content-center gap-8 flex-wrap'>
-                      {item.status !== "approved" ? (
-                        <button
-                          type='button'
-                          className='btn btn-success btn-sm radius-10 px-12'
-                          title='Approve'
-                          disabled={statusUpdatingId === item.row.id}
-                          onClick={() => setAdStatus(item.row, "approved")}
-                        >
-                          Approve
-                        </button>
-                      ) : null}
-                      {item.status !== "rejected" ? (
-                        <button
-                          type='button'
-                          className='btn btn-outline-danger btn-sm radius-10 px-12'
-                          title='Reject'
-                          disabled={statusUpdatingId === item.row.id}
-                          onClick={() => setAdStatus(item.row, "rejected")}
-                        >
-                          Reject
-                        </button>
-                      ) : null}
-                      <TableActionButtons
-                        size='sm'
-                        gap={8}
-                        actions={[
-                          { type: "view", onClick: () => setModal({ mode: "view", id: item.row.id }) },
-                          { type: "edit", onClick: () => setModal({ mode: "edit", id: item.row.id }) },
-                        ]}
-                      />
-                    </div>
+                    <TableActionButtons
+                      size='sm'
+                      gap={8}
+                      actions={[
+                        {
+                          type: "verify",
+                          title: "Approve",
+                          hidden: item.status === "approved",
+                          disabled: statusUpdatingId === item.row.id,
+                          onClick: () => setAdStatus(item.row, "approved"),
+                        },
+                        {
+                          type: "cancel",
+                          title: "Reject",
+                          hidden: item.status === "rejected",
+                          disabled: statusUpdatingId === item.row.id,
+                          onClick: () => setAdStatus(item.row, "rejected"),
+                        },
+                        { type: "view", onClick: () => setModal({ mode: "view", id: item.row.id }) },
+                        { type: "edit", onClick: () => setModal({ mode: "edit", id: item.row.id }) },
+                      ]}
+                    />
                   </TableActionCell>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
