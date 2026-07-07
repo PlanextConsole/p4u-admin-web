@@ -12,6 +12,7 @@ import {
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import FormModal from "../../components/admin/FormModal";
+import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
 import { IMAGE_ACCEPT } from "../../lib/acceptImages";
 
@@ -41,10 +42,14 @@ function adId(row) {
 }
 
 function formatDateTime(value) {
-  if (!value) return "--";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value);
-  return date.toLocaleString("en-IN", { day: "numeric", month: "short", year: "2-digit", hour: "2-digit", minute: "2-digit" });
+  if (!value) return "—";
+  const dt = new Date(value);
+  if (Number.isNaN(dt.getTime())) return "—";
+  const day = dt.toLocaleString("en-IN", { day: "2-digit" });
+  const mon = dt.toLocaleString("en-IN", { month: "short" });
+  const yr = String(dt.getFullYear()).slice(-2);
+  const time = dt.toLocaleString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+  return `${day} ${mon} ${yr}, ${time}`;
 }
 
 function formatInr(value) {
@@ -273,7 +278,88 @@ const ClassifiedAdsReportLayer = () => {
           <div><label className='p4u-classified-search'><Icon icon='ion:search-outline' /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder='Search ads...' /></label><label className='p4u-classified-select'><select value={status} onChange={(e) => setStatus(e.target.value)}><option value='all'>Status</option><option value='pending'>Pending</option><option value='approved'>Approved</option><option value='rejected'>Rejected</option></select><Icon icon='lucide:chevron-down' /></label></div>
           <div><label className='p4u-classified-date'><Icon icon='lucide:calendar-days' /><span>From Date</span><input type='date' value={fromDate} onChange={(e) => setFromDate(e.target.value)} /></label><label className='p4u-classified-date'><Icon icon='lucide:calendar-days' /><span>To Date</span><input type='date' value={toDate} onChange={(e) => setToDate(e.target.value)} /></label><button type='button' onClick={exportCsv}><Icon icon='lucide:download' />Export CSV</button></div>
         </div>
-        <div className='p4u-classified-table-wrap'><table className='p4u-classified-table'><thead><tr><th><i /></th><th>ID</th><th>Image</th><th>Title</th><th>Price</th><th>Location</th><th>Posted By</th><th>Status</th><th>Created</th><th>Updated</th><th /></tr></thead><tbody>{loading ? <tr><td colSpan='11' className='p4u-classified-empty'>Loading...</td></tr> : filtered.length === 0 ? <tr><td colSpan='11' className='p4u-classified-empty'>No classified ads found.</td></tr> : filtered.map((item) => <tr key={item.row.id}><td><i /></td><td>{item.id}</td><td>{item.image ? <img src={resolveMediaUrl(item.image)} alt={item.title} onError={(e) => { e.currentTarget.style.display = "none"; }} /> : <span className='p4u-classified-placeholder'><Icon icon='mdi:cube-outline' /></span>}</td><td><strong>{item.title}</strong><small>{item.category}</small></td><td>{formatInr(item.price)}</td><td>{[item.area, item.city].filter(Boolean).join(", ") || "--"}</td><td>{item.vendor}</td><td><span className={`p4u-classified-pill is-${item.status}`}>{item.status}</span></td><td>{formatDateTime(item.createdAt)}</td><td>{formatDateTime(item.updatedAt)}</td><td><div className='p4u-classified-actions'>{item.status !== "approved" ? <button type='button' className='is-success' title='Approve' disabled={statusUpdatingId === item.row.id} onClick={() => setAdStatus(item.row, "approved")}><Icon icon='lucide:check-circle' /></button> : null}{item.status !== "rejected" ? <button type='button' className='is-danger' title='Reject' disabled={statusUpdatingId === item.row.id} onClick={() => setAdStatus(item.row, "rejected")}><Icon icon='lucide:x-circle' /></button> : null}<button type='button' title='View' onClick={() => setModal({ mode: "view", id: item.row.id })}><Icon icon='lucide:eye' /></button><button type='button' title='Edit' onClick={() => setModal({ mode: "edit", id: item.row.id })}><Icon icon='lucide:pencil' /></button></div></td></tr>)}</tbody></table></div>
+        <div className='p4u-classified-table-wrap'>
+          <table className='p4u-classified-table'>
+            <thead>
+              <tr>
+                <th className='col-image'>Image</th>
+                <th className='col-title'>Title</th>
+                <th className='col-id'>ID</th>
+                <th className='col-price'>Price</th>
+                <th className='col-location'>Location</th>
+                <th className='col-poster'>Posted By</th>
+                <th className='col-status'>Status</th>
+                <th className='col-date'>Created</th>
+                <th className='col-date'>Updated</th>
+                <TableActionHeader className='col-actions' />
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={10} className='p4u-classified-empty'>Loading...</td></tr>
+              ) : filtered.length === 0 ? (
+                <tr><td colSpan={10} className='p4u-classified-empty'>No classified ads found.</td></tr>
+              ) : filtered.map((item) => (
+                <tr key={item.row.id}>
+                  <td className='col-image'>
+                    {item.image ? (
+                      <img src={resolveMediaUrl(item.image)} alt={item.title} onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                    ) : (
+                      <span className='p4u-classified-placeholder'><Icon icon='mdi:cube-outline' /></span>
+                    )}
+                  </td>
+                  <td className='col-title'>
+                    <strong>{item.title}</strong>
+                    <small>{item.category}</small>
+                  </td>
+                  <td className='col-id'><span className='p4u-classified-id'>{item.id}</span></td>
+                  <td className='col-price'>{formatInr(item.price)}</td>
+                  <td className='col-location'>{[item.area, item.city].filter(Boolean).join(", ") || "—"}</td>
+                  <td className='col-poster'>{item.vendor}</td>
+                  <td className='col-status'>
+                    <span className={`p4u-classified-pill is-${item.status}`}>{item.status}</span>
+                  </td>
+                  <td className='col-date'>{formatDateTime(item.createdAt)}</td>
+                  <td className='col-date'>{formatDateTime(item.updatedAt)}</td>
+                  <TableActionCell className='col-actions'>
+                    <div className='d-flex align-items-center justify-content-center gap-8 flex-wrap'>
+                      {item.status !== "approved" ? (
+                        <button
+                          type='button'
+                          className='btn btn-success btn-sm radius-10 px-12'
+                          title='Approve'
+                          disabled={statusUpdatingId === item.row.id}
+                          onClick={() => setAdStatus(item.row, "approved")}
+                        >
+                          Approve
+                        </button>
+                      ) : null}
+                      {item.status !== "rejected" ? (
+                        <button
+                          type='button'
+                          className='btn btn-outline-danger btn-sm radius-10 px-12'
+                          title='Reject'
+                          disabled={statusUpdatingId === item.row.id}
+                          onClick={() => setAdStatus(item.row, "rejected")}
+                        >
+                          Reject
+                        </button>
+                      ) : null}
+                      <TableActionButtons
+                        size='sm'
+                        gap={8}
+                        actions={[
+                          { type: "view", onClick: () => setModal({ mode: "view", id: item.row.id }) },
+                          { type: "edit", onClick: () => setModal({ mode: "edit", id: item.row.id }) },
+                        ]}
+                      />
+                    </div>
+                  </TableActionCell>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
       {modal && selected ? <FormModal onClose={() => setModal(null)} size='md'><ClassifiedModal mode={modal.mode} row={selected.row} categoryName={selected.category} vendorName={selected.vendor} onClose={() => setModal(null)} onSaved={(nextMode) => { if (nextMode === "edit") setModal({ mode: "edit", id: selected.row.id }); else { setModal(null); load(); } }} onDeleted={() => { setModal(null); load(); }} /></FormModal> : null}
     </div>

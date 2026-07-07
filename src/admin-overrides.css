@@ -9623,3 +9623,169 @@ body .p4u-form-modal-portal .p4u-ref-modal-close {
 :where(.p4u-homes-moderation-page, .p4u-localities-page, .p4u-plans-page, .p4u-haf-page, .p4u-property-users-page, .p4u-homes-cms-page, .p4u-property-reports-page, .p4u-food-page) :where(.p4u-homes-stat strong, .p4u-property-reports-metrics strong) {
   color: #08233f;
 }
+
+/* Classified Ads — compact table (no horizontal scroll, vendor-list alignment) */
+.p4u-classified-page {
+  padding: 24px 28px 36px;
+}
+
+.p4u-classified-hero {
+  margin-bottom: 20px;
+}
+
+.p4u-classified-stats {
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.p4u-classified-stats article {
+  min-height: 84px;
+  padding: 16px 20px;
+}
+
+.p4u-classified-stats strong {
+  font-size: 1.35rem;
+}
+
+.p4u-classified-card {
+  border-radius: 14px;
+}
+
+.p4u-classified-toolbar {
+  padding: 14px 16px;
+  gap: 12px;
+}
+
+.p4u-classified-search,
+.p4u-classified-select,
+.p4u-classified-date,
+.p4u-classified-toolbar button {
+  min-height: 40px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  padding: 0 12px;
+}
+
+.p4u-classified-search {
+  width: min(320px, 100%);
+}
+
+.p4u-classified-search input,
+.p4u-classified-select select {
+  font-size: 0.875rem;
+}
+
+.p4u-classified-select {
+  min-width: 140px;
+}
+
+.p4u-classified-table-wrap {
+  overflow-x: visible;
+}
+
+.p4u-classified-table {
+  width: 100%;
+  min-width: 0 !important;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.p4u-classified-table th {
+  padding: 12px 10px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.p4u-classified-table td {
+  padding: 12px 10px;
+  font-size: 0.88rem;
+  line-height: 1.35;
+  vertical-align: middle;
+  word-break: break-word;
+}
+
+.p4u-classified-table .col-image {
+  width: 56px;
+}
+
+.p4u-classified-table .col-title {
+  width: 16%;
+}
+
+.p4u-classified-table .col-id {
+  width: 88px;
+}
+
+.p4u-classified-table .col-price {
+  width: 92px;
+  white-space: nowrap;
+}
+
+.p4u-classified-table .col-location {
+  width: 13%;
+}
+
+.p4u-classified-table .col-poster {
+  width: 11%;
+}
+
+.p4u-classified-table .col-status {
+  width: 96px;
+}
+
+.p4u-classified-table .col-date {
+  width: 118px;
+  font-size: 0.82rem;
+  color: #50627a;
+  white-space: nowrap;
+}
+
+.p4u-classified-table .col-actions {
+  width: 220px;
+}
+
+.p4u-classified-table img,
+.p4u-classified-table .p4u-classified-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+
+.p4u-classified-table strong {
+  display: block;
+  max-width: none;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #06172a;
+}
+
+.p4u-classified-table small {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.78rem;
+  color: #60748b;
+}
+
+.p4u-classified-id {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #51657d;
+  letter-spacing: 0.02em;
+}
+
+.p4u-classified-pill {
+  min-width: 0;
+  min-height: 22px;
+  padding: 3px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: lowercase;
+}
+
+.p4u-classified-empty {
+  padding: 32px 16px !important;
+}
