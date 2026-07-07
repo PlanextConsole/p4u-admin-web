@@ -12,7 +12,6 @@ import {
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import FormModal from "../../components/admin/FormModal";
-import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
 import { IMAGE_ACCEPT } from "../../lib/acceptImages";
 
@@ -42,14 +41,14 @@ function adId(row) {
 }
 
 function formatDateTime(value) {
-  if (!value) return { date: "—", time: "" };
+  if (!value) return "—";
   const dt = new Date(value);
-  if (Number.isNaN(dt.getTime())) return { date: "—", time: "" };
-  const day = dt.toLocaleString("en-IN", { day: "2-digit" });
+  if (Number.isNaN(dt.getTime())) return "—";
+  const day = dt.toLocaleString("en-IN", { day: "numeric" });
   const mon = dt.toLocaleString("en-IN", { month: "short" });
   const yr = String(dt.getFullYear()).slice(-2);
   const time = dt.toLocaleString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
-  return { date: `${day} ${mon} ${yr}`, time };
+  return `${day} ${mon} ${yr}, ${time}`;
 }
 
 function formatInr(value) {
@@ -225,6 +224,20 @@ const ClassifiedAdsReportLayer = () => {
     }
   }, [load]);
 
+  const handleDeleteAd = useCallback(async (row) => {
+    if (!window.confirm("Delete this classified ad?")) return;
+    setStatusUpdatingId(row.id);
+    try {
+      await deleteClassifiedProduct(row.id);
+      toast.success("Classified ad deleted.");
+      await load();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : String(e));
+    } finally {
+      setStatusUpdatingId("");
+    }
+  }, [load]);
+
   const enriched = useMemo(() => products.map((row) => {
     const meta = parseMeta(row.metadata);
     const category = maps.categories[row.categoryId]?.name || meta.category || "--";
@@ -282,6 +295,7 @@ const ClassifiedAdsReportLayer = () => {
           <table className='p4u-classified-table'>
             <thead>
               <tr>
+                <th className='col-id'>ID</th>
                 <th className='col-image'>Image</th>
                 <th className='col-title'>Title</th>
                 <th className='col-price'>Price</th>
@@ -289,18 +303,18 @@ const ClassifiedAdsReportLayer = () => {
                 <th className='col-poster'>Posted By</th>
                 <th className='col-status'>Status</th>
                 <th className='col-date'>Created</th>
-                <TableActionHeader className='col-actions' />
+                <th className='col-date'>Updated</th>
+                <th className='col-actions'>Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={8} className='p4u-classified-empty'>Loading...</td></tr>
+                <tr><td colSpan={10} className='p4u-classified-empty'>Loading...</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={8} className='p4u-classified-empty'>No classified ads found.</td></tr>
-              ) : filtered.map((item) => {
-                const created = formatDateTime(item.createdAt);
-                return (
-                <tr key={item.row.id}>
+                <tr><td colSpan={10} className='p4u-classified-empty'>No classified ads found.</td></tr>
+              ) : filtered.map((item) => (
+                <tr key={item.row.id} className={item.status === "pending" ? "is-pending-row" : ""}>
+                  <td className='col-id'><span className='p4u-classified-id'>{item.id}</span></td>
                   <td className='col-image'>
                     {item.image ? (
                       <img src={resolveMediaUrl(item.image)} alt={item.title} onError={(e) => { e.currentTarget.style.display = "none"; }} />
@@ -310,45 +324,53 @@ const ClassifiedAdsReportLayer = () => {
                   </td>
                   <td className='col-title'>
                     <strong>{item.title}</strong>
-                    <small>{item.category} · {item.id}</small>
+                    <small>{item.category}</small>
                   </td>
                   <td className='col-price'>{formatInr(item.price)}</td>
-                  <td className='col-location'>{[item.area, item.city].filter(Boolean).join(", ") || "—"}</td>
+                  <td className='col-location'>{[item.area, item.city].filter(Boolean).join(" ") || "—"}</td>
                   <td className='col-poster'>{item.vendor}</td>
                   <td className='col-status'>
                     <span className={`p4u-classified-pill is-${item.status}`}>{item.status}</span>
                   </td>
-                  <td className='col-date'>
-                    <span className='p4u-classified-date'>{created.date}</span>
-                    {created.time ? <small className='p4u-classified-time'>{created.time}</small> : null}
+                  <td className='col-date'>{formatDateTime(item.createdAt)}</td>
+                  <td className='col-date'>{formatDateTime(item.updatedAt)}</td>
+                  <td className='col-actions'>
+                    <div className='p4u-classified-actions'>
+                      {item.status !== "approved" ? (
+                        <button
+                          type='button'
+                          className='is-approve'
+                          title='Approve'
+                          disabled={statusUpdatingId === item.row.id}
+                          onClick={() => setAdStatus(item.row, "approved")}
+                        >
+                          <Icon icon='lucide:check-circle' />
+                        </button>
+                      ) : null}
+                      {item.status !== "rejected" ? (
+                        <button
+                          type='button'
+                          className='is-reject'
+                          title='Reject'
+                          disabled={statusUpdatingId === item.row.id}
+                          onClick={() => setAdStatus(item.row, "rejected")}
+                        >
+                          <Icon icon='lucide:x-circle' />
+                        </button>
+                      ) : null}
+                      <button
+                        type='button'
+                        className='is-delete'
+                        title='Delete'
+                        disabled={statusUpdatingId === item.row.id}
+                        onClick={() => handleDeleteAd(item.row)}
+                      >
+                        <Icon icon='lucide:trash-2' />
+                      </button>
+                    </div>
                   </td>
-                  <TableActionCell className='col-actions'>
-                    <TableActionButtons
-                      size='sm'
-                      gap={8}
-                      actions={[
-                        {
-                          type: "verify",
-                          title: "Approve",
-                          hidden: item.status === "approved",
-                          disabled: statusUpdatingId === item.row.id,
-                          onClick: () => setAdStatus(item.row, "approved"),
-                        },
-                        {
-                          type: "cancel",
-                          title: "Reject",
-                          hidden: item.status === "rejected",
-                          disabled: statusUpdatingId === item.row.id,
-                          onClick: () => setAdStatus(item.row, "rejected"),
-                        },
-                        { type: "view", onClick: () => setModal({ mode: "view", id: item.row.id }) },
-                        { type: "edit", onClick: () => setModal({ mode: "edit", id: item.row.id }) },
-                      ]}
-                    />
-                  </TableActionCell>
                 </tr>
-                );
-              })}
+              ))}
             </tbody>
           </table>
         </div>

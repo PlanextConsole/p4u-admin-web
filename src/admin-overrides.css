@@ -9624,76 +9624,75 @@ body .p4u-form-modal-portal .p4u-ref-modal-close {
   color: #08233f;
 }
 
-/* Classified Ads — compact table (no horizontal scroll, vendor-list alignment) */
+/* Classified Ads — reference layout (ID, Image, Title, …, Approve/Reject/Delete) */
 .p4u-classified-page {
   min-height: 0 !important;
-  padding: 16px 20px 24px;
+  padding: 20px 24px 28px;
+  background: #f7fafc;
 }
 
 .p4u-classified-hero {
-  margin-bottom: 14px;
+  margin-bottom: 18px;
 }
 
 .p4u-classified-stats {
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: 14px;
+  margin-bottom: 16px;
 }
 
 .p4u-classified-stats article {
-  min-height: 72px;
-  padding: 12px 16px;
-  gap: 12px;
+  min-height: 88px;
+  padding: 18px 22px;
+  gap: 14px;
 }
 
 .p4u-classified-stats svg {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
 }
 
 .p4u-classified-stats span {
-  font-size: 0.72rem;
-  margin-bottom: 4px;
+  font-size: 0.6875rem;
+  margin-bottom: 6px;
 }
 
 .p4u-classified-stats strong {
-  font-size: 1.15rem;
+  font-size: 1.35rem;
 }
 
 .p4u-classified-card {
-  border-radius: 12px;
+  border-radius: 14px;
+  overflow: hidden;
 }
 
 .p4u-classified-toolbar {
-  padding: 12px 14px;
-  gap: 10px;
+  padding: 14px 16px;
+  gap: 12px;
+  border-bottom: 1px solid #edf3f6;
 }
 
 .p4u-classified-search,
 .p4u-classified-select,
 .p4u-classified-date,
 .p4u-classified-toolbar button {
-  min-height: 38px;
-  border-radius: 10px;
-  font-size: 0.8125rem;
-  padding: 0 10px;
+  min-height: 42px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  padding: 0 12px;
 }
 
 .p4u-classified-search {
-  width: min(280px, 100%);
+  width: min(300px, 100%);
 }
 
 .p4u-classified-search input,
 .p4u-classified-select select {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
 }
 
 .p4u-classified-select {
-  min-width: 120px;
-}
-
-.p4u-classified-date span {
-  font-size: 0.75rem;
+  min-width: 130px;
 }
 
 .p4u-classified-table-wrap {
@@ -9703,18 +9702,22 @@ body .p4u-form-modal-portal .p4u-ref-modal-close {
 .p4u-classified-table {
   width: 100%;
   min-width: 0 !important;
-  table-layout: auto;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 0.875rem;
 }
 
 .p4u-classified-table th {
-  padding: 10px 12px;
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.05em;
+  padding: 12px 10px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   white-space: nowrap;
   text-align: left;
+  background: #f8fcfb;
+  border-bottom: 1px solid #e7f0f3;
+  color: #516177;
 }
 
 .p4u-classified-table th.col-actions {
@@ -9722,75 +9725,91 @@ body .p4u-form-modal-portal .p4u-ref-modal-close {
 }
 
 .p4u-classified-table td {
-  padding: 10px 12px;
+  padding: 12px 10px;
   font-size: 0.875rem;
-  line-height: 1.3;
+  line-height: 1.35;
   vertical-align: middle;
-  word-break: normal;
-  overflow-wrap: anywhere;
+  border-bottom: 1px solid #edf3f6;
+  color: #001b36;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.p4u-classified-table tbody tr.is-pending-row {
+  background: #fffaf3;
+}
+
+.p4u-classified-table .col-id {
+  width: 9%;
 }
 
 .p4u-classified-table .col-image {
-  width: 52px;
-  padding-left: 14px;
-  padding-right: 6px;
+  width: 5%;
 }
 
 .p4u-classified-table .col-title {
-  min-width: 140px;
+  width: 14%;
 }
 
 .p4u-classified-table .col-price {
-  white-space: nowrap;
-  width: 1%;
+  width: 8%;
 }
 
 .p4u-classified-table .col-location {
-  min-width: 100px;
-  max-width: 160px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  width: 14%;
 }
 
 .p4u-classified-table .col-poster {
-  min-width: 100px;
-  max-width: 140px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  width: 11%;
 }
 
 .p4u-classified-table .col-status {
-  width: 1%;
-  white-space: nowrap;
+  width: 9%;
 }
 
 .p4u-classified-table .col-date {
-  width: 1%;
-  white-space: nowrap;
+  width: 12%;
   font-size: 0.8125rem;
   color: #50627a;
+  white-space: nowrap;
 }
 
 .p4u-classified-table .col-actions {
-  width: 1%;
-  white-space: nowrap;
-  padding-right: 14px;
+  width: 8%;
+  text-align: center;
 }
 
 .p4u-classified-table img,
 .p4u-classified-table .p4u-classified-placeholder {
-  width: 38px;
-  height: 38px;
-  border-radius: 8px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.p4u-classified-table .p4u-classified-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f8f8;
+  color: #b07b4e;
+}
+
+.p4u-classified-id {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #001b36;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .p4u-classified-table strong {
   display: block;
   font-size: 0.875rem;
-  font-weight: 700;
-  color: #06172a;
+  font-weight: 600;
+  color: #001b36;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -9798,26 +9817,17 @@ body .p4u-form-modal-portal .p4u-ref-modal-close {
 
 .p4u-classified-table small {
   display: block;
-  margin-top: 2px;
-  font-size: 0.75rem;
-  color: #60748b;
+  margin-top: 3px;
+  font-size: 0.8125rem;
+  color: #50627a;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.p4u-classified-date {
-  display: block;
-  color: #06172a;
-  font-size: 0.8125rem;
-  font-weight: 500;
-}
-
-.p4u-classified-time {
-  display: block;
-  margin-top: 2px;
-  font-size: 0.75rem;
-  color: #60748b;
+.p4u-classified-table .col-price,
+.p4u-classified-table .col-poster {
+  white-space: nowrap;
 }
 
 .p4u-classified-pill {
@@ -9827,12 +9837,71 @@ body .p4u-form-modal-portal .p4u-ref-modal-close {
   min-width: 72px;
   min-height: 24px;
   padding: 4px 12px;
-  font-size: 0.75rem;
-  font-weight: 700;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
   text-transform: capitalize;
   white-space: nowrap;
 }
 
+.p4u-classified-pill.is-approved {
+  color: #009b72;
+  background: #e3f6ef;
+}
+
+.p4u-classified-pill.is-pending {
+  color: #ff8a1f;
+  background: #fff1e2;
+}
+
+.p4u-classified-pill.is-rejected {
+  color: #ff3152;
+  background: #fff0f3;
+}
+
+.p4u-classified-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.p4u-classified-actions button {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.p4u-classified-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.p4u-classified-actions svg {
+  width: 22px;
+  height: 22px;
+}
+
+.p4u-classified-actions .is-approve {
+  color: #009b72;
+}
+
+.p4u-classified-actions .is-reject {
+  color: #ff3152;
+}
+
+.p4u-classified-actions .is-delete {
+  color: #64748b;
+}
+
+.p4u-classified-actions .is-delete:hover:not(:disabled) {
+  color: #ff3152;
+}
+
 .p4u-classified-empty {
-  padding: 24px 16px !important;
+  padding: 28px 16px !important;
+  text-align: center;
+  color: #50627a !important;
 }
