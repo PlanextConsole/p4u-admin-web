@@ -25,11 +25,21 @@ import ImageUploadField from "../../components/admin/ImageUploadField";
 
 const YES_NO = ["Yes", "No"];
 
+/** Normalize a possibly-stringified JSON metadata column into a plain object. */
+function parseMeta(value) {
+  if (!value) return {};
+  if (typeof value === "string") {
+    try { return JSON.parse(value) || {}; } catch { return {}; }
+  }
+  return typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
 const emptyServiceRoot = () => ({
   parentId: "",
   name: "",
   availability: "No",
   trending: "No",
+  showOnHome: "No",
   description: "",
   iconUrl: "",
 });
@@ -39,6 +49,7 @@ const emptyProductVisual = () => ({
   name: "",
   availability: "No",
   trending: "No",
+  showOnHome: "No",
   description: "",
   thumbnailUrl: "",
   bannerUrls: [],
@@ -74,6 +85,8 @@ const CategoryFormLayer = ({
   };
 
   const [formData, setFormData] = useState(initialEmpty);
+  // Preserve any other metadata keys on the row so we only patch showOnHome.
+  const [baseMetadata, setBaseMetadata] = useState({});
   const [entityLoading, setEntityLoading] = useState(Boolean(categoryId));
   const [loadError, setLoadError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -83,12 +96,16 @@ const CategoryFormLayer = ({
 
   const applyRow = useCallback(
     (row) => {
+      const meta = parseMeta(row.metadata);
+      setBaseMetadata(meta);
+      const showOnHome = meta.showOnHome ? "Yes" : "No";
       if (isServiceRoot) {
         setFormData({
           parentId: "",
           name: row.name || "",
           availability: row.availability ? "Yes" : "No",
           trending: row.trending ? "Yes" : "No",
+          showOnHome,
           description: row.description || "",
           iconUrl: row.iconUrl || "",
         });
@@ -98,6 +115,7 @@ const CategoryFormLayer = ({
           name: row.name || "",
           availability: row.availability ? "Yes" : "No",
           trending: row.trending ? "Yes" : "No",
+          showOnHome,
           description: row.description || "",
           thumbnailUrl: row.thumbnailUrl || "",
           bannerUrls: Array.isArray(row.bannerUrls) ? row.bannerUrls : [],
@@ -109,6 +127,7 @@ const CategoryFormLayer = ({
           name: row.name || "",
           availability: row.availability ? "Yes" : "No",
           trending: row.trending ? "Yes" : "No",
+          showOnHome,
           description: row.description || "",
           thumbnailUrl: row.thumbnailUrl || "",
           bannerUrls: Array.isArray(row.bannerUrls) ? row.bannerUrls : [],
@@ -222,6 +241,9 @@ const CategoryFormLayer = ({
     setSubmitting(true);
     try {
       const parentId = !isRoot ? formData.parentId?.trim() || null : null;
+      // Persist the "Show on Home" flag inside metadata (no schema column needed),
+      // preserving any other metadata keys already on the row.
+      const metadataPayload = { ...baseMetadata, showOnHome: formData.showOnHome === "Yes" };
 
       if (isServiceRoot) {
         const payload = {
@@ -234,6 +256,7 @@ const CategoryFormLayer = ({
           iconUrl: iconUrl || null,
           thumbnailUrl: null,
           bannerUrls: null,
+          metadata: metadataPayload,
         };
         if (isEdit && categoryId) {
           await updateServiceCategory(categoryId, payload);
@@ -253,6 +276,7 @@ const CategoryFormLayer = ({
           bannerUrls: bannerUrls.length > 0 ? bannerUrls : null,
           commissionOverridePercent:
             formData.commissionOverridePercent !== "" ? Number(formData.commissionOverridePercent) : null,
+          metadata: metadataPayload,
         };
         if (isEdit && categoryId) {
           await updateProductCategory(categoryId, payload);
@@ -271,6 +295,7 @@ const CategoryFormLayer = ({
           description: formData.description.trim() || null,
           thumbnailUrl: thumbnailUrl || null,
           bannerUrls: bannerUrls.length > 0 ? bannerUrls : null,
+          metadata: metadataPayload,
         };
         if (isEdit && categoryId) {
           await updateServiceSubcategory(categoryId, payload);
@@ -291,6 +316,7 @@ const CategoryFormLayer = ({
           bannerUrls: bannerUrls.length > 0 ? bannerUrls : null,
           commissionOverridePercent:
             formData.commissionOverridePercent !== "" ? Number(formData.commissionOverridePercent) : null,
+          metadata: metadataPayload,
         };
         if (isEdit && categoryId) {
           await updateProductSubcategory(categoryId, payload);
@@ -416,6 +442,12 @@ const CategoryFormLayer = ({
               <div>
                 <label className="form-label">Trending</label>
                 <select className="form-control form-select" name="trending" value={formData.trending} onChange={handleChange} disabled={disabled}>
+                  {YES_NO.map((o) => <option key={o} value={o}>{o}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="form-label">Show on Home</label>
+                <select className="form-control form-select" name="showOnHome" value={formData.showOnHome} onChange={handleChange} disabled={disabled}>
                   {YES_NO.map((o) => <option key={o} value={o}>{o}</option>)}
                 </select>
               </div>

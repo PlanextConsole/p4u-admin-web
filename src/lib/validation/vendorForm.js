@@ -66,9 +66,6 @@ export function validateVendorForm(form) {
     errors.maxRedemptionPercent = "Max redemption must be between 0 and 100";
   }
 
-  if (vendorKind === "product" && !String(form.categorySlug || "").trim()) {
-    errors.categorySlug = "Vendor category is required";
-  }
   if (
     vendorKind === "service" &&
     (!Array.isArray(form.selectedServiceIds) || !form.selectedServiceIds.length)

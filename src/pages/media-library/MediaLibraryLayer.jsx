@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import {
   createMediaLibraryFolder,
   deleteMediaLibraryAsset,
+  deleteMediaLibraryFolder,
   listMediaLibraryAssets,
   listMediaLibraryFolders,
   uploadMediaLibraryFiles,
@@ -204,6 +205,22 @@ const MediaLibraryLayer = () => {
     }
   };
 
+  const handleDeleteFolder = async (folder) => {
+    const count = folder.fileCount || 0;
+    const warn = count
+      ? `Delete folder "${folder.name}" and its ${count} file(s)? This cannot be undone.`
+      : `Delete folder "${folder.name}"?`;
+    if (!window.confirm(warn)) return;
+    try {
+      await deleteMediaLibraryFolder(folder.id);
+      toast.success("Folder deleted.");
+      if (selectedFolder?.id === folder.id) setSelectedFolder(null);
+      await loadFolders();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : String(err));
+    }
+  };
+
   const renderFolderGrid = () => (
     <div>
       <div className='d-flex flex-wrap align-items-center justify-content-between gap-12 mb-16'>
@@ -236,22 +253,34 @@ const MediaLibraryLayer = () => {
         <div className='row g-16'>
           {folders.map((f) => (
             <div key={f.id} className='col-sm-6 col-md-4 col-lg-3'>
-              <button
-                type='button'
-                className='card border-0 shadow-sm radius-12 p-20 w-100 text-start bg-base h-100 hover-border-primary-200'
-                style={{ border: "1px solid var(--neutral-200, #e9ecef)" }}
-                onClick={() => setSelectedFolder(f)}
-              >
-                <div className='d-flex flex-column align-items-center text-center gap-8'>
-                  <Icon icon='mdi:folder-outline' className='text-4xl text-primary-600' />
-                  <div className='fw-semibold text-truncate w-100' title={f.name}>
-                    {f.name}
+              <div className='position-relative h-100'>
+                <button
+                  type='button'
+                  className='card border-0 shadow-sm radius-12 p-20 w-100 text-start bg-base h-100 hover-border-primary-200'
+                  style={{ border: "1px solid var(--neutral-200, #e9ecef)" }}
+                  onClick={() => setSelectedFolder(f)}
+                >
+                  <div className='d-flex flex-column align-items-center text-center gap-8'>
+                    <Icon icon='mdi:folder-outline' className='text-4xl text-primary-600' />
+                    <div className='fw-semibold text-truncate w-100' title={f.name}>
+                      {f.name}
+                    </div>
+                    <span className='badge bg-primary-50 text-primary-600 radius-8'>
+                      {f.fileCount ? `${f.fileCount} files` : "Empty"}
+                    </span>
                   </div>
-                  <span className='badge bg-primary-50 text-primary-600 radius-8'>
-                    {f.fileCount ? `${f.fileCount} files` : "Empty"}
-                  </span>
-                </div>
-              </button>
+                </button>
+                <button
+                  type='button'
+                  className='btn btn-sm btn-outline-danger radius-8 position-absolute'
+                  style={{ top: 8, right: 8, lineHeight: 1, padding: "4px 6px" }}
+                  title='Delete folder'
+                  aria-label={`Delete folder ${f.name}`}
+                  onClick={(e) => { e.stopPropagation(); handleDeleteFolder(f); }}
+                >
+                  <Icon icon='mdi:trash-can-outline' />
+                </button>
+              </div>
             </div>
           ))}
         </div>

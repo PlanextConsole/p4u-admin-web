@@ -25,6 +25,20 @@ function toCsv(rows) {
   return rows.map((r) => r.map(esc).join(",")).join("\n");
 }
 
+/** Normalize a possibly-stringified JSON metadata column into a plain object. */
+function parseMeta(value) {
+  if (!value) return {};
+  if (typeof value === "string") {
+    try { return JSON.parse(value) || {}; } catch { return {}; }
+  }
+  return typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+/** Whether a category/subcategory is flagged to display on the customer Home page. */
+function isOnHome(cat) {
+  return parseMeta(cat.metadata).showOnHome === true;
+}
+
 function yesNoPill(val, invert = false) {
   const yes = Boolean(val);
   const showYes = invert ? !yes : yes;
@@ -154,8 +168,8 @@ const CategoryListLayer = ({ variant = "service-roots" }) => {
     if (availFilter === "deactive") rows = rows.filter((c) => !c.availability);
     if (trendFilter === "yes") rows = rows.filter((c) => c.trending);
     if (trendFilter === "no") rows = rows.filter((c) => !c.trending);
-    if (homeFilter === "yes") rows = rows.filter((c) => c.isActive !== false);
-    if (homeFilter === "no") rows = rows.filter((c) => c.isActive === false);
+    if (homeFilter === "yes") rows = rows.filter((c) => isOnHome(c));
+    if (homeFilter === "no") rows = rows.filter((c) => !isOnHome(c));
     if (parentFilter !== "all") rows = rows.filter((c) => c.parentId === parentFilter);
     return rows;
   }, [pool, search, subsByParent, parentById, isServiceRoots, isProductRoots, availFilter, trendFilter, homeFilter, parentFilter]);
@@ -228,7 +242,7 @@ const CategoryListLayer = ({ variant = "service-roots" }) => {
       return [
         i + 1,
         cat.sortOrder ?? 0,
-        cat.isActive !== false ? "Yes" : "No",
+        isOnHome(cat) ? "Yes" : "No",
         cat.name || "",
         typeLabel,
         ...(isSubTable ? [parentName] : []),
@@ -287,10 +301,6 @@ const CategoryListLayer = ({ variant = "service-roots" }) => {
           <option value="all">All on home</option>
           <option value="yes">On home</option>
           <option value="no">Not on home</option>
-        </select>
-        <select defaultValue="all" aria-label="Filter type" disabled>
-          <option value="all">All Types</option>
-          <option value={typeLabel}>{typeLabel}</option>
         </select>
         {isSubTable && (
           <select value={parentFilter} onChange={(e) => setParentFilter(e.target.value)} aria-label="Filter parent category">
@@ -372,7 +382,7 @@ const CategoryListLayer = ({ variant = "service-roots" }) => {
               {filtered.length > 0 ? (
                 filtered.map((cat, index) => {
                   const chips = chipItems(cat);
-                  const homePill = yesNoPill(cat.isActive !== false);
+                  const homePill = yesNoPill(isOnHome(cat));
                   const trendPill = yesNoPill(cat.trending);
                   const imgUrl = showThumbnailImage
                     ? cat.thumbnailUrl

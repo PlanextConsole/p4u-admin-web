@@ -16,7 +16,9 @@ import { IMAGE_ACCEPT, IMAGE_OR_PDF_ACCEPT } from "../../lib/acceptImages";
 import ImageUploadField from "../../components/admin/ImageUploadField";
 import { validateVendorForm } from "../../lib/validation/vendorForm";
 
-const VEND_REF_RE = /^VEND[a-f0-9]{6}$/i;
+// Backend generates refs as "VEND" + zero-padded digits (e.g. VEND0000001);
+// keep it tolerant of legacy hex-style refs too.
+const VEND_REF_RE = /^VEND[a-z0-9]{4,}$/i;
 
 const emptyForm = (kind = "product") => ({
   vendorKind: kind === "service" ? "service" : "product",
@@ -349,8 +351,9 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
       }
 
       const categoriesJson = uploaded.categorySlug ? [uploaded.categorySlug] : null;
+      const wantsServices = uploaded.vendorKind === "service" || uploaded.vendorKind === "both";
       const servicesJson =
-        uploaded.vendorKind === "service" && Array.isArray(uploaded.selectedServiceIds) && uploaded.selectedServiceIds.length > 0
+        wantsServices && Array.isArray(uploaded.selectedServiceIds) && uploaded.selectedServiceIds.length > 0
           ? uploaded.selectedServiceIds
           : null;
       const addressJson = {
@@ -363,7 +366,7 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
       if (uploaded.gstCertUrl?.trim()) documentsJson.gstCertificateUrl = uploaded.gstCertUrl.trim();
       if (uploaded.panCardUrl?.trim()) documentsJson.panCardUrl = uploaded.panCardUrl.trim();
 
-      const vk = uploaded.vendorKind === "service" ? "service" : "product";
+      const vk = uploaded.vendorKind === "service" ? "service" : uploaded.vendorKind === "both" ? "both" : "product";
 
       const payload = {
         ownerName: uploaded.ownerName.trim(),
@@ -377,7 +380,7 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
         maxRedemptionPercent: uploaded.maxRedemptionPercent ? Number(uploaded.maxRedemptionPercent) : null,
         thumbnailUrl: uploaded.thumbnailUrl?.trim() || null,
         vendorKind: vk,
-        vendorType: vk === "service" ? "SERVICE" : "PRODUCT",
+        vendorType: vk === "both" ? "BOTH" : vk === "service" ? "SERVICE" : "PRODUCT",
         bannerUrl: null,
         gst: uploaded.gst?.trim().toUpperCase() || null,
         pan: uploaded.pan?.trim().toUpperCase() || null,
@@ -516,7 +519,9 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
                   <DisplayField label='Business Name *' value={formData.businessName || "—"} />
                   <DisplayField label='Email' value={formData.email || "—"} icon='mdi:email-outline' />
                   <DisplayField label='Mobile' value={formData.phone || "—"} icon='mdi:phone-outline' />
-                  <DisplayField label='Vendor Category' value={categoryLabel} col='col-12' />
+                  {formData.vendorKind === "service" && (
+                    <DisplayField label='Service' value={categoryLabel} col='col-12' />
+                  )}
                 </div>
               ) : (
                 <div className='row g-12 mb-16'>
@@ -527,15 +532,7 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
                   <Field col='col-md-6' label='Business Name *' error={fieldErrors.businessName}><input className={`form-control radius-10${fieldErrors.businessName ? " is-invalid" : ""}`} name='businessName' value={formData.businessName} onChange={handleChange} disabled={disabled} /></Field>
                   <Field col='col-md-6' label='Email *' error={fieldErrors.email}><input type='email' className={`form-control radius-10${fieldErrors.email ? " is-invalid" : ""}`} name='email' value={formData.email} onChange={handleChange} disabled={disabled} /></Field>
                   <Field col='col-md-6' label='Mobile *' error={fieldErrors.phone}><input className={`form-control radius-10${fieldErrors.phone ? " is-invalid" : ""}`} name='phone' value={formData.phone} onChange={handleChange} disabled={disabled} placeholder='10-digit mobile' /></Field>
-                  {formData.vendorKind !== "service" && (
-                    <Field col='col-md-6' label='Vendor Category *' error={fieldErrors.categorySlug}>
-                      <select className={`form-select radius-10${fieldErrors.categorySlug ? " is-invalid" : ""}`} name='categorySlug' value={formData.categorySlug} onChange={handleChange} disabled={disabled}>
-                        <option value=''>Select...</option>
-                        {catalogCategories.filter((c) => !c.parentId).map((c) => <option key={c.id} value={c.slug || c.name}>{c.name}</option>)}
-                      </select>
-                    </Field>
-                  )}
-                  {formData.vendorKind === "service" && (
+                  {(formData.vendorKind === "service" || formData.vendorKind === "both") && (
                     <Field col='col-md-6' label='Services *' error={fieldErrors.selectedServiceIds}>
                       <select className={`form-select radius-10${fieldErrors.selectedServiceIds ? " is-invalid" : ""}`} name='selectedServiceIds' value={formData.selectedServiceIds?.[0] || ""} onChange={handleServicesChange} disabled={disabled}>
                         <option value=''>Select service...</option>
@@ -555,6 +552,7 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
                     <select className='form-select radius-10' name='vendorKind' value={formData.vendorKind} onChange={handleChange} disabled={disabled || isView} required>
                       <option value='product'>Product Vendor</option>
                       <option value='service'>Service Vendor</option>
+                      <option value='both'>Both</option>
                     </select>
                   </Field>
                   <Field col='col-md-12' label={<span className='d-inline-flex align-items-center gap-6'><Icon icon='mdi:crown' className='text-warning-main' /> Vendor Plan</span>}>

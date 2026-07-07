@@ -19,6 +19,10 @@ function isPendingModeration(p) {
   return String(p.moderationStatus || "").toLowerCase() === "pending";
 }
 
+function isRejectedModeration(p) {
+  return String(p.moderationStatus || "").toLowerCase() === "rejected";
+}
+
 function parseMeta(p) {
   const raw = p.metadata || p.metaJson;
   if (!raw) return {};
@@ -90,6 +94,21 @@ const ProductListLayer = () => {
         availability: true,
       });
       toast.success("Product approved and published.");
+      await load();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : String(e));
+    }
+  };
+
+  const handleRejectProduct = async (id) => {
+    if (!window.confirm("Reject this product? It will not be published to the catalog.")) return;
+    try {
+      await updateProduct(id, {
+        moderationStatus: "rejected",
+        isActive: false,
+        availability: false,
+      });
+      toast.success("Product rejected.");
       await load();
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : String(e));
@@ -176,8 +195,9 @@ const ProductListLayer = () => {
     URL.revokeObjectURL(url);
   };
 
-  const statusPill = (pendingMod, active) => {
+  const statusPill = (pendingMod, active, rejected) => {
     if (pendingMod) return { label: "Pending approval", cls: "p4u-product-pill is-pending" };
+    if (rejected) return { label: "Rejected", cls: "p4u-product-pill is-rejected" };
     if (active) return { label: "Active", cls: "p4u-product-pill is-active" };
     return { label: "Inactive", cls: "p4u-product-pill is-inactive" };
   };
@@ -279,9 +299,10 @@ const ProductListLayer = () => {
                   const price = resolveAdminProductUnitPrice(product);
                   const discount = Number(product.discountAmount || 0) || 0;
                   const pendingMod = isPendingModeration(product);
-                  const active = !pendingMod && Boolean(product.availability || product.isActive);
+                  const rejectedMod = isRejectedModeration(product);
+                  const active = !pendingMod && !rejectedMod && Boolean(product.availability || product.isActive);
                   const ref = product.productRef || `PRD-${String(product.id || "").slice(-6)}`;
-                  const pill = statusPill(pendingMod, active);
+                  const pill = statusPill(pendingMod, active, rejectedMod);
                   const categoryName = categoryMap[product.categoryId] || "—";
                   const typeLabel = productTypeLabel(product);
                   return (
@@ -302,7 +323,7 @@ const ProductListLayer = () => {
                       <td>{formatProductDateTime(product.updatedAt)}</td>
                       <td>
                         <div className="d-flex align-items-center gap-2 flex-wrap">
-                          {pendingMod ? (
+                          {pendingMod || rejectedMod ? (
                             <button
                               type="button"
                               onClick={() => void handleApproveProduct(product.id)}
@@ -310,6 +331,16 @@ const ProductListLayer = () => {
                               title="Approve and publish to catalog"
                             >
                               Approve
+                            </button>
+                          ) : null}
+                          {pendingMod ? (
+                            <button
+                              type="button"
+                              onClick={() => void handleRejectProduct(product.id)}
+                              className="p4u-products-btn-reject"
+                              title="Reject this product"
+                            >
+                              Reject
                             </button>
                           ) : null}
                           <button

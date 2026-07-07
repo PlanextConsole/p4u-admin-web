@@ -3366,7 +3366,7 @@ button.fw-semibold {
 
 .p4u-vendor-step.is-done { background: #0b7285; }
 .p4u-vendor-step + .p4u-vendor-step::before {
-  content: "ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢";
+  content: "";
   position: absolute;
   left: -8px;
   top: -10px;
@@ -4131,6 +4131,19 @@ button.fw-semibold {
   font-size: 0.82rem;
 }
 
+.p4u-products-btn-reject {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: #dc2626;
+  color: #fff;
+  font-weight: 650;
+  font-size: 0.82rem;
+}
+
 .p4u-products-table-wrap {
   overflow-x: auto;
   border: 1px solid #e4edf4;
@@ -4180,6 +4193,7 @@ button.fw-semibold {
 .p4u-product-pill.is-active { background: #dcfce7; color: #15803d; }
 .p4u-product-pill.is-pending { background: #fef3c7; color: #b45309; }
 .p4u-product-pill.is-inactive { background: #f1f5f9; color: #64748b; }
+.p4u-product-pill.is-rejected { background: #fee2e2; color: #b91c1c; }
 
 .p4u-products-action-btn {
   width: 34px;
@@ -8331,6 +8345,27 @@ button.fw-semibold {
   position: relative;
   overflow: hidden;
   cursor: pointer;
+}
+
+.p4u-ad-library-btn {
+  margin-top: 8px;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #00a8a5;
+  border-radius: 10px;
+  background: #f4fbfb;
+  color: #007a78;
+  font-size: 0.82rem;
+  font-weight: 650;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.p4u-ad-library-btn:hover {
+  background: #e6f7f6;
 }
 
 .p4u-ad-upload input {

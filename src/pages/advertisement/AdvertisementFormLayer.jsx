@@ -5,6 +5,7 @@ import { createAdvertisement, listProducts, updateAdvertisement, uploadFile } fr
 import { ApiError } from "../../lib/api/client";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
 import { IMAGE_ACCEPT } from "../../lib/acceptImages";
+import MediaLibraryPicker from "../../components/admin/MediaLibraryPicker";
 
 const pageOptions = [
   { value: "all", label: "All Pages" },
@@ -55,6 +56,8 @@ const AdvertisementFormLayer = ({ isEdit = false, isView = false, isSocioDefault
   const [desktopFile, setDesktopFile] = useState(null);
   const [mobileFile, setMobileFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  // Which image slot ('desktop' | 'mobile') the Media Library picker is choosing for.
+  const [pickerFor, setPickerFor] = useState(null);
   const desktopRef = useRef(null);
   const mobileRef = useRef(null);
 
@@ -207,15 +210,35 @@ const AdvertisementFormLayer = ({ isEdit = false, isView = false, isSocioDefault
     }
   };
 
-  const renderDropzone = ({ label, value, file, onChange }) => (
-    <label className='p4u-ad-upload'>
-      <input type='file' accept={IMAGE_ACCEPT} onChange={onChange} disabled={disabled} />
-      {value ? <img src={resolveMediaUrl(value)} alt={label} onError={(event) => { event.currentTarget.style.display = "none"; }} /> : null}
-      <Icon icon='lucide:image' />
-      <span>{file ? file.name : label}</span>
-      <small>Click to open Media Library</small>
-    </label>
+  const renderDropzone = ({ label, value, file, onChange, slot }) => (
+    <>
+      <label className='p4u-ad-upload'>
+        <input type='file' accept={IMAGE_ACCEPT} onChange={onChange} disabled={disabled} />
+        {value ? <img src={resolveMediaUrl(value)} alt={label} onError={(event) => { event.currentTarget.style.display = "none"; }} /> : null}
+        <Icon icon='lucide:image' />
+        <span>{file ? file.name : label}</span>
+        <small>Click to upload from your device</small>
+      </label>
+      {!disabled ? (
+        <button type='button' className='p4u-ad-library-btn' onClick={() => setPickerFor(slot)}>
+          <Icon icon='mdi:folder-image' /> Choose from Media Library
+        </button>
+      ) : null}
+    </>
   );
+
+  const applyLibrarySelection = (url) => {
+    if (pickerFor === "desktop") {
+      desktopRef.current = null;
+      setDesktopFile(null);
+      setField("desktopImageUrl", url);
+    } else if (pickerFor === "mobile") {
+      mobileRef.current = null;
+      setMobileFile(null);
+      setField("mobileImageUrl", url);
+    }
+    setPickerFor(null);
+  };
 
   return (
     <form className='p4u-ad-modal' onSubmit={handleSubmit}>
@@ -252,11 +275,11 @@ const AdvertisementFormLayer = ({ isEdit = false, isView = false, isSocioDefault
       <div className='p4u-ad-grid'>
         <div className='p4u-ad-drop-field'>
           <span>Desktop Image</span>
-          {renderDropzone({ label: "Desktop", value: form.desktopImageUrl, file: desktopFile, onChange: pickDesktop })}
+          {renderDropzone({ label: "Desktop", value: form.desktopImageUrl, file: desktopFile, onChange: pickDesktop, slot: "desktop" })}
         </div>
         <div className='p4u-ad-drop-field'>
           <span>Mobile Image</span>
-          {renderDropzone({ label: "Mobile", value: form.mobileImageUrl, file: mobileFile, onChange: pickMobile })}
+          {renderDropzone({ label: "Mobile", value: form.mobileImageUrl, file: mobileFile, onChange: pickMobile, slot: "mobile" })}
         </div>
       </div>
 
@@ -358,6 +381,13 @@ const AdvertisementFormLayer = ({ isEdit = false, isView = false, isSocioDefault
         <button type='button' className='p4u-ad-cancel' onClick={() => (onCancel ? onCancel() : window.history.back())}>{isView ? "Back" : "Cancel"}</button>
         {!isView && <button type='submit' className='p4u-ad-submit' disabled={disabled}>{submitting ? "Saving..." : isEdit ? "Save" : "Create"}</button>}
       </div>
+
+      <MediaLibraryPicker
+        open={pickerFor !== null}
+        onClose={() => setPickerFor(null)}
+        onSelect={applyLibrarySelection}
+        title={pickerFor === "mobile" ? "Choose mobile image" : "Choose desktop image"}
+      />
     </form>
   );
 };

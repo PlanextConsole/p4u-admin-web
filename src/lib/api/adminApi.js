@@ -556,6 +556,10 @@ export function createMediaLibraryFolder(body) {
   return api.post("/api/admin/media-library/folders", body);
 }
 
+export function deleteMediaLibraryFolder(folderId) {
+  return api.delete(`/api/admin/media-library/folders/${encodeURIComponent(folderId)}`);
+}
+
 /** @param {{ limit?: number, offset?: number }} [params] */
 export function listMediaLibraryAssets(folderId, params) {
   return api.get(`/api/admin/media-library/folders/${encodeURIComponent(folderId)}/assets`, params);
