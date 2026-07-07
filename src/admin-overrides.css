@@ -9744,11 +9744,15 @@ body .p4u-form-modal-portal .p4u-ref-modal-close {
 }
 
 .p4u-classified-table .col-image {
-  width: 5%;
+  width: 56px;
+  min-width: 56px;
+  max-width: 56px;
+  padding-left: 12px;
+  padding-right: 8px;
 }
 
 .p4u-classified-table .col-title {
-  width: 14%;
+  width: 15%;
 }
 
 .p4u-classified-table .col-price {
@@ -9779,20 +9783,33 @@ body .p4u-form-modal-portal .p4u-ref-modal-close {
   text-align: center;
 }
 
-.p4u-classified-table img,
+.p4u-classified-table img.p4u-classified-thumb,
 .p4u-classified-table .p4u-classified-placeholder {
   width: 44px;
   height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: 50%;
   object-fit: cover;
+  flex-shrink: 0;
+}
+
+.p4u-classified-table img.p4u-classified-thumb {
+  display: block !important;
+  background: #f1f8f8;
 }
 
 .p4u-classified-table .p4u-classified-placeholder {
-  display: inline-flex;
+  display: inline-flex !important;
   align-items: center;
   justify-content: center;
   background: #f1f8f8;
-  color: #b07b4e;
+  color: #94a3b8;
+}
+
+.p4u-classified-table .p4u-classified-placeholder svg {
+  width: 20px;
+  height: 20px;
 }
 
 .p4u-classified-id {

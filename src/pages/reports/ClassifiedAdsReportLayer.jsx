@@ -56,6 +56,28 @@ function formatInr(value) {
   return `₹${n.toLocaleString("en-IN", { maximumFractionDigits: n % 1 ? 2 : 0 })}`;
 }
 
+function ClassifiedThumb({ src, alt }) {
+  const [broken, setBroken] = useState(false);
+  const url = resolveMediaUrl(src);
+  if (!url || broken) {
+    return (
+      <span className='p4u-classified-placeholder' aria-hidden='true'>
+        <Icon icon='mdi:image-outline' />
+      </span>
+    );
+  }
+  return (
+    <img
+      src={url}
+      alt={alt || "Classified ad"}
+      className='p4u-classified-thumb'
+      loading='lazy'
+      decoding='async'
+      onError={() => setBroken(true)}
+    />
+  );
+}
+
 async function fetchAllProducts() {
   const all = [];
   let offset = 0;
@@ -316,11 +338,7 @@ const ClassifiedAdsReportLayer = () => {
                 <tr key={item.row.id} className={item.status === "pending" ? "is-pending-row" : ""}>
                   <td className='col-id'><span className='p4u-classified-id'>{item.id}</span></td>
                   <td className='col-image'>
-                    {item.image ? (
-                      <img src={resolveMediaUrl(item.image)} alt={item.title} onError={(e) => { e.currentTarget.style.display = "none"; }} />
-                    ) : (
-                      <span className='p4u-classified-placeholder'><Icon icon='mdi:cube-outline' /></span>
-                    )}
+                    <ClassifiedThumb src={item.image} alt={item.title} />
                   </td>
                   <td className='col-title'>
                     <strong>{item.title}</strong>
