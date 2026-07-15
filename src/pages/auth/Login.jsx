@@ -1,9 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import logo from "../../assets/image/logo.png";
 import { useAuth } from "../../context/AuthContext";
 import { ApiError } from "../../lib/api/client";
+
+// External portals — override via Vite env if the deployed hosts differ.
+const CUSTOMER_URL = import.meta.env.VITE_CUSTOMER_URL || "https://planext4u.com";
+const VENDOR_URL = import.meta.env.VITE_VENDOR_URL || "https://vendor.planext4u.com";
+
+const BRAND = "#0f9d94";
+const BRAND_DARK = "#0c8f86";
 
 const LoginPage = () => {
   const [username, setUsername] = useState("");
@@ -42,49 +49,97 @@ const LoginPage = () => {
     }
   };
 
+  const inputStyle = {
+    width: "100%",
+    background: "#eef1fb",
+    border: "1px solid transparent",
+    borderRadius: 14,
+    padding: "16px 18px",
+    fontSize: 15,
+    color: "#0f172a",
+    outline: "none",
+  };
+
   return (
-    <section className="auth bg-neutral-50 d-flex align-items-center justify-content-center min-vh-100 p-24 position-relative">
+    <section
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 24,
+        background:
+          "linear-gradient(135deg, #35c9bd 0%, #0f9d94 42%, #0b6b64 100%)",
+      }}
+    >
       <div
-        className="bg-base p-32 p-sm-48 radius-16 shadow-sm border border-neutral-200 w-100 max-w-464-px position-relative"
-        style={{ zIndex: 20 }}
+        style={{
+          width: "100%",
+          maxWidth: 480,
+          background: "#fff",
+          borderRadius: 24,
+          overflow: "hidden",
+          boxShadow: "0 24px 60px rgba(0,0,0,0.28)",
+        }}
       >
-        <div className="text-center mb-32">
-          <Link to="/" className="d-inline-block text-decoration-none mb-24">
-            <div className="d-flex align-items-center justify-content-center gap-2">
-              <img src={logo} alt="Planext4u" className="h-48-px" />
-            </div>
-          </Link>
-          <h5 className="mb-12 fw-semibold">Admin Login</h5>
-          <p className="text-secondary-light text-md mb-0">
-            Sign in with your Keycloak admin username (often your email).
+        {/* Teal header */}
+        <div
+          style={{
+            background: `linear-gradient(180deg, ${BRAND}, ${BRAND_DARK})`,
+            padding: "34px 24px 30px",
+            textAlign: "center",
+          }}
+        >
+          <div
+            style={{
+              width: 76,
+              height: 76,
+              margin: "0 auto 18px",
+              background: "#fff",
+              borderRadius: 18,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 10px 24px rgba(0,0,0,0.18)",
+            }}
+          >
+            <img
+              src={logo}
+              alt="Planext4u"
+              style={{ width: 50, height: 50, objectFit: "contain" }}
+            />
+          </div>
+          <h1 style={{ color: "#fff", fontSize: 26, fontWeight: 800, margin: 0 }}>
+            Admin Portal
+          </h1>
+          <p
+            style={{
+              color: "rgba(255,255,255,0.85)",
+              margin: "8px 0 0",
+              fontSize: 14,
+            }}
+          >
+            Restricted access — Authorized personnel only
           </p>
         </div>
 
-        <form id="p4u-admin-login-form" onSubmit={handleLogin}>
-          <div className="icon-field mb-16">
-            <span className="icon top-50 translate-middle-y">
-              <Icon icon="mage:email" />
-            </span>
+        {/* White body */}
+        <div style={{ padding: "30px 30px 34px" }}>
+          <form id="p4u-admin-login-form" onSubmit={handleLogin}>
             <input
               type="text"
-              className="form-control h-56-px bg-neutral-50 radius-12"
-              placeholder="Username"
+              style={{ ...inputStyle, marginBottom: 16 }}
+              placeholder="admin@planext4u.com"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               autoComplete="username"
               required
             />
-          </div>
 
-          <div className="mb-20">
-            <div className="position-relative d-flex align-items-center">
-              <span className="position-absolute start-0 ms-16 text-secondary-light d-flex align-items-center">
-                <Icon icon="solar:lock-password-outline" className="text-xl" />
-              </span>
+            <div style={{ position: "relative", marginBottom: 22 }}>
               <input
                 type={showPassword ? "text" : "password"}
-                className="form-control h-56-px bg-neutral-50 radius-12 ps-48 pe-48"
-                id="your-password"
+                style={{ ...inputStyle, paddingRight: 48 }}
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -92,54 +147,95 @@ const LoginPage = () => {
                 required
               />
               <span
-                className="cursor-pointer position-absolute end-0 me-16 text-secondary-light d-flex align-items-center"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={() => setShowPassword((s) => !s)}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(ev) => {
                   if (ev.key === "Enter" || ev.key === " ") setShowPassword((s) => !s);
                 }}
+                style={{
+                  position: "absolute",
+                  right: 16,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  cursor: "pointer",
+                  color: "#64748b",
+                  display: "flex",
+                }}
               >
-                <Icon icon={showPassword ? "mdi:eye-off-outline" : "mdi:eye-outline"} className="text-xl" />
+                <Icon
+                  icon={showPassword ? "mdi:eye-off-outline" : "mdi:eye-outline"}
+                  style={{ fontSize: 20 }}
+                />
               </span>
             </div>
-          </div>
 
-          {error && <p className="text-danger-600 text-sm mb-16 text-center">{error}</p>}
-
-          <div className="mb-32">
-            <div className="d-flex justify-content-between align-items-center gap-2">
-              <div className="form-check style-check d-flex align-items-center mb-0">
-                <input
-                  className="form-check-input border border-neutral-300 m-0"
-                  type="checkbox"
-                  id="remember"
-                  defaultChecked
-                />
-                <label className="form-check-label ms-8" htmlFor="remember">
-                  Remember me
-                </label>
-              </div>
-              <button
-                type="button"
-                className="btn btn-link text-primary-600 fw-medium text-sm text-decoration-none p-0 border-0 shadow-none"
-                onClick={() => navigate("/forgot-password")}
+            {error && (
+              <p
+                style={{
+                  color: "#dc2626",
+                  fontSize: 13,
+                  marginBottom: 16,
+                  textAlign: "center",
+                }}
               >
-                Forgot Password?
-              </button>
-            </div>
-          </div>
+                {error}
+              </p>
+            )}
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="btn btn-primary text-md px-12 py-16 w-100 radius-12 d-flex align-items-center justify-content-center gap-2 fw-semibold"
-            style={{ position: "relative", zIndex: 1 }}
-          >
-            {submitting ? "Signing in…" : "Sign In"}{" "}
-            <Icon icon="mingcute:arrow-right-line" className="text-xl" />
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={submitting}
+              style={{
+                width: "100%",
+                background: BRAND,
+                color: "#fff",
+                border: "none",
+                borderRadius: 14,
+                padding: "16px",
+                fontSize: 16,
+                fontWeight: 700,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                cursor: submitting ? "default" : "pointer",
+                opacity: submitting ? 0.75 : 1,
+              }}
+            >
+              <Icon icon="mdi:login" style={{ fontSize: 20 }} />
+              {submitting ? "Signing in…" : "Sign In"}
+            </button>
+          </form>
+
+          <div style={{ textAlign: "center", marginTop: 18 }}>
+            <a
+              href={CUSTOMER_URL}
+              style={{
+                display: "block",
+                color: BRAND,
+                fontWeight: 600,
+                fontSize: 14,
+                textDecoration: "none",
+                marginBottom: 8,
+              }}
+            >
+              Customer Login →
+            </a>
+            <a
+              href={VENDOR_URL}
+              style={{
+                display: "block",
+                color: BRAND,
+                fontWeight: 600,
+                fontSize: 14,
+                textDecoration: "none",
+              }}
+            >
+              Vendor Login →
+            </a>
+          </div>
+        </div>
       </div>
     </section>
   );
