@@ -164,6 +164,11 @@ import CmsPagesPage from './pages/cms-pages/CmsPagesPage';
 import SplashScreensPage from './pages/splash-screens/SplashScreensPage';
 import VendorPlansPage from './pages/vendor-plan/VendorPlansPage';
 import VendorPortalPage from './pages/vendor-portal/VendorPortalPage';
+import FranchisePlansPage from './pages/franchise/plans/FranchisePlansPage';
+import FranchiseRegistrationsPage from './pages/franchise/registrations/FranchiseRegistrationsPage';
+import ActiveFranchisesPage from './pages/franchise/active/ActiveFranchisesPage';
+import FranchisePaymentsPage from './pages/franchise/payments/FranchisePaymentsPage';
+import FranchiseProjectionsPage from './pages/franchise/projections/FranchiseProjectionsPage';
 
 // REPORT
 import ReportLogPage from './pages/report/ReportLogPage';
@@ -261,6 +266,13 @@ function App() {
 <Route exact path='/cf-services' element={<CFServicesListPage />} />
 <Route exact path='/cf-cities' element={<CFCityListPage />} />
 <Route exact path='/cf-areas' element={<CFAreaListPage />} />
+
+{/* FRANCHISE MANAGEMENT */}
+<Route exact path='/franchise/plans' element={<FranchisePlansPage />} />
+<Route exact path='/franchise/registrations' element={<FranchiseRegistrationsPage />} />
+<Route exact path='/franchise/active' element={<ActiveFranchisesPage />} />
+<Route exact path='/franchise/registration-payments' element={<FranchisePaymentsPage />} />
+<Route exact path='/franchise/business-projections' element={<FranchiseProjectionsPage />} />
 
 
 {/* P4U HOMES */}

@@ -376,6 +376,39 @@ const MasterLayout = ({ children }) => {
                 <span>Food Coupons</span>
               </NavLink>
             </li>
+            {/* FRANCHISE MANAGEMENT */}
+            <li className='sidebar-menu-group-title'>Franchise Management</li>
+            <li>
+              <NavLink to='/franchise/plans' className={sidebarNavClass}>
+                <Icon icon='mdi:crown-outline' className='menu-icon' />
+                <span>Franchise Plans</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to='/franchise/registrations' className={sidebarNavClass}>
+                <Icon icon='mdi:clipboard-text-outline' className='menu-icon' />
+                <span>Registrations</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to='/franchise/active' className={sidebarNavClass}>
+                <Icon icon='mdi:store-outline' className='menu-icon' />
+                <span>Active Franchises</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to='/franchise/registration-payments' className={sidebarNavClass}>
+                <Icon icon='mdi:cash-multiple' className='menu-icon' />
+                <span>Registration Payments</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to='/franchise/business-projections' className={sidebarNavClass}>
+                <Icon icon='mdi:chart-timeline-variant' className='menu-icon' />
+                <span>Business Projections</span>
+              </NavLink>
+            </li>
+
             {/* SALES & FINANCIALS */}
             <li className='sidebar-menu-group-title'>Finance</li>
             <li>
@@ -581,4 +614,3 @@ const MasterLayout = ({ children }) => {
 };
 
 export default MasterLayout;
-

@@ -193,6 +193,37 @@ export function deleteVendorPlan(id) {
   return api.delete(`/api/admin/vendor-plans/${encodeURIComponent(id)}`);
 }
 
+export function listFranchisePlans(params) { return api.get("/api/admin/franchise/plans", params); }
+export function getFranchisePlan(id) { return api.get(`/api/admin/franchise/plans/${encodeURIComponent(id)}`); }
+export function createFranchisePlan(body) { return api.post("/api/admin/franchise/plans", body); }
+export function updateFranchisePlan(id, body) { return api.patch(`/api/admin/franchise/plans/${encodeURIComponent(id)}`, body); }
+export function deleteFranchisePlan(id) { return api.delete(`/api/admin/franchise/plans/${encodeURIComponent(id)}`); }
+
+export function listFranchiseRegistrations(params) { return api.get("/api/admin/franchise/registrations", params); }
+export function getFranchiseRegistration(id) { return api.get(`/api/admin/franchise/registrations/${encodeURIComponent(id)}`); }
+export function createFranchiseRegistration(body) { return api.post("/api/admin/franchise/registrations", body); }
+export function updateFranchiseRegistration(id, body) { return api.patch(`/api/admin/franchise/registrations/${encodeURIComponent(id)}`, body); }
+export function approveFranchiseRegistration(id) { return api.patch(`/api/admin/franchise/registrations/${encodeURIComponent(id)}/approve`, {}); }
+export function rejectFranchiseRegistration(id, rejectionReason) { return api.patch(`/api/admin/franchise/registrations/${encodeURIComponent(id)}/reject`, { rejectionReason }); }
+export function deleteFranchiseRegistration(id) { return api.delete(`/api/admin/franchise/registrations/${encodeURIComponent(id)}`); }
+
+export function listActiveFranchises(params) { return api.get("/api/admin/franchise/active", params); }
+export function getActiveFranchise(id) { return api.get(`/api/admin/franchise/active/${encodeURIComponent(id)}`); }
+export function updateActiveFranchise(id, body) { return api.patch(`/api/admin/franchise/active/${encodeURIComponent(id)}`, body); }
+export function suspendActiveFranchise(id) { return api.patch(`/api/admin/franchise/active/${encodeURIComponent(id)}/suspend`, {}); }
+export function terminateActiveFranchise(id) { return api.patch(`/api/admin/franchise/active/${encodeURIComponent(id)}/terminate`, {}); }
+
+export function listFranchiseRegistrationPayments(params) { return api.get("/api/admin/franchise/registration-payments", params); }
+export function getFranchiseRegistrationPayment(id) { return api.get(`/api/admin/franchise/registration-payments/${encodeURIComponent(id)}`); }
+export function createFranchiseRegistrationPayment(body) { return api.post("/api/admin/franchise/registration-payments", body); }
+export function updateFranchiseRegistrationPayment(id, body) { return api.patch(`/api/admin/franchise/registration-payments/${encodeURIComponent(id)}`, body); }
+
+export function listFranchiseBusinessProjections(params) { return api.get("/api/admin/franchise/business-projections", params); }
+export function getFranchiseBusinessProjection(id) { return api.get(`/api/admin/franchise/business-projections/${encodeURIComponent(id)}`); }
+export function createFranchiseBusinessProjection(body) { return api.post("/api/admin/franchise/business-projections", body); }
+export function updateFranchiseBusinessProjection(id, body) { return api.patch(`/api/admin/franchise/business-projections/${encodeURIComponent(id)}`, body); }
+export function deleteFranchiseBusinessProjection(id) { return api.delete(`/api/admin/franchise/business-projections/${encodeURIComponent(id)}`); }
+
 export function createTaxConfiguration(body) {
   return api.post("/api/admin/taxconfiguration", body);
 }
