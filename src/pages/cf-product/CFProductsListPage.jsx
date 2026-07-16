@@ -6,8 +6,10 @@ import CFProductListLayer from "./CFProductListLayer";
 export default function CFProductsListPage() {
   return (
     <MasterLayout>
-      <Breadcrumb title='List CF Products' pagetitle='CF Products' />
-      <CFProductListLayer />
+      <div className='p4u-reference-admin'>
+        <Breadcrumb title='CF Products' pagetitle='CF Products' subtitle='Manage products available through classified vendors.' />
+        <CFProductListLayer />
+      </div>
     </MasterLayout>
   );
 }

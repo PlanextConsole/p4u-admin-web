@@ -5,8 +5,10 @@ import CFAreaListLayer from "./CFAreaListLayer";
 
 const CFAreaListPage = () => (
   <MasterLayout>
-    <Breadcrumb title='List Areas' pagetitle='CF Area' />
-    <CFAreaListLayer />
+    <div className='p4u-reference-admin'>
+      <Breadcrumb title='CF Area' pagetitle='CF Area' subtitle='Configure classified service areas and availability.' />
+      <CFAreaListLayer />
+    </div>
   </MasterLayout>
 );
 

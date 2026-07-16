@@ -6,8 +6,10 @@ import CFServiceListLayer from "./CFServiceListLayer";
 const CFServicesListPage = () => {
   return (
     <MasterLayout>
-      <Breadcrumb title='List CF Services' pagetitle='CF Services' />
-      <CFServiceListLayer />
+      <div className='p4u-reference-admin'>
+        <Breadcrumb title='CF Services' pagetitle='CF Services' subtitle='Manage classified services, pricing, and availability.' />
+        <CFServiceListLayer />
+      </div>
     </MasterLayout>
   );
 };

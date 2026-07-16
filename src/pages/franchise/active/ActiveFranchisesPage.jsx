@@ -4,5 +4,5 @@ import Breadcrumb from "../../../components/Breadcrumb";
 import ActiveFranchiseListLayer from "./ActiveFranchiseListLayer";
 
 export default function ActiveFranchisesPage() {
-  return <MasterLayout><Breadcrumb title='Active Franchises' pagetitle='Franchise Management' /><ActiveFranchiseListLayer /></MasterLayout>;
+  return <MasterLayout><div className='p4u-reference-admin p4u-franchise-admin'><Breadcrumb title='Active Franchises' pagetitle='Active Franchises' subtitle='Manage lifecycle, payments, and receipts of live franchise partners.' /><ActiveFranchiseListLayer /></div></MasterLayout>;
 }

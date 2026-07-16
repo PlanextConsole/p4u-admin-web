@@ -6,8 +6,10 @@ import CFCityListLayer from "./CFCityListLayer";
 const CFCityListPage = () => {
   return (
     <MasterLayout>
-      <Breadcrumb title='List Cities' pagetitle='CF City' />
-      <CFCityListLayer />
+      <div className='p4u-reference-admin'>
+        <Breadcrumb title='CF City' pagetitle='CF City' subtitle='Configure classified cities and their service coverage.' />
+        <CFCityListLayer />
+      </div>
     </MasterLayout>
   );
 };

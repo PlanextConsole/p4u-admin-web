@@ -6,8 +6,10 @@ import CFVendorListLayer from "./CFVendorListLayer";
 export default function CFVendorsListPage() {
   return (
     <MasterLayout>
-      <Breadcrumb title='CF vendors (classified)' pagetitle='CF vendors (classified)' />
-      <CFVendorListLayer />
+      <div className='p4u-reference-admin'>
+        <Breadcrumb title='CF Vendors' pagetitle='CF Vendors' subtitle='Manage classified vendors, coverage, and approval status.' />
+        <CFVendorListLayer />
+      </div>
     </MasterLayout>
   );
 }
