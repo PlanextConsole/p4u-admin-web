@@ -12,6 +12,7 @@ import { IMAGE_ACCEPT } from "../../lib/acceptImages";
 
 const empty = () => ({
   name: "",
+  stateName: "",
   description: "",
   iconUrl: "",
   isActive: true,
@@ -28,6 +29,7 @@ const CFCityFormLayer = ({ isEdit = false, isView = false, initialData = null, o
       const meta = initialData.metadata || {};
       setForm({
         name: initialData.name || "",
+        stateName: initialData.stateName || "",
         description: meta.description || "",
         iconUrl: meta.iconUrl || "",
         isActive: initialData.isActive !== false,
@@ -80,6 +82,7 @@ const CFCityFormLayer = ({ isEdit = false, isView = false, initialData = null, o
 
     const body = {
       name,
+      stateName: form.stateName.trim() || null,
       isActive: form.isActive,
       metadata: Object.keys(metadata).length ? metadata : null,
     };
@@ -127,6 +130,20 @@ const CFCityFormLayer = ({ isEdit = false, isView = false, initialData = null, o
                 disabled={dis}
                 maxLength={255}
                 required
+              />
+            </div>
+
+            <div className='col-md-6 mb-20'>
+              <label className='form-label fw-semibold text-primary-light text-sm mb-8'>State</label>
+              <input
+                type='text'
+                className='form-control radius-8'
+                name='stateName'
+                placeholder='e.g., Tamil Nadu'
+                value={form.stateName}
+                onChange={handleChange}
+                disabled={dis}
+                maxLength={255}
               />
             </div>
 

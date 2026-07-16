@@ -261,10 +261,10 @@ const MasterLayout = ({ children }) => {
               </NavLink>
             </li>
             <li className='p4u-sidebar-classified-item'>
-              <Link to='/cf-cities' className='p4u-sidebar-classified-link'>
+              <NavLink to='/cf-areas' className={({ isActive }) => `p4u-sidebar-classified-link ${isActive ? "active-page" : ""}`}>
                 <Icon icon='mdi:map-outline' className='menu-icon' />
                 <span>CF Area</span>
-              </Link>
+              </NavLink>
             </li>
             <li className='p4u-sidebar-classified-item'>
               <NavLink to='/cf-categories' className={({ isActive }) => `p4u-sidebar-classified-link ${isActive ? "active-page" : ""}`}>
@@ -282,6 +282,12 @@ const MasterLayout = ({ children }) => {
               <NavLink to='/cf-products' className={({ isActive }) => `p4u-sidebar-classified-link ${isActive ? "active-page" : ""}`}>
                 <Icon icon='mdi:cube-outline' className='menu-icon' />
                 <span>CF Products</span>
+              </NavLink>
+            </li>
+            <li className='p4u-sidebar-classified-item'>
+              <NavLink to='/cf-vendors' className={({ isActive }) => `p4u-sidebar-classified-link ${isActive ? "active-page" : ""}`}>
+                <Icon icon='mdi:storefront-outline' className='menu-icon' />
+                <span>CF Vendors</span>
               </NavLink>
             </li>
 
@@ -575,5 +581,4 @@ const MasterLayout = ({ children }) => {
 };
 
 export default MasterLayout;
-
 

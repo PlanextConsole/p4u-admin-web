@@ -37,7 +37,10 @@ const CFCityListLayer = () => {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return items;
-    return items.filter((r) => (r.name || "").toLowerCase().includes(q));
+    return items.filter((r) =>
+      (r.name || "").toLowerCase().includes(q) ||
+      (r.stateName || "").toLowerCase().includes(q)
+    );
   }, [items, search]);
 
   const rowForId = (id) => items.find((c) => c.id === id) || null;
@@ -54,7 +57,7 @@ const CFCityListLayer = () => {
 
   return (
     <div className='card h-100 p-0 radius-12'>
-      <div className='card-header border-bottom bg-base py-16 px-24 p4u-admin-filter-row align-items-center gap-3'>
+      <div className='card-header border-bottom bg-base py-16 px-24 p4u-admin-filter-row align-items-center gap-3 justify-content-between'>
         <div className='p4u-admin-filter-row align-items-center gap-3'>
           <span className='text-md fw-medium text-secondary-light mb-0'>Show</span>
           <select className='form-select form-select-sm w-auto ps-12 py-6 radius-12 h-40-px' defaultValue='10'>
@@ -73,6 +76,10 @@ const CFCityListLayer = () => {
             <Icon icon='ion:search-outline' className='icon' />
           </form>
         </div>
+        <button type='button' onClick={() => setModal({ mode: "add" })} className='btn btn-primary text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2'>
+          <Icon icon='ic:baseline-plus' className='icon text-xl line-height-1' />
+          Add City
+        </button>
       </div>
       <div className='card-body p-24'>
         {error && (
@@ -90,6 +97,8 @@ const CFCityListLayer = () => {
                   <th scope='col'>S.No</th>
                   <th scope='col'>Icon</th>
                   <th scope='col'>City Name</th>
+                  <th scope='col'>State</th>
+                  <th scope='col' className='text-center'>Areas</th>
                   <th scope='col'>Description</th>
                   <th scope='col' className='text-center'>Active</th>
                   <TableActionHeader />
@@ -98,7 +107,7 @@ const CFCityListLayer = () => {
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan='6' className='text-center py-4'>No cities found.</td>
+                    <td colSpan='8' className='text-center py-4'>No cities found.</td>
                   </tr>
                 ) : (
                   filtered.map((city, index) => {
@@ -119,6 +128,8 @@ const CFCityListLayer = () => {
                           )}
                         </td>
                         <td><span className='fw-semibold text-primary-light'>{city.name || "—"}</span></td>
+                        <td>{city.stateName || "—"}</td>
+                        <td className='text-center fw-semibold'>{city.areaCount ?? 0}</td>
                         <td>
                           <span className='text-secondary-light text-truncate d-inline-block' style={{ maxWidth: '300px' }}>
                             {meta.description || "—"}

@@ -147,6 +147,7 @@ import CFCategoriesListPage from './pages/cf-category/CFCategoriesListPage';
 import CFProductsListPage from './pages/cf-product/CFProductsListPage';
 import CFServicesListPage from './pages/cf-service/CFServicesListPage';
 import CFCityListPage from './pages/cf-city/CFCityListPage';
+import CFAreaListPage from './pages/cf-area/CFAreaListPage';
 
 // SETTLEMENTS / TAX / MARKETING
 import SettlementsPage from './pages/settlement/SettlementsPage';
@@ -259,6 +260,7 @@ function App() {
 <Route exact path='/cf-products' element={<CFProductsListPage />} />
 <Route exact path='/cf-services' element={<CFServicesListPage />} />
 <Route exact path='/cf-cities' element={<CFCityListPage />} />
+<Route exact path='/cf-areas' element={<CFAreaListPage />} />
 
 
 {/* P4U HOMES */}

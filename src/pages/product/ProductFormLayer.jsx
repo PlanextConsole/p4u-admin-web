@@ -677,8 +677,8 @@ const ProductFormLayer = ({ isEdit = false, isView = false, productId, onSuccess
 
                 <div className="p4u-product-commission-box">
                   <div className="row g-12">
-                    <Field col="col-md-4" label="Max Points Redeemable"><input className="form-control" name="maxPointsRedeemable" value={formData.maxPointsRedeemable} onChange={handleChange} disabled={disabled} /></Field>
-                    <Field col="col-md-4" label="Max User Redemption %"><input className="form-control" name="maxUserRedemptionPercent" value={formData.maxUserRedemptionPercent} onChange={handleChange} disabled={disabled} /></Field>
+                    <Field col="col-md-4" label="Max Points Redeemable"><input type="number" min="0" step="1" className="form-control" name="maxPointsRedeemable" value={formData.maxPointsRedeemable} onChange={handleChange} disabled={disabled} /></Field>
+                    <Field col="col-md-4" label="Max User Redemption %"><input type="number" min="0" max="100" step="0.01" className="form-control" name="maxUserRedemptionPercent" value={formData.maxUserRedemptionPercent} onChange={handleChange} disabled={disabled} /></Field>
                     <Field col="col-md-4" label="Vendor to P4U Commission"><input className="form-control" name="vendorCommissionLabel" value={formData.vendorCommissionLabel} onChange={handleChange} disabled={disabled} /></Field>
                     <Field col="col-md-4" label="Commission Override % (this product)">
                       <input

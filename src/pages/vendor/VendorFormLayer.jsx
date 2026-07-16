@@ -34,7 +34,12 @@ const emptyForm = (kind = "product") => ({
   pan: "",
   stateName: "",
   stateCode: "",
+  city: "",
+  district: "",
   registeredShopAddress: "",
+  latitude: "",
+  longitude: "",
+  originalAddressJson: {},
   thumbnailUrl: "",
   gstCertUrl: "",
   panCardUrl: "",
@@ -203,7 +208,12 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
       pan: row.pan || "",
       stateName: String(address.state || ""),
       stateCode: String(address.stateCode || ""),
+      city: String(address.city || ""),
+      district: String(address.district || ""),
       registeredShopAddress: String(address.areaLocality || address.buildingNumber || ""),
+      latitude: address.latitude != null ? String(address.latitude) : (address.lat != null ? String(address.lat) : ""),
+      longitude: address.longitude != null ? String(address.longitude) : (address.lng != null ? String(address.lng) : ""),
+      originalAddressJson: address,
       thumbnailUrl: row.thumbnailUrl || "",
       gstCertUrl: docs.gstCertificateUrl || "",
       panCardUrl: docs.panCardUrl || "",
@@ -357,9 +367,14 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
           ? uploaded.selectedServiceIds
           : null;
       const addressJson = {
+        ...(uploaded.originalAddressJson && typeof uploaded.originalAddressJson === "object" ? uploaded.originalAddressJson : {}),
         state: uploaded.stateName || "",
         stateCode: uploaded.stateCode || "",
+        city: uploaded.city || "",
+        district: uploaded.district || "",
         areaLocality: uploaded.registeredShopAddress || "",
+        latitude: uploaded.latitude ? Number(uploaded.latitude) : null,
+        longitude: uploaded.longitude ? Number(uploaded.longitude) : null,
       };
       const bankJson = buildBankJson(uploaded);
       const documentsJson = {};
@@ -601,7 +616,11 @@ const VendorFormLayer = ({ isEdit = false, isView = false, vendorId, vendorKind 
                     <Field col='col-md-6' label='PAN (10 chars)' error={fieldErrors.pan}><input className={`form-control radius-10${fieldErrors.pan ? " is-invalid" : ""}`} name='pan' value={formData.pan} onChange={handleChange} disabled={disabled} maxLength={10} /></Field>
                     <Field col='col-md-6' label='State Name (place of supply)'><input className='form-control radius-10' name='stateName' value={formData.stateName} onChange={handleChange} disabled={disabled} /></Field>
                     <Field col='col-md-6' label='State Code (2 digits)' error={fieldErrors.stateCode}><input className={`form-control radius-10${fieldErrors.stateCode ? " is-invalid" : ""}`} name='stateCode' value={formData.stateCode} onChange={handleChange} disabled={disabled} maxLength={2} /></Field>
+                    <Field col='col-md-6' label='City'><input className='form-control radius-10' name='city' value={formData.city} onChange={handleChange} disabled={disabled} /></Field>
+                    <Field col='col-md-6' label='District'><input className='form-control radius-10' name='district' value={formData.district} onChange={handleChange} disabled={disabled} /></Field>
                     <Field col='col-md-12' label='Registered Shop Address (printed on invoice)'><input className='form-control radius-10' name='registeredShopAddress' value={formData.registeredShopAddress} onChange={handleChange} disabled={disabled} /></Field>
+                    <Field col='col-md-6' label='Latitude'><input type='number' min='-90' max='90' step='0.0000001' className='form-control radius-10' name='latitude' value={formData.latitude} onChange={handleChange} disabled={disabled} /></Field>
+                    <Field col='col-md-6' label='Longitude'><input type='number' min='-180' max='180' step='0.0000001' className='form-control radius-10' name='longitude' value={formData.longitude} onChange={handleChange} disabled={disabled} /></Field>
                   </div>
                 )}
               </div>

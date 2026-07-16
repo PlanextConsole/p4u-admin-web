@@ -788,6 +788,22 @@ export function deleteAvailableCity(id) {
   return api.delete(`/api/admin/availableCities/${encodeURIComponent(id)}`);
 }
 
+export function listAvailableAreas(params) {
+  return api.get("/api/admin/availableAreas", params);
+}
+
+export function createAvailableArea(body) {
+  return api.post("/api/admin/availableAreas", body);
+}
+
+export function updateAvailableArea(id, body) {
+  return api.patch(`/api/admin/availableAreas/individual/${encodeURIComponent(id)}`, body);
+}
+
+export function deleteAvailableArea(id) {
+  return api.delete(`/api/admin/availableAreas/${encodeURIComponent(id)}`);
+}
+
 export function listClassifiedCategories(params) {
   return api.get("/api/admin/classifiedCategories", params);
 }
