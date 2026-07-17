@@ -1,7 +1,7 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { toast } from "react-toastify";
-import { createAdvertisement, listProducts, updateAdvertisement, uploadFile } from "../../lib/api/adminApi";
+import { createAdvertisement, listProducts, listVendors, updateAdvertisement, uploadFile } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import { resolveMediaUrl } from "../../lib/resolveMediaUrl";
 import { IMAGE_ACCEPT } from "../../lib/acceptImages";
@@ -28,6 +28,7 @@ const empty = (isSocioDefault = false) => ({
   categoryFilter: "",
   productSearch: "",
   selectedProductId: "",
+  selectedVendorId: "",
   pages: isSocioDefault ? ["socio"] : ["all"],
   type: isSocioDefault ? "Sponsored Post" : "Banner",
   status: "active",
@@ -53,6 +54,7 @@ const toDateInput = (value) => {
 const AdvertisementFormLayer = ({ isEdit = false, isView = false, isSocioDefault = false, initialData = null, onSuccess, onCancel }) => {
   const [form, setForm] = useState(() => empty(isSocioDefault));
   const [products, setProducts] = useState([]);
+  const [vendors, setVendors] = useState([]);
   const [desktopFile, setDesktopFile] = useState(null);
   const [mobileFile, setMobileFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -67,6 +69,11 @@ const AdvertisementFormLayer = ({ isEdit = false, isView = false, isSocioDefault
       if (alive) setProducts(res.items || []);
     }).catch(() => {
       if (alive) setProducts([]);
+    });
+    listVendors({ limit: 100, offset: 0, type: "PRODUCT" }).then((res) => {
+      if (alive) setVendors(res.items || res.data || []);
+    }).catch(() => {
+      if (alive) setVendors([]);
     });
     return () => { alive = false; };
   }, []);
@@ -85,6 +92,7 @@ const AdvertisementFormLayer = ({ isEdit = false, isView = false, isSocioDefault
         categoryFilter: meta.categoryFilter || "",
         productSearch: "",
         selectedProductId: meta.selectedProductId || "",
+        selectedVendorId: meta.selectedVendorId || meta.vendorId || "",
         pages: normalizePages(meta, isSocioDefault),
         type: meta.type || meta.postType || (meta.isSocioAd ? "Sponsored Post" : "Banner"),
         status: String(initialData.status || "active").toLowerCase() === "inactive" ? "paused" : String(initialData.status || "active").toLowerCase(),
@@ -168,6 +176,12 @@ const AdvertisementFormLayer = ({ isEdit = false, isView = false, isSocioDefault
     try {
       const desktopImageUrl = await uploadIfNeeded(desktopRef.current || desktopFile, form.desktopImageUrl);
       const mobileImageUrl = await uploadIfNeeded(mobileRef.current || mobileFile, form.mobileImageUrl);
+      const selectedProduct = products.find((product) => String(product.id) === String(form.selectedProductId));
+      const targetVendorId = form.linkType === "Vendor"
+        ? form.selectedVendorId
+        : form.linkType === "Product"
+          ? (selectedProduct?.vendorId || selectedProduct?.vendor_id || selectedProduct?.vendor?.id || "")
+          : "";
       const metadata = {
         advertiser: form.advertiser.trim(),
         caption: form.description.trim(),
@@ -175,9 +189,13 @@ const AdvertisementFormLayer = ({ isEdit = false, isView = false, isSocioDefault
         desktopImageUrl,
         mobileImageUrl,
         linkType: form.linkType,
-        linkLabel: form.linkType === "Product" ? "Product" : "Custom",
+        linkLabel: form.linkType,
         categoryFilter: form.categoryFilter.trim(),
         selectedProductId: form.selectedProductId,
+        selectedVendorId: form.selectedVendorId,
+        productId: form.linkType === "Product" ? form.selectedProductId : null,
+        vendorId: targetVendorId || null,
+        targetType: form.linkType,
         pages: form.pages,
         isSocioAd: form.pages.includes("socio"),
         type: form.type,
@@ -190,7 +208,13 @@ const AdvertisementFormLayer = ({ isEdit = false, isView = false, isSocioDefault
       const body = {
         title,
         imageUrl: desktopImageUrl || null,
-        redirectUrl: form.linkType === "Product" && form.selectedProductId ? `/app/product/${form.selectedProductId}` : (form.redirectUrl.trim() || null),
+        redirectUrl: form.linkType === "Product" && form.selectedProductId
+          ? `/app/product/${form.selectedProductId}`
+          : form.linkType === "Vendor" && form.selectedVendorId
+            ? `/app/vendor/${form.selectedVendorId}`
+            : form.linkType === "Custom URL"
+              ? (form.redirectUrl.trim() || null)
+              : null,
         status: form.status === "paused" ? "inactive" : form.status,
         sortOrder: Number.isFinite(form.sortOrder) ? form.sortOrder : 0,
         metadata,
@@ -289,8 +313,7 @@ const AdvertisementFormLayer = ({ isEdit = false, isView = false, isSocioDefault
           <select value={form.linkType} onChange={(event) => setField("linkType", event.target.value)} disabled={disabled}>
             <option>Custom URL</option>
             <option>Product</option>
-            <option>Category</option>
-            <option>Service</option>
+            <option>Vendor</option>
             <option>No link</option>
           </select>
         </label>
@@ -329,12 +352,25 @@ const AdvertisementFormLayer = ({ isEdit = false, isView = false, isSocioDefault
               }) : <p>No products found.</p>}
             </div>
           </>
-        ) : (
+        ) : form.linkType === "Vendor" ? (
+          <label className='p4u-ad-field is-full'>
+            <span>Vendor</span>
+            <select value={form.selectedVendorId} onChange={(event) => setField("selectedVendorId", event.target.value)} disabled={disabled} required>
+              <option value=''>Select a product vendor</option>
+              {vendors.map((vendor) => (
+                <option key={vendor.id} value={vendor.id}>
+                  {vendor.businessName || vendor.business_name || vendor.displayName || vendor.name || vendor.id}
+                  {vendor.trending ? " (Trending)" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : form.linkType === "Custom URL" ? (
           <label className='p4u-ad-field is-full'>
             <span>Custom URL</span>
             <input value={form.redirectUrl} onChange={(event) => setField("redirectUrl", event.target.value)} disabled={disabled || form.linkType === "No link"} placeholder='/app/browse or https://...' />
           </label>
-        )}
+        ) : null}
       </section>
 
       <section className='p4u-ad-pages'>
