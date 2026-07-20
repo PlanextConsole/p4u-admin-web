@@ -405,6 +405,14 @@ export function updateOrder(id, body) {
   return api.patch(`/api/admin/orders/individual/${encodeURIComponent(id)}`, body);
 }
 
+export function permanentlyDeleteOrder(id) {
+  return api.delete(`/api/admin/orders/individual/${encodeURIComponent(id)}/permanent`);
+}
+
+export function permanentlyDeleteOrders(ids) {
+  return api.post('/api/admin/orders/permanent-delete', { ids });
+}
+
 export function listCoupons(params) {
   return api.get("/api/admin/coupons", params);
 }

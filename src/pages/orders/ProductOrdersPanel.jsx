@@ -1,7 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { toast } from "react-toastify";
-import { listOrders, listVendors, getCustomer, getVendor, updateOrder, getOrderStats } from "../../lib/api/adminApi";
+import {
+  listOrders,
+  listVendors,
+  getCustomer,
+  getVendor,
+  updateOrder,
+  getOrderStats,
+  permanentlyDeleteOrder,
+  permanentlyDeleteOrders,
+} from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import OrderDetailModal from "./OrderDetailModal";
 import { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
@@ -52,6 +61,7 @@ export default function ProductOrdersPanel({ deletedOnly = false }) {
   const [modal, setModal] = useState(null);
   const [globalStats, setGlobalStats] = useState(null);
   const [selected, setSelected] = useState(() => new Set());
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     listVendors({ limit: 200, offset: 0 }).then((r) => setVendors(r.items || [])).catch(() => {});
@@ -200,6 +210,8 @@ export default function ProductOrdersPanel({ deletedOnly = false }) {
     return true;
   }), [enriched, deletedOnly, statusFilter, fromDate, toDate, vendorFilter, itemFilter, customerFilter, minPrice, maxPrice, search, customerById]);
 
+  const selectedCount = filtered.filter((r) => selected.has(r.order.id)).length;
+
   const stats = useMemo(() => {
     if (!deletedOnly && globalStats && typeof globalStats.total === "number") {
       return {
@@ -229,6 +241,46 @@ export default function ProductOrdersPanel({ deletedOnly = false }) {
       toast.success("Order cancelled.");
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : String(e));
+    }
+  };
+
+  const removePermanently = async (r) => {
+    const ref = r.order.orderRef || r.order.id;
+    if (!window.confirm(`Permanently delete order ${ref}? This action cannot be undone.`)) return;
+    setDeleting(true);
+    try {
+      await permanentlyDeleteOrder(r.order.id);
+      setOrders((prev) => prev.filter((row) => row.id !== r.order.id));
+      setSelected((prev) => {
+        const next = new Set(prev);
+        next.delete(r.order.id);
+        return next;
+      });
+      setTotal((prev) => Math.max(0, prev - 1));
+      toast.success("Order permanently deleted.");
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : String(e));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const removeSelectedPermanently = async () => {
+    const ids = filtered.filter((r) => selected.has(r.order.id)).map((r) => r.order.id);
+    if (ids.length === 0) return;
+    if (!window.confirm(`Permanently delete ${ids.length} selected order${ids.length === 1 ? "" : "s"}? This action cannot be undone.`)) return;
+    setDeleting(true);
+    try {
+      await permanentlyDeleteOrders(ids);
+      const removed = new Set(ids);
+      setOrders((prev) => prev.filter((row) => !removed.has(row.id)));
+      setSelected(new Set());
+      setTotal((prev) => Math.max(0, prev - ids.length));
+      toast.success(`${ids.length} order${ids.length === 1 ? "" : "s"} permanently deleted.`);
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : String(e));
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -262,7 +314,7 @@ export default function ProductOrdersPanel({ deletedOnly = false }) {
   const canNext = offset + limit < total;
 
   const toggleAll = () => {
-    if (selected.size === filtered.length) setSelected(new Set());
+    if (selectedCount === filtered.length) setSelected(new Set());
     else setSelected(new Set(filtered.map((r) => r.order.id)));
   };
 
@@ -345,6 +397,17 @@ export default function ProductOrdersPanel({ deletedOnly = false }) {
           <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
         </label>
         <div className="p4u-orders-toolbar__actions">
+          {deletedOnly && selectedCount > 0 && (
+            <button
+              type="button"
+              className="p4u-orders-btn-outline is-danger"
+              onClick={() => void removeSelectedPermanently()}
+              disabled={deleting}
+            >
+              <Icon icon="mdi:delete-forever-outline" />
+              {deleting ? "Deleting..." : `Delete Permanently (${selectedCount})`}
+            </button>
+          )}
           <button type="button" className="p4u-orders-btn-outline" onClick={exportCsv}>
             <Icon icon="mdi:download-outline" /> Export CSV
           </button>
@@ -365,7 +428,7 @@ export default function ProductOrdersPanel({ deletedOnly = false }) {
                     <input
                       type="checkbox"
                       className="form-check-input"
-                      checked={filtered.length > 0 && selected.size === filtered.length}
+                      checked={filtered.length > 0 && filtered.every((r) => selected.has(r.order.id))}
                       onChange={toggleAll}
                       aria-label="Select all"
                     />
@@ -432,6 +495,14 @@ export default function ProductOrdersPanel({ deletedOnly = false }) {
                                 customerName: r.customerName,
                                 vendorName: r.vendorName,
                               }),
+                            },
+                            {
+                              type: "delete",
+                              icon: "mdi:delete-forever-outline",
+                              title: "Delete permanently",
+                              hidden: !deletedOnly,
+                              disabled: deleting,
+                              onClick: () => void removePermanently(r),
                             },
                             {
                               type: "cancel",

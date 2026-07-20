@@ -443,7 +443,6 @@ export function buildRegisterRow(order, vendor, customer) {
   return {
     order: o,
     vendor,
-    customer,
     invoiceNo: model.invoiceNo,
     invoiceDate: invoiceAt,
     orderRef: model.orderRef,

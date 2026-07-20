@@ -273,8 +273,11 @@ const ViewDetailsLayer = () => {
                 <div className='d-flex align-items-center justify-content-between'>
                   <textarea
                     className='textarea-max-height form-control p-0 border-0 py-8 pe-16 resize-none scroll-sm'
-                    oninput='adjustHeight(this)'
-                    placeholder='Write massage'
+                    onInput={(event) => {
+                      event.currentTarget.style.height = 'auto';
+                      event.currentTarget.style.height = `${event.currentTarget.scrollHeight}px`;
+                    }}
+                    placeholder='Write message'
                     defaultValue={""}
                   />
                   <div className='d-flex align-items-center gap-4 ms-16'>

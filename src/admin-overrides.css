@@ -5261,6 +5261,17 @@ button.fw-semibold {
   font-weight: 650;
 }
 
+.p4u-orders-btn-outline.is-danger {
+  border-color: #fecaca;
+  background: #fff5f5;
+  color: #dc2626;
+}
+
+.p4u-orders-btn-outline:disabled {
+  cursor: not-allowed;
+  opacity: .65;
+}
+
 .p4u-orders-table-wrap {
   overflow-x: auto;
   border: 1px solid #e4edf4;
