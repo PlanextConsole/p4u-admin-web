@@ -184,6 +184,7 @@ import PaymentReportPage from './pages/reports/PaymentReportPage';
 import RevenueProfitReportPage from './pages/reports/RevenueProfitReportPage';
 import TaxInvoicesReportPage from './pages/reports/TaxInvoicesReportPage';
 import TaxReportPage from './pages/reports/TaxReportPage';
+import StatutoryReportPage from './pages/reports/StatutoryReportPage';
 import SocialDashboardPage from './pages/social/SocialDashboardPage';
 import AdminModulePlaceholderPage from './pages/placeholder/AdminModulePlaceholderPage';
 import HomesModerationQueuePage from './pages/homes/moderation-queue/HomesModerationQueuePage';
@@ -193,12 +194,15 @@ import HomesAmenitiesFiltersPage from './pages/homes/amenities-filters/HomesAmen
 import HomesPropertyUsersPage from './pages/homes/property-users/HomesPropertyUsersPage';
 import HomesCmsPage from './pages/homes/cms/HomesCmsPage';
 import HomesPropertyReportsPage from './pages/homes/reports/HomesPropertyReportsPage';
+import HomesPropertiesPage from './pages/homes/properties/HomesPropertiesPage';
 import FoodRestaurantsPage from './pages/food/FoodRestaurantsPage';
 import FoodRidersPage from './pages/food/FoodRidersPage';
 import FoodRiderKycPage from './pages/food/FoodRiderKycPage';
 import FoodRiderSettlementsPage from './pages/food/FoodRiderSettlementsPage';
 import FoodOrdersPage from './pages/food/FoodOrdersPage';
 import FoodCouponsPage from './pages/food/FoodCouponsPage';
+import FoodRefundsPage from './pages/food/FoodRefundsPage';
+import SupportTicketsPage from './pages/support/SupportTicketsPage';
 
 
 
@@ -276,7 +280,7 @@ function App() {
 
 
 {/* P4U HOMES */}
-<Route exact path='/homes/properties' element={<AdminModulePlaceholderPage section='P4U Homes' title='All Properties' />} />
+<Route exact path='/homes/properties' element={<HomesPropertiesPage />} />
 <Route exact path='/homes/moderation-queue' element={<HomesModerationQueuePage />} />
 <Route exact path='/homes/localities' element={<HomesLocalitiesPage />} />
 <Route exact path='/homes/plans-pricing' element={<HomesPlansPricingPage />} />
@@ -292,6 +296,8 @@ function App() {
 <Route exact path='/food/rider-settlements' element={<FoodRiderSettlementsPage />} />
 <Route exact path='/food/orders' element={<FoodOrdersPage />} />
 <Route exact path='/food/coupons' element={<FoodCouponsPage />} />
+<Route exact path='/food/refunds' element={<FoodRefundsPage />} />
+<Route exact path='/support-tickets' element={<SupportTicketsPage />} />
 {/* SETTLEMENTS */}
 <Route exact path='/settlements' element={<SettlementsPage />} />
 
@@ -323,7 +329,15 @@ function App() {
         <Route exact path='/reports/payments' element={<PaymentReportPage />} />
         <Route exact path='/reports/revenue-profit' element={<RevenueProfitReportPage />} />
         <Route exact path='/reports/tax-invoices' element={<TaxInvoicesReportPage />} />
-        <Route exact path='/reports/tax' element={<TaxReportPage />} />
+<Route exact path='/reports/tax' element={<TaxReportPage />} />
+        <Route exact path='/reports/gstr-1' element={<StatutoryReportPage kind='gstr-1' />} />
+        <Route exact path='/reports/gstr-3b' element={<StatutoryReportPage kind='gstr-3b' />} />
+        <Route exact path='/reports/credit-notes' element={<StatutoryReportPage kind='credit-notes' />} />
+        <Route exact path='/reports/hsn-summary' element={<StatutoryReportPage kind='hsn-summary' />} />
+        <Route exact path='/reports/tcs' element={<StatutoryReportPage kind='tcs' />} />
+        <Route exact path='/reports/tds-194o' element={<StatutoryReportPage kind='tds-194o' />} />
+        <Route exact path='/reports/gstr-9' element={<StatutoryReportPage kind='gstr-9' />} />
+        <Route exact path='/reports/day-book' element={<StatutoryReportPage kind='day-book' />} />
 <Route exact path='/report-log' element={<ReportLogPage />} />
 <Route exact path='/admin/social' element={<SocialDashboardPage />} />
 

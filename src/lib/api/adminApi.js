@@ -1000,24 +1000,34 @@ export function deleteHomesCmsContent(id) {
 export function getHomesPropertyAnalytics(params) {
   return api.get("/api/admin/homes/reports/analytics", params);
 }
-export function listFoodRestaurants(params) { return api.get("/api/admin/food/restaurants", params); }
-export function createFoodRestaurant(body) { return api.post("/api/admin/food/restaurants", body); }
-export function updateFoodRestaurant(id, body) { return api.patch(`/api/admin/food/restaurants/${encodeURIComponent(id)}`, body); }
-export function deleteFoodRestaurant(id) { return api.delete(`/api/admin/food/restaurants/${encodeURIComponent(id)}`); }
+const FOOD_ADMIN = "/api/v1/commerce/food/admin";
+const unwrapFood = (response) => response?.success === true ? response.data : response;
+const foodList = async (request) => {
+  const data = unwrapFood(await request);
+  return { items: Array.isArray(data) ? data : (data?.items || []), total: Array.isArray(data) ? data.length : Number(data?.total || 0) };
+};
+export function listFoodRestaurants(params) { return foodList(api.get(`${FOOD_ADMIN}/restaurants`, params)); }
+export function createFoodRestaurant(body) { return api.post(`${FOOD_ADMIN}/restaurants`, body).then(unwrapFood); }
+export function updateFoodRestaurant(id, body) { return api.patch(`${FOOD_ADMIN}/restaurants/${encodeURIComponent(id)}`, body).then(unwrapFood); }
+export function deleteFoodRestaurant(id) { return api.patch(`${FOOD_ADMIN}/restaurants/${encodeURIComponent(id)}`, { isActive: false, status: "offline" }).then(unwrapFood); }
+export function listFoodRiders(params) { return foodList(api.get(`${FOOD_ADMIN}/riders`, params)); }
+export function createFoodRider(body) { return api.post(`${FOOD_ADMIN}/riders`, body).then(unwrapFood); }
+export function updateFoodRider(id, body) { return api.patch(`${FOOD_ADMIN}/riders/${encodeURIComponent(id)}`, body).then(unwrapFood); }
+export function deleteFoodRider(id) { return api.patch(`${FOOD_ADMIN}/riders/${encodeURIComponent(id)}`, { approved: false }).then(unwrapFood); }
+export function updateFoodRiderKyc(id, status) { return api.patch(`${FOOD_ADMIN}/riders/${encodeURIComponent(id)}/approval`, { approved: status === "verified" }).then(unwrapFood); }
+export function listFoodOrders(params) { return foodList(api.get(`${FOOD_ADMIN}/orders`, params)); }
+export function updateFoodOrder(id, body) { return api.patch(`${FOOD_ADMIN}/orders/${encodeURIComponent(id)}`, body).then(unwrapFood); }
+export function listFoodCoupons(params) { return foodList(api.get(`${FOOD_ADMIN}/coupons`, params)); }
+export function createFoodCoupon(body) { return api.post(`${FOOD_ADMIN}/coupons`, body).then(unwrapFood); }
+export function updateFoodCoupon(id, body) { return api.post(`${FOOD_ADMIN}/coupons`, { ...body, id }).then(unwrapFood); }
+export function deleteFoodCoupon(id) { return api.delete(`${FOOD_ADMIN}/coupons/${encodeURIComponent(id)}`).then(unwrapFood); }
+export function listFoodRefunds(params) { return foodList(api.get(`${FOOD_ADMIN}/refunds`, params)); }
+export function updateFoodRefund(id, body) { return api.patch(`${FOOD_ADMIN}/refunds/${encodeURIComponent(id)}`, body).then(unwrapFood); }
+export function listFoodRiderSettlements(params) { return foodList(api.get(`${FOOD_ADMIN}/rider-settlements`, params)); }
+export function payFoodRiderSettlement(id, transactionRef = `ADMIN-${Date.now()}`) { return api.post(`${FOOD_ADMIN}/rider-settlements/${encodeURIComponent(id)}/pay`, { transactionRef }).then(unwrapFood); }
 
-export function listFoodRiders(params) { return api.get("/api/admin/food/riders", params); }
-export function createFoodRider(body) { return api.post("/api/admin/food/riders", body); }
-export function updateFoodRider(id, body) { return api.patch(`/api/admin/food/riders/${encodeURIComponent(id)}`, body); }
-export function deleteFoodRider(id) { return api.delete(`/api/admin/food/riders/${encodeURIComponent(id)}`); }
-export function updateFoodRiderKyc(id, status) { return api.post(`/api/admin/food/riders/${encodeURIComponent(id)}/kyc`, { status }); }
-
-export function listFoodOrders(params) { return api.get("/api/admin/food/orders", params); }
-export function updateFoodOrder(id, body) { return api.patch(`/api/admin/food/orders/${encodeURIComponent(id)}`, body); }
-
-export function listFoodCoupons(params) { return api.get("/api/admin/food/coupons", params); }
-export function createFoodCoupon(body) { return api.post("/api/admin/food/coupons", body); }
-export function updateFoodCoupon(id, body) { return api.patch(`/api/admin/food/coupons/${encodeURIComponent(id)}`, body); }
-export function deleteFoodCoupon(id) { return api.delete(`/api/admin/food/coupons/${encodeURIComponent(id)}`); }
-
-export function listFoodRiderSettlements(params) { return api.get("/api/admin/food/rider-settlements", params); }
-export function payFoodRiderSettlement(id) { return api.post(`/api/admin/food/rider-settlements/${encodeURIComponent(id)}/pay`, {}); }
+const SUPPORT_ADMIN='/api/v1/commerce/support';
+export function listSupportTickets(params){return api.get(`${SUPPORT_ADMIN}/tickets`,params).then(unwrapFood);}
+export function getSupportTicket(id){return api.get(`${SUPPORT_ADMIN}/tickets/${encodeURIComponent(id)}`).then(unwrapFood);}
+export function replySupportTicket(id,message){return api.post(`${SUPPORT_ADMIN}/tickets/${encodeURIComponent(id)}/messages`,{message}).then(unwrapFood);}
+export function updateSupportTicket(id,body){return api.patch(`${SUPPORT_ADMIN}/admin/tickets/${encodeURIComponent(id)}`,body).then(unwrapFood);}

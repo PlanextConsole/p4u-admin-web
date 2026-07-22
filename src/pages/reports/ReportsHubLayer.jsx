@@ -74,14 +74,14 @@ const MARKETPLACE = [
 const GST = [
   { icon: "mdi:file-document-outline", title: "Tax Invoices Issued", description: "All vendor → customer GST invoices auto-generated on order delivery (statutory register).", to: "/reports/tax-invoices", gradient: GRAD.teal },
   { icon: "mdi:calculator-variant", title: "Tax Report", description: "Product tax, GST on platform fee, and tax collection summary.", to: "/reports/tax", gradient: GRAD.orange },
-  { icon: "mdi:file-chart-outline", title: "GSTR-1 (Outward Supplies)", description: "Invoice-wise B2C outward supplies with CGST/SGST/IGST + HSN summary for monthly GST filing.", to: null, gradient: GRAD.teal },
-  { icon: "mdi:file-document-multiple", title: "GSTR-3B (Monthly Summary)", description: "Self-declaration summary of outward supplies, tax liability, and ITC for monthly return.", to: null, gradient: GRAD.blue },
-  { icon: "mdi:backup-restore", title: "Credit Notes (GSTR-1 Table 9B)", description: "Refund/cancellation credit notes auto-generated with reverse tax breakup for amendment filing.", to: null, gradient: GRAD.orange },
-  { icon: "mdi:package-variant", title: "HSN-wise Summary", description: "Aggregated supply by HSN code with quantity, taxable value, and tax breakup (GSTR-1 Table 12).", to: null, gradient: GRAD.green },
-  { icon: "mdi:domain", title: "TCS u/s 52 (GSTR-8)", description: "Tax Collected at Source @1% per vendor — required monthly filing for e-commerce operators.", to: null, gradient: GRAD.pink },
-  { icon: "mdi:percent", title: "TDS u/s 194-O", description: "1% TDS deducted from vendor payouts > ₹5L/yr — quarterly statutory filing for marketplaces.", to: null, gradient: GRAD.blue },
-  { icon: "mdi:file-cabinet", title: "GSTR-9 (Annual Return)", description: "Consolidated annual GST return — auto-aggregates monthly GSTR-1/3B data for FY filing.", to: null, gradient: GRAD.cyan },
-  { icon: "mdi:book-open-page-variant", title: "Day Book (Tally / Zoho Export)", description: "Voucher-level export for accounting tools and period close.", to: null, gradient: GRAD.emerald },
+  { icon: "mdi:file-chart-outline", title: "GSTR-1 (Outward Supplies)", description: "Invoice-wise B2C outward supplies with CGST/SGST/IGST + HSN summary for monthly GST filing.", to: "/reports/gstr-1", gradient: GRAD.teal },
+  { icon: "mdi:file-document-multiple", title: "GSTR-3B (Monthly Summary)", description: "Self-declaration summary of outward supplies, tax liability, and ITC for monthly return.", to: "/reports/gstr-3b", gradient: GRAD.blue },
+  { icon: "mdi:backup-restore", title: "Credit Notes (GSTR-1 Table 9B)", description: "Refund/cancellation credit notes auto-generated with reverse tax breakup for amendment filing.", to: "/reports/credit-notes", gradient: GRAD.orange },
+  { icon: "mdi:package-variant", title: "HSN-wise Summary", description: "Aggregated supply by HSN code with quantity, taxable value, and tax breakup (GSTR-1 Table 12).", to: "/reports/hsn-summary", gradient: GRAD.green },
+  { icon: "mdi:domain", title: "TCS u/s 52 (GSTR-8)", description: "Tax Collected at Source @1% per vendor — required monthly filing for e-commerce operators.", to: "/reports/tcs", gradient: GRAD.pink },
+  { icon: "mdi:percent", title: "TDS u/s 194-O", description: "1% TDS deducted from vendor payouts > ₹5L/yr — quarterly statutory filing for marketplaces.", to: "/reports/tds-194o", gradient: GRAD.blue },
+  { icon: "mdi:file-cabinet", title: "GSTR-9 (Annual Return)", description: "Consolidated annual GST return — auto-aggregates monthly GSTR-1/3B data for FY filing.", to: "/reports/gstr-9", gradient: GRAD.cyan },
+  { icon: "mdi:book-open-page-variant", title: "Day Book (Tally / Zoho Export)", description: "Voucher-level export for accounting tools and period close.", to: "/reports/day-book", gradient: GRAD.emerald },
 ];
 
 const GST_VISIBLE = GST.filter((c) => c.to);

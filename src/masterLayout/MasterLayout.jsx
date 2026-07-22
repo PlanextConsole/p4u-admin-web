@@ -376,6 +376,8 @@ const MasterLayout = ({ children }) => {
                 <span>Food Coupons</span>
               </NavLink>
             </li>
+            <li><NavLink to='/food/refunds' className={sidebarNavClass}><Icon icon='mdi:cash-refund' className='menu-icon' /><span>Food Refunds</span></NavLink></li>
+            <li><NavLink to='/support-tickets' className={sidebarNavClass}><Icon icon='mdi:message-alert-outline' className='menu-icon' /><span>Support Tickets</span></NavLink></li>
             {/* FRANCHISE MANAGEMENT */}
             <li className='sidebar-menu-group-title'>Franchise Management</li>
             <li>
