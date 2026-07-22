@@ -1,10 +1,9 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { deleteCoupon, listCoupons } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import { formatDateTime, shortJson } from "../../lib/formatters";
 import FormModal from "../../components/admin/FormModal";
-import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 import CouponFormLayer from "./CouponFormLayer";
 
 export default function CouponListLayer() {
@@ -14,6 +13,7 @@ export default function CouponListLayer() {
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
   const [modal, setModal] = useState(null);
 
   const load = useCallback(async () => {
@@ -44,96 +44,158 @@ export default function CouponListLayer() {
     }
   }
 
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((row) =>
+      String(row.code || "").toLowerCase().includes(q)
+      || String(row.title || "").toLowerCase().includes(q)
+      || String(row.status || "").toLowerCase().includes(q));
+  }, [items, search]);
+
   const pageFrom = total === 0 ? 0 : offset + 1;
   const pageTo = offset + items.length;
+  const activeCount = items.filter((r) => String(r.status || "").toLowerCase() === "active").length;
 
   return (
-    <div className="card h-100 p-0 radius-12">
-      <div className="card-header border-bottom bg-base py-16 px-24 p4u-admin-filter-row gap-3 justify-content-between align-items-center">
-        <div className="p4u-admin-filter-row align-items-center gap-3">
-          <span className="text-md fw-medium text-secondary-light mb-0">Show</span>
-          <select
-            className="form-select form-select-sm w-auto ps-12 py-6 radius-12 h-40-px"
-            value={String(limit)}
-            onChange={(e) => {
-              setLimit(Number(e.target.value));
-              setOffset(0);
-            }}
-          >
-            <option value="10">10</option>
-            <option value="20">20</option>
-            <option value="50">50</option>
-          </select>
+    <div className="p4u-vendors-page">
+      <div className="p4u-vendors-hero">
+        <div>
+          <h3>Coupons</h3>
+          <p>{total.toLocaleString("en-IN")} coupons · Discounts and promotions</p>
         </div>
-        <button type="button" onClick={() => setModal({ mode: "add" })} className="btn btn-primary text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2">
-          <Icon icon="ic:baseline-plus" className="icon text-xl line-height-1" />
-          Add Coupon
-        </button>
       </div>
-      <div className="card-body p-24">
-        {error && (
-          <div className="alert alert-danger radius-12 mb-16" role="alert">
-            {error}
+
+      <div className="p4u-vendors-stats">
+        <div className="p4u-vendors-stat is-total">
+          <span className="p4u-vendors-stat__icon"><Icon icon="mdi:ticket-percent-outline" /></span>
+          <div>
+            <p className="p4u-vendors-stat__label">Total Coupons</p>
+            <p className="p4u-vendors-stat__value">{total}</p>
           </div>
-        )}
+        </div>
+        <div className="p4u-vendors-stat is-verified">
+          <span className="p4u-vendors-stat__icon"><Icon icon="mdi:check-circle-outline" /></span>
+          <div>
+            <p className="p4u-vendors-stat__label">Active (page)</p>
+            <p className="p4u-vendors-stat__value">{activeCount}</p>
+          </div>
+        </div>
+        <div className="p4u-vendors-stat is-pending">
+          <span className="p4u-vendors-stat__icon"><Icon icon="mdi:eye-outline" /></span>
+          <div>
+            <p className="p4u-vendors-stat__label">Showing</p>
+            <p className="p4u-vendors-stat__value">{filtered.length}</p>
+          </div>
+        </div>
+        <div className="p4u-vendors-stat is-rejected">
+          <span className="p4u-vendors-stat__icon"><Icon icon="mdi:format-list-bulleted" /></span>
+          <div>
+            <p className="p4u-vendors-stat__label">Page size</p>
+            <p className="p4u-vendors-stat__value">{limit}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="p4u-vendors-toolbar">
+        <label className="p4u-vendors-search">
+          <Icon icon="mdi:magnify" />
+          <input
+            type="search"
+            placeholder="Search coupons…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </label>
+        <select
+          className="form-select"
+          style={{ maxWidth: 120, height: 42, borderRadius: 12 }}
+          value={String(limit)}
+          onChange={(e) => {
+            setLimit(Number(e.target.value));
+            setOffset(0);
+          }}
+        >
+          <option value="10">10</option>
+          <option value="20">20</option>
+          <option value="50">50</option>
+        </select>
+        <div className="p4u-vendors-toolbar__actions">
+          <button type="button" className="p4u-vendors-btn-primary" onClick={() => setModal({ mode: "add" })}>
+            <Icon icon="ic:baseline-plus" />
+            Add Coupon
+          </button>
+        </div>
+      </div>
+
+      {error && <div className="alert alert-danger radius-12 mb-16" role="alert">{error}</div>}
+
+      <div className="p4u-vendors-table-wrap">
         {loading ? (
-          <p className="text-secondary-light mb-0">Loading coupons...</p>
+          <p className="text-secondary-light mb-0 p-24">Loading coupons...</p>
         ) : (
           <>
-            <div className="table-responsive scroll-sm">
-              <table className="table bordered-table sm-table mb-0">
-                <thead>
+            <table className="p4u-vendors-table">
+              <thead>
+                <tr>
+                  <th>S.No</th>
+                  <th>Code</th>
+                  <th>Title</th>
+                  <th>Status</th>
+                  <th>Discount</th>
+                  <th>Valid From</th>
+                  <th>Valid To</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 ? (
                   <tr>
-                    <th>S.No</th>
-                    <th>Code</th>
-                    <th>Title</th>
-                    <th>Status</th>
-                    <th>Discount</th>
-                    <th>Valid from</th>
-                    <th>Valid to</th>
-                    <TableActionHeader />
+                    <td colSpan={8} className="text-center py-4">No coupons found.</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {items.length === 0 ? (
-                    <tr>
-                      <td colSpan="8" className="text-center py-4">
-                        No coupons found.
+                ) : (
+                  filtered.map((row, index) => (
+                    <tr key={row.id}>
+                      <td>{offset + index + 1}</td>
+                      <td className="business-name">{row.code || "—"}</td>
+                      <td>{row.title || "—"}</td>
+                      <td>
+                        <span className={`p4u-vendor-pill ${String(row.status || "").toLowerCase() === "active" ? "is-verified" : "is-pending"}`}>
+                          {row.status || "—"}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="business-owner">{shortJson(row.discountJson)}</span>
+                      </td>
+                      <td>{formatDateTime(row.validFrom)}</td>
+                      <td>{formatDateTime(row.validTo)}</td>
+                      <td>
+                        <div className="d-flex align-items-center gap-8">
+                          <button type="button" className="p4u-vendors-view-btn" title="View" onClick={() => setModal({ mode: "view", id: row.id })}>
+                            <Icon icon="mdi:eye-outline" />
+                          </button>
+                          <button type="button" className="p4u-vendors-view-btn" title="Edit" onClick={() => setModal({ mode: "edit", id: row.id })}>
+                            <Icon icon="mdi:pencil-outline" />
+                          </button>
+                          <button type="button" className="p4u-vendors-view-btn" title="Delete" style={{ color: "#dc2626" }} onClick={() => onDelete(row.id)}>
+                            <Icon icon="mdi:trash-can-outline" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
-                  ) : (
-                    items.map((row, index) => (
-                      <tr key={row.id}>
-                        <td>{offset + index + 1}</td>
-                        <td className="fw-semibold">{row.code || "—"}</td>
-                        <td>{row.title || "—"}</td>
-                        <td>{row.status || "—"}</td>
-                        <td>
-                          <span className="text-xs text-secondary-light">{shortJson(row.discountJson)}</span>
-                        </td>
-                        <td>{formatDateTime(row.validFrom)}</td>
-                        <td>{formatDateTime(row.validTo)}</td>
-                        <TableActionCell
-                          actions={[
-                            { type: "view", onClick: () => setModal({ mode: "view", id: row.id }) },
-                            { type: "edit", onClick: () => setModal({ mode: "edit", id: row.id }) },
-                            { type: "delete", onClick: () => onDelete(row.id) },
-                          ]}
-                        />
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-            <div className="p4u-admin-filter-row justify-content-between gap-2 mt-24">
-              <span className="text-sm">
+                  ))
+                )}
+              </tbody>
+            </table>
+
+            <div className="p4u-vendors-toolbar" style={{ marginTop: 16, marginBottom: 0 }}>
+              <span className="text-secondary-light text-sm">
                 Showing {pageFrom} to {pageTo} of {total}
               </span>
-              <div className="d-flex gap-2">
+              <div className="p4u-vendors-toolbar__actions">
                 <button
                   type="button"
-                  className="btn btn-sm btn-outline-secondary radius-8"
+                  className="p4u-vendors-btn-outline"
                   disabled={offset <= 0}
                   onClick={() => setOffset(Math.max(0, offset - limit))}
                 >
@@ -141,7 +203,7 @@ export default function CouponListLayer() {
                 </button>
                 <button
                   type="button"
-                  className="btn btn-sm btn-outline-secondary radius-8"
+                  className="p4u-vendors-btn-outline"
                   disabled={offset + limit >= total}
                   onClick={() => setOffset(offset + limit)}
                 >

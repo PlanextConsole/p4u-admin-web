@@ -9542,38 +9542,208 @@ body .p4u-form-modal-portal .p4u-ref-modal-close {
 @media (max-width: 991px) { .p4u-homes-cms-toolbar { flex-direction: column; align-items: stretch; } .p4u-homes-cms-search, .p4u-homes-cms-add { width: 100%; } .p4u-homes-cms-tabs { display: flex; width: 100%; overflow-x: auto; } }
 @media (max-width: 767px) { .p4u-homes-cms-page { padding: 18px 14px 32px; } .p4u-homes-cms-modal-backdrop { padding: 14px; } .p4u-homes-cms-modal { width: 100%; max-height: none; padding: 24px 18px; } .p4u-homes-cms-grid { grid-template-columns: 1fr; } }
 /* P4U Homes: Property Reports */
-.p4u-property-reports-page { min-height: calc(100vh - 72px); padding: 32px; background: #f8fbfd; color: #001b36; }
-.p4u-property-reports-header { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 28px; }
-.p4u-property-reports-header h1 { margin: 0; color: #001b36; font-size: 28px; line-height: 1.15; font-weight: 800; letter-spacing: 0; }
-.p4u-property-reports-header > div { display: flex; align-items: center; gap: 10px; }
-.p4u-property-reports-header select, .p4u-property-reports-header button { min-height: 46px; border-radius: 18px; border: 1px solid #d5e4eb; background: #ffffff; color: #001b36; padding: 0 18px; font-size: 16px; font-weight: 700; }
-.p4u-property-reports-header select { min-width: 170px; border-color: #00a8a5; box-shadow: 0 0 0 3px rgba(0,168,165,.08); }
-.p4u-property-reports-header button { display: inline-flex; align-items: center; justify-content: center; gap: 10px; }
-.p4u-property-reports-header button svg { width: 21px; height: 21px; }
-.p4u-property-reports-loading { margin-bottom: 16px; border: 1px solid #d5e4eb; border-radius: 14px; background: #ffffff; padding: 14px 16px; color: #405a75; }
-.p4u-property-reports-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 32px; }
-.p4u-property-reports-metrics article { min-height: 108px; border: 1px solid #dce7ee; border-radius: 16px; background: #ffffff; box-shadow: 0 8px 18px rgba(15,23,42,.045); padding: 22px; display: grid; grid-template-columns: 22px 1fr; align-content: center; gap: 6px 12px; }
-.p4u-property-reports-metrics svg { width: 22px; height: 22px; grid-row: span 2; align-self: center; }
-.p4u-property-reports-metrics svg.is-teal { color: #00a8a5; }
+.p4u-property-reports-page {
+  min-height: calc(100vh - 72px);
+  padding: 28px 28px 40px;
+  background: linear-gradient(180deg, #eef4f7 0%, #e6eef3 100%);
+  color: #2f465f;
+}
+.p4u-property-reports-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+.p4u-property-reports-header h1 {
+  margin: 0;
+  color: #17324d;
+  font-size: 26px;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+.p4u-property-reports-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.p4u-property-reports-header select,
+.p4u-property-reports-header button {
+  box-sizing: border-box;
+  height: 42px;
+  min-height: 42px;
+  border-radius: 12px;
+  border: 1px solid #c5d5de;
+  background: #f4f8fa;
+  color: #17324d;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+}
+.p4u-property-reports-header select {
+  min-width: 160px;
+  border-color: #009f98;
+  box-shadow: inset 0 0 0 1px rgba(0, 159, 152, 0.12);
+  appearance: auto;
+}
+.p4u-property-reports-header button.p4u-property-reports-export {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #009f98;
+  border-color: #009f98;
+  color: #ffffff;
+}
+.p4u-property-reports-header button svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.p4u-property-reports-loading {
+  margin-bottom: 14px;
+  border: 1px solid #c5d5de;
+  border-radius: 12px;
+  background: #f4f8fa;
+  padding: 12px 14px;
+  color: #405a75;
+}
+.p4u-property-reports-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.p4u-property-reports-metrics article {
+  min-height: 104px;
+  border: 1px solid #c5d5de;
+  border-radius: 14px;
+  background: #f4f8fa;
+  box-shadow: none;
+  padding: 18px 16px;
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  align-content: center;
+  gap: 4px 12px;
+}
+.p4u-property-reports-metrics svg {
+  width: 22px;
+  height: 22px;
+  grid-row: span 2;
+  align-self: center;
+}
+.p4u-property-reports-metrics svg.is-teal { color: #009f98; }
 .p4u-property-reports-metrics svg.is-green { color: #18a878; }
-.p4u-property-reports-metrics svg.is-orange { color: #ff8a1f; }
-.p4u-property-reports-metrics svg.is-blue { color: #2f75ff; }
-.p4u-property-reports-metrics span { color: #60748b; font-size: 16px; font-weight: 500; }
-.p4u-property-reports-metrics strong { color: #001b36; font-size: 32px; line-height: 1; font-weight: 900; }
-.p4u-property-reports-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 20px; }
-.p4u-property-reports-chart { min-height: 308px; border: 1px solid #dce7ee; border-radius: 16px; background: #ffffff; box-shadow: 0 8px 18px rgba(15,23,42,.045); padding: 22px; overflow: hidden; }
-.p4u-property-reports-chart h2, .p4u-property-reports-top h2 { margin: 0 0 18px; color: #001b36; font-size: 19px; font-weight: 800; }
-.p4u-property-reports-top { margin-top: 32px; border: 1px solid #dce7ee; border-radius: 16px; background: #ffffff; box-shadow: 0 8px 18px rgba(15,23,42,.045); padding: 22px; }
-.p4u-property-reports-top article { min-height: 74px; border-radius: 18px; background: #fbfdfe; display: grid; grid-template-columns: 45px 1fr auto; align-items: center; gap: 12px; padding: 14px 16px; margin-top: 12px; }
-.p4u-property-reports-top b { color: #a6b0bd; font-size: 24px; font-weight: 900; }
-.p4u-property-reports-top strong { display: block; color: #001b36; font-size: 18px; font-weight: 800; }
-.p4u-property-reports-top span { display: block; margin-top: 4px; color: #405a75; font-size: 15px; }
-.p4u-property-reports-top ul { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; gap: 18px; }
-.p4u-property-reports-top li { display: flex; flex-direction: column; align-items: center; color: #001b36; font-size: 15px; line-height: 1; }
-.p4u-property-reports-top li svg { width: 18px; height: 18px; color: #405a75; margin-bottom: 6px; }
+.p4u-property-reports-metrics svg.is-orange { color: #e08a20; }
+.p4u-property-reports-metrics svg.is-blue { color: #3b6fd9; }
+.p4u-property-reports-metrics span {
+  color: #5a7086;
+  font-size: 14px;
+  font-weight: 600;
+}
+.p4u-property-reports-metrics strong {
+  color: #08233f;
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 800;
+}
+.p4u-property-reports-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.p4u-property-reports-chart {
+  min-height: 300px;
+  border: 1px solid #c5d5de;
+  border-radius: 14px;
+  background: #f4f8fa;
+  box-shadow: none;
+  padding: 18px;
+  overflow: hidden;
+}
+.p4u-property-reports-chart h2,
+.p4u-property-reports-top h2 {
+  margin: 0 0 14px;
+  color: #17324d;
+  font-size: 17px;
+  font-weight: 800;
+}
+.p4u-property-reports-top {
+  margin-top: 16px;
+  border: 1px solid #c5d5de;
+  border-radius: 14px;
+  background: #f4f8fa;
+  box-shadow: none;
+  padding: 18px;
+}
+.p4u-property-reports-top article {
+  min-height: 70px;
+  border-radius: 12px;
+  background: #e9f0f4;
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  margin-top: 10px;
+}
+.p4u-property-reports-top b {
+  color: #7a8ea3;
+  font-size: 20px;
+  font-weight: 800;
+}
+.p4u-property-reports-top strong {
+  display: block;
+  color: #17324d;
+  font-size: 16px;
+  font-weight: 800;
+}
+.p4u-property-reports-top span {
+  display: block;
+  margin-top: 3px;
+  color: #405a75;
+  font-size: 13px;
+}
+.p4u-property-reports-top ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.p4u-property-reports-top li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #17324d;
+  font-size: 13px;
+  line-height: 1;
+}
+.p4u-property-reports-top li svg {
+  width: 16px;
+  height: 16px;
+  color: #5a7086;
+  margin-bottom: 5px;
+}
 
-@media (max-width: 1199px) { .p4u-property-reports-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } .p4u-property-reports-grid { grid-template-columns: 1fr; } }
-@media (max-width: 767px) { .p4u-property-reports-page { padding: 18px 14px 32px; } .p4u-property-reports-header { flex-direction: column; align-items: stretch; } .p4u-property-reports-header > div { flex-direction: column; align-items: stretch; } .p4u-property-reports-metrics { grid-template-columns: 1fr; } .p4u-property-reports-top article { grid-template-columns: 1fr; align-items: flex-start; } .p4u-property-reports-top ul { width: 100%; justify-content: flex-end; } }
+@media (max-width: 1199px) {
+  .p4u-property-reports-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .p4u-property-reports-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 767px) {
+  .p4u-property-reports-page { padding: 16px 12px 28px; }
+  .p4u-property-reports-header { flex-direction: column; align-items: stretch; }
+  .p4u-property-reports-actions { flex-direction: column; align-items: stretch; }
+  .p4u-property-reports-header select,
+  .p4u-property-reports-header button { width: 100%; }
+  .p4u-property-reports-metrics { grid-template-columns: 1fr; }
+  .p4u-property-reports-top article { grid-template-columns: 1fr; align-items: flex-start; }
+  .p4u-property-reports-top ul { width: 100%; justify-content: flex-end; }
+}
 /* P4U Food Modules */
 .p4u-food-page { min-height: calc(100vh - 72px); padding: 34px 36px 48px; background: #f8fbfd; color: #001b36; }
 .p4u-food-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 28px; }
@@ -10287,4 +10457,344 @@ body .p4u-form-modal-portal .p4u-ref-modal-close {
   .p4u-form-modal-body {
     padding: 26px 18px 20px !important;
   }
+}
+
+/* Global authenticated admin visual parity */
+.dashboard-main-body.p4u-reference-admin {
+  --primary-50: #edf8f8;
+  --primary-100: #d8eeee;
+  --primary-500: #128c9d;
+  --primary-600: #0b7285;
+  --primary-700: #095f6f;
+  --reference-teal: #0b7285;
+  --reference-teal-dark: #095f6f;
+  --reference-ink: #001b36;
+}
+
+/* Every module-level primary/add action follows the Add Customer reference. */
+.dashboard-main-body.p4u-reference-admin :is(
+  button.btn-primary,
+  a.btn-primary,
+  button.btn-primary-600,
+  a.btn-primary-600,
+  .p4u-vendors-btn-primary,
+  .p4u-categories-btn-primary,
+  .p4u-products-btn-primary,
+  .p4u-services-btn-primary,
+  .p4u-customers-btn-primary,
+  .p4u-ref-primary,
+  .p4u-localities-add,
+  .p4u-plans-add,
+  .p4u-onboarding-add,
+  .p4u-ads-new-btn
+) {
+  min-height: 42px !important;
+  height: auto;
+  padding: 9px 18px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: #0b7285 !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.dashboard-main-body.p4u-reference-admin :is(
+  button.btn-primary,
+  a.btn-primary,
+  button.btn-primary-600,
+  a.btn-primary-600,
+  .p4u-vendors-btn-primary,
+  .p4u-categories-btn-primary,
+  .p4u-products-btn-primary,
+  .p4u-services-btn-primary,
+  .p4u-customers-btn-primary,
+  .p4u-ref-primary,
+  .p4u-localities-add,
+  .p4u-plans-add,
+  .p4u-onboarding-add,
+  .p4u-ads-new-btn
+):hover:not(:disabled) {
+  background: #095f6f !important;
+  color: #fff !important;
+}
+
+.dashboard-main-body.p4u-reference-admin :is(
+  button.btn-primary,
+  a.btn-primary,
+  button.btn-primary-600,
+  a.btn-primary-600,
+  .p4u-vendors-btn-primary,
+  .p4u-categories-btn-primary,
+  .p4u-products-btn-primary,
+  .p4u-services-btn-primary,
+  .p4u-customers-btn-primary,
+  .p4u-ref-primary,
+  .p4u-localities-add,
+  .p4u-plans-add,
+  .p4u-onboarding-add,
+  .p4u-ads-new-btn
+):disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+}
+
+/* Standardize the remaining custom header actions that do not use Bootstrap. */
+.dashboard-main-body.p4u-reference-admin :is(
+  .p4u-food-head,
+  .p4u-cms-hero,
+  .p4u-splash-controls
+) > button {
+  min-height: 42px !important;
+  padding: 9px 18px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: #0b7285 !important;
+  color: #fff !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+}
+
+/* Use one table surface, header and row treatment across every admin module. */
+.dashboard-main-body.p4u-reference-admin .table-responsive {
+  width: 100%;
+  margin-right: 0;
+  margin-left: 0;
+  overflow-x: auto;
+  border: 1px solid #e4edf4;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.dashboard-main-body.p4u-reference-admin table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  background: #fff;
+  color: #001b36;
+  font-size: 0.86rem;
+}
+
+.dashboard-main-body.p4u-reference-admin table thead th {
+  height: auto;
+  padding: 12px 14px !important;
+  border-color: #e4edf4 !important;
+  border-bottom: 1px solid #e4edf4 !important;
+  background: #f8fbfd !important;
+  color: #64748b !important;
+  font-size: 0.68rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.06em;
+  line-height: 1.35;
+  text-align: left;
+  text-transform: uppercase;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.dashboard-main-body.p4u-reference-admin table tbody td {
+  height: auto;
+  min-height: 0;
+  padding: 12px 14px !important;
+  border-color: #eef4f8 !important;
+  border-bottom: 1px solid #eef4f8 !important;
+  background: #fff;
+  color: #334155;
+  font-size: 0.86rem;
+  vertical-align: middle;
+}
+
+.dashboard-main-body.p4u-reference-admin table tbody tr:last-child td {
+  border-bottom: 0 !important;
+}
+
+.dashboard-main-body.p4u-reference-admin table tbody tr:hover td {
+  background: #fbfdfd;
+}
+
+@media (max-width: 767.98px) {
+  .dashboard-main-body.p4u-reference-admin :is(
+    button.btn-primary,
+    a.btn-primary,
+    button.btn-primary-600,
+    a.btn-primary-600,
+    .p4u-vendors-btn-primary,
+    .p4u-categories-btn-primary,
+    .p4u-products-btn-primary,
+    .p4u-services-btn-primary,
+    .p4u-customers-btn-primary,
+    .p4u-ref-primary,
+    .p4u-localities-add,
+    .p4u-plans-add,
+    .p4u-onboarding-add,
+    .p4u-ads-new-btn
+  ) {
+    min-height: 44px !important;
+  }
+}
+/* Custom modules with bespoke add-button class names use the same primary action. */
+.dashboard-main-body.p4u-reference-admin :is(
+  .p4u-banner-add-btn,
+  .p4u-popup-add-btn,
+  .p4u-home-cms-add-btn,
+  .p4u-haf-add,
+  .p4u-homes-cms-add
+) {
+  min-height: 42px !important;
+  height: auto;
+  padding: 9px 18px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: #0b7285 !important;
+  color: #fff !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.dashboard-main-body.p4u-reference-admin :is(
+  .p4u-banner-add-btn,
+  .p4u-popup-add-btn,
+  .p4u-home-cms-add-btn,
+  .p4u-haf-add,
+  .p4u-homes-cms-add
+):hover:not(:disabled) {
+  background: #095f6f !important;
+  color: #fff !important;
+}
+
+.dashboard-main-body.p4u-reference-admin .btn-group > .btn {
+  border-radius: 999px !important;
+}
+
+/* Destructive actions keep their semantic red treatment. */
+.dashboard-main-body.p4u-reference-admin button[style*="#dc2626"],
+.dashboard-main-body.p4u-reference-admin button.danger,
+.dashboard-main-body.p4u-reference-admin .btn-danger {
+  background: #dc2626 !important;
+  color: #fff !important;
+}
+
+/* Form save/create actions share the same visual language as list-page add actions. */
+.dashboard-main-body.p4u-reference-admin :is(
+  .p4u-banner-submit,
+  .p4u-ad-submit,
+  .p4u-haf-save,
+  .p4u-homes-cms-save,
+  .p4u-plans-save,
+  .p4u-localities-save,
+  .p4u-push-submit,
+  .p4u-classified-submit,
+  .p4u-food-modal-actions .is-save,
+  .p4u-ref-modal-footer button:last-child,
+  .p4u-cms-modal-footer button:last-child
+) {
+  min-height: 42px !important;
+  height: auto;
+  padding: 9px 18px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: #0b7285 !important;
+  color: #fff !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+}
+
+.dashboard-main-body.p4u-reference-admin :is(
+  .p4u-banner-submit,
+  .p4u-ad-submit,
+  .p4u-haf-save,
+  .p4u-homes-cms-save,
+  .p4u-plans-save,
+  .p4u-localities-save,
+  .p4u-push-submit,
+  .p4u-classified-submit,
+  .p4u-food-modal-actions .is-save,
+  .p4u-ref-modal-footer button:last-child,
+  .p4u-cms-modal-footer button:last-child
+):hover:not(:disabled) {
+  background: #095f6f !important;
+  color: #fff !important;
+}
+
+/* Legacy WowDash list pages → Vendors reference colors (no blue Add / pagination) */
+.dashboard-main-body.p4u-reference-admin :is(
+  .bg-primary-600,
+  .text-primary-600,
+  .page-link.bg-primary-600,
+  .btn-info,
+  .bg-info-600
+) {
+  background-color: #0b7285 !important;
+  border-color: #0b7285 !important;
+  color: #fff !important;
+}
+
+.dashboard-main-body.p4u-reference-admin .text-primary-light,
+.dashboard-main-body.p4u-reference-admin .text-primary-600:not(.btn):not(.page-link) {
+  color: #0b7285 !important;
+  background-color: transparent !important;
+}
+
+.dashboard-main-body.p4u-reference-admin .nav.nav-pills {
+  display: inline-flex !important;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px !important;
+  margin-bottom: 18px;
+  border-radius: 14px !important;
+  background: #edf3f8 !important;
+}
+
+.dashboard-main-body.p4u-reference-admin .nav.nav-pills .nav-link {
+  border: 0 !important;
+  border-radius: 10px !important;
+  padding: 10px 16px !important;
+  background: transparent !important;
+  color: #51657d !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+.dashboard-main-body.p4u-reference-admin .nav.nav-pills .nav-link.active,
+.dashboard-main-body.p4u-reference-admin .nav.nav-pills .nav-link.bg-white {
+  background: #fff !important;
+  color: #06172a !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 4px rgba(6, 23, 42, 0.08) !important;
+}
+
+.dashboard-main-body.p4u-reference-admin > .card.radius-12,
+.dashboard-main-body.p4u-reference-admin .card.h-100.p-0.radius-12 {
+  border: 1px solid #d8e2ea !important;
+  border-radius: 14px !important;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.045) !important;
+  overflow: hidden;
+  background: #fff !important;
+}
+
+.dashboard-main-body.p4u-reference-admin .card-header {
+  background: #fff !important;
+  border-bottom: 1px solid #e7eef2 !important;
+}
+
+.dashboard-main-body.p4u-reference-admin table.bordered-table thead th,
+.dashboard-main-body.p4u-reference-admin table.sm-table thead th {
+  background: #f7fbfa !important;
+  color: #51657d !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  border-bottom: 1px solid #e4edf1 !important;
 }

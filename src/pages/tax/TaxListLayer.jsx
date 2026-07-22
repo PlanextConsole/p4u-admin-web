@@ -6,7 +6,6 @@ import {
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import FormModal from "../../components/admin/FormModal";
-import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 import TaxFormLayer from "./TaxFormLayer";
 
 const TaxListLayer = () => {
@@ -43,6 +42,7 @@ const TaxListLayer = () => {
     );
   }, [items, search]);
 
+  const activeCount = useMemo(() => items.filter((r) => r.isActive !== false).length, [items]);
   const rowForId = (id) => items.find((t) => t.id === id) || null;
 
   const handleDelete = async (id) => {
@@ -56,96 +56,138 @@ const TaxListLayer = () => {
   };
 
   return (
-    <div className='card h-100 p-0 radius-12'>
-      <div className='card-header border-bottom bg-base py-16 px-24 p4u-admin-filter-row align-items-center gap-3 justify-content-between'>
-        <div className='p4u-admin-filter-row align-items-center gap-3'>
-          <span className='text-md fw-medium text-secondary-light mb-0'>Show</span>
-          <select className='form-select form-select-sm w-auto ps-12 py-6 radius-12 h-40-px' defaultValue='10'>
-            <option value='10'>10</option>
-            <option value='20'>20</option>
-          </select>
-          <form className='navbar-search' onSubmit={(e) => e.preventDefault()}>
-            <input
-              type='text'
-              className='bg-base h-40-px w-auto'
-              name='search'
-              placeholder='Search Tax...'
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <Icon icon='ion:search-outline' className='icon' />
-          </form>
+    <div className="p4u-vendors-page">
+      <div className="p4u-vendors-hero">
+        <div>
+          <h3>Tax Management</h3>
+          <p>{items.length} tax rate{items.length === 1 ? "" : "s"} · Platform tax configuration</p>
         </div>
-        <button type='button' onClick={() => setModal({ mode: "add" })} className='btn btn-primary text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2'>
-          <Icon icon='ic:baseline-plus' className='icon text-xl line-height-1' />
-          Add Tax
-        </button>
       </div>
-      <div className='card-body p-24'>
-        {error && (
-          <div className='alert alert-danger radius-12 mb-16' role='alert'>
-            {error}
-          </div>
-        )}
-        {loading ? (
-          <p className='text-secondary-light mb-0'>Loading...</p>
-        ) : (
-          <div className='table-responsive scroll-sm'>
-            <table className='table bordered-table sm-table mb-0'>
-              <thead>
-                <tr>
-                  <th scope='col'>S.No</th>
-                  <th scope='col'>Code</th>
-                  <th scope='col'>Title</th>
-                  <th scope='col'>Rate</th>
-                  <th scope='col' className='text-center'>Active</th>
-                  <th scope='col'>Description</th>
-                  <TableActionHeader />
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan='7' className='text-center py-4'>No tax records found.</td>
-                  </tr>
-                ) : (
-                  filtered.map((tax, index) => (
-                    <tr key={tax.id}>
-                      <td>{index + 1}</td>
-                      <td className='fw-medium text-primary-light'>{tax.code || "—"}</td>
-                      <td>{tax.title || "—"}</td>
-                      <td>
-                        <span className='bg-info-focus text-info-600 px-12 py-4 radius-4 fw-bold text-sm'>
-                          {tax.percentage != null ? `${tax.percentage}%` : "—"}
-                        </span>
-                      </td>
-                      <td className='text-center'>{tax.isActive !== false ? "Yes" : "No"}</td>
-                      <td>
-                        <span className='text-secondary-light'>
-                          {(tax.metadata && tax.metadata.description) || "—"}
-                        </span>
-                      </td>
-                      <TableActionCell
-                        actions={[
-                          { type: "edit", onClick: () => setModal({ mode: "edit", id: tax.id }) },
-                          { type: "delete", onClick: () => handleDelete(tax.id) },
-                        ]}
-                      />
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
 
-        <div className='p4u-admin-filter-row align-items-center justify-content-between gap-2 mt-24'>
-          <span>Showing 1 to {filtered.length} of {filtered.length} entries</span>
+      <div className="p4u-vendors-stats">
+        <div className="p4u-vendors-stat is-total">
+          <span className="p4u-vendors-stat__icon"><Icon icon="mdi:percent-outline" /></span>
+          <div>
+            <p className="p4u-vendors-stat__label">Total Rates</p>
+            <p className="p4u-vendors-stat__value">{items.length}</p>
+          </div>
         </div>
+        <div className="p4u-vendors-stat is-verified">
+          <span className="p4u-vendors-stat__icon"><Icon icon="mdi:check-circle-outline" /></span>
+          <div>
+            <p className="p4u-vendors-stat__label">Active</p>
+            <p className="p4u-vendors-stat__value">{activeCount}</p>
+          </div>
+        </div>
+        <div className="p4u-vendors-stat is-pending">
+          <span className="p4u-vendors-stat__icon"><Icon icon="mdi:pause-circle-outline" /></span>
+          <div>
+            <p className="p4u-vendors-stat__label">Inactive</p>
+            <p className="p4u-vendors-stat__value">{Math.max(0, items.length - activeCount)}</p>
+          </div>
+        </div>
+        <div className="p4u-vendors-stat is-rejected">
+          <span className="p4u-vendors-stat__icon"><Icon icon="mdi:filter-outline" /></span>
+          <div>
+            <p className="p4u-vendors-stat__label">Showing</p>
+            <p className="p4u-vendors-stat__value">{filtered.length}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="p4u-vendors-toolbar">
+        <label className="p4u-vendors-search">
+          <Icon icon="mdi:magnify" />
+          <input
+            type="search"
+            placeholder="Search tax…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </label>
+        <div className="p4u-vendors-toolbar__actions">
+          <button type="button" className="p4u-vendors-btn-primary" onClick={() => setModal({ mode: "add" })}>
+            <Icon icon="ic:baseline-plus" />
+            Add Tax
+          </button>
+        </div>
+      </div>
+
+      {error && <div className="alert alert-danger radius-12 mb-16" role="alert">{error}</div>}
+
+      <div className="p4u-vendors-table-wrap">
+        {loading ? (
+          <p className="text-secondary-light mb-0 p-24">Loading...</p>
+        ) : (
+          <table className="p4u-vendors-table">
+            <thead>
+              <tr>
+                <th>S.No</th>
+                <th>Code</th>
+                <th>Title</th>
+                <th>Rate</th>
+                <th>Status</th>
+                <th>Description</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-4">No tax records found.</td>
+                </tr>
+              ) : (
+                filtered.map((tax, index) => (
+                  <tr key={tax.id}>
+                    <td>{index + 1}</td>
+                    <td className="business-name">{tax.code || "—"}</td>
+                    <td>{tax.title || "—"}</td>
+                    <td>
+                      <span className="p4u-vendor-pill is-verified">
+                        {tax.percentage != null ? `${tax.percentage}%` : "—"}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`p4u-vendor-pill ${tax.isActive !== false ? "is-verified" : "is-rejected"}`}>
+                        {tax.isActive !== false ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="business-owner">
+                        {(tax.metadata && tax.metadata.description) || "—"}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="d-flex align-items-center gap-8">
+                        <button
+                          type="button"
+                          className="p4u-vendors-view-btn"
+                          title="Edit"
+                          onClick={() => setModal({ mode: "edit", id: tax.id })}
+                        >
+                          <Icon icon="mdi:pencil-outline" />
+                        </button>
+                        <button
+                          type="button"
+                          className="p4u-vendors-view-btn"
+                          title="Delete"
+                          style={{ color: "#dc2626" }}
+                          onClick={() => handleDelete(tax.id)}
+                        >
+                          <Icon icon="mdi:trash-can-outline" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {modal && (
-        <FormModal onClose={() => setModal(null)} size='md'>
+        <FormModal onClose={() => setModal(null)} size="md">
           <TaxFormLayer
             isEdit={modal.mode === "edit"}
             initialData={modal.id ? rowForId(modal.id) : null}

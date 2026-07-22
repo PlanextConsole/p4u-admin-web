@@ -1,9 +1,8 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { listPlatformVariables, deletePlatformVariable } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import FormModal from "../../components/admin/FormModal";
-import TableActionButtons, { TableActionCell, TableActionHeader } from "../../components/admin/TableActionButtons";
 import PlatformVariableFormLayer from "./PlatformVariableFormLayer";
 
 const PlatformVariableListLayer = () => {
@@ -42,9 +41,11 @@ const PlatformVariableListLayer = () => {
     }
   };
 
-  const filtered = search.trim()
-    ? variables.filter((v) => (v.key || "").toLowerCase().includes(search.toLowerCase()))
-    : variables;
+  const filtered = useMemo(() => (
+    search.trim()
+      ? variables.filter((v) => (v.key || "").toLowerCase().includes(search.toLowerCase()))
+      : variables
+  ), [variables, search]);
 
   const getVal = (row) => {
     const v = row.value;
@@ -66,67 +67,151 @@ const PlatformVariableListLayer = () => {
   const totalPages = Math.ceil(total / limit) || 1;
 
   return (
-    <div className="card h-100 p-0 radius-12">
-      <div className="card-header border-bottom bg-base py-16 px-24 p4u-admin-filter-row align-items-center gap-3 justify-content-between">
-        <button type="button" onClick={() => setModal({ mode: "add" })} className="btn btn-primary text-sm btn-sm px-12 py-8 radius-8 d-flex align-items-center gap-2">
-          <Icon icon="ic:baseline-plus" className="icon text-xl line-height-1" /> Add Variable
-        </button>
-        <input type="text" className="form-control radius-8" style={{ maxWidth: 300 }} placeholder="Search Platform Variables" value={search} onChange={(e) => setSearch(e.target.value)} />
+    <div className="p4u-vendors-page">
+      <div className="p4u-vendors-hero">
+        <div>
+          <h3>Platform Variables</h3>
+          <p>{total.toLocaleString("en-IN")} variables · System configuration keys</p>
+        </div>
       </div>
-      <div className="card-body p-24">
-        {error && <div className="alert alert-danger radius-12 mb-16" role="alert">{error}</div>}
+
+      <div className="p4u-vendors-stats">
+        <div className="p4u-vendors-stat is-total">
+          <span className="p4u-vendors-stat__icon"><Icon icon="mdi:variable" /></span>
+          <div>
+            <p className="p4u-vendors-stat__label">Total Variables</p>
+            <p className="p4u-vendors-stat__value">{total}</p>
+          </div>
+        </div>
+        <div className="p4u-vendors-stat is-verified">
+          <span className="p4u-vendors-stat__icon"><Icon icon="mdi:file-document-outline" /></span>
+          <div>
+            <p className="p4u-vendors-stat__label">This Page</p>
+            <p className="p4u-vendors-stat__value">{variables.length}</p>
+          </div>
+        </div>
+        <div className="p4u-vendors-stat is-pending">
+          <span className="p4u-vendors-stat__icon"><Icon icon="mdi:magnify" /></span>
+          <div>
+            <p className="p4u-vendors-stat__label">Matches</p>
+            <p className="p4u-vendors-stat__value">{filtered.length}</p>
+          </div>
+        </div>
+        <div className="p4u-vendors-stat is-rejected">
+          <span className="p4u-vendors-stat__icon"><Icon icon="mdi:book-open-page-variant-outline" /></span>
+          <div>
+            <p className="p4u-vendors-stat__label">Page</p>
+            <p className="p4u-vendors-stat__value">{page}/{totalPages}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="p4u-vendors-toolbar">
+        <label className="p4u-vendors-search">
+          <Icon icon="mdi:magnify" />
+          <input
+            type="search"
+            placeholder="Search platform variables…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </label>
+        <div className="p4u-vendors-toolbar__actions">
+          <button type="button" className="p4u-vendors-btn-primary" onClick={() => setModal({ mode: "add" })}>
+            <Icon icon="ic:baseline-plus" />
+            Add Variable
+          </button>
+        </div>
+      </div>
+
+      {error && <div className="alert alert-danger radius-12 mb-16" role="alert">{error}</div>}
+
+      <div className="p4u-vendors-table-wrap">
         {loading ? (
-          <p className="text-secondary-light mb-0">Loading platform variables...</p>
+          <p className="text-secondary-light mb-0 p-24">Loading platform variables...</p>
         ) : (
           <>
-            <div className="table-responsive scroll-sm">
-              <table className="table bordered-table sm-table mb-0">
-                <thead>
-                  <tr>
-                    <th><input type="checkbox" disabled /></th>
-                    <th>S.No</th>
-                    <th>Variable Type</th>
-                    <th>Value</th>
-                    <th>Value Type</th>
-                    <th>Currency Type</th>
-                    <th>CreatedAt</th>
-                    <TableActionHeader />
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.length > 0 ? (
-                    filtered.map((row, index) => {
-                      const v = getVal(row);
-                      return (
-                        <tr key={row.id}>
-                          <td><input type="checkbox" /></td>
-                          <td>{offset + index + 1}</td>
-                          <td className="fw-medium">{row.key || "—"}</td>
-                          <td>{v.amount}</td>
-                          <td>{v.valueType || "—"}</td>
-                          <td>{v.currencyType || "None"}</td>
-                          <td>{formatDate(row.createdAt)}</td>
-                          <TableActionCell
-                            actions={[
-                              { type: "view", icon: "mdi:information-outline", onClick: () => setModal({ mode: "view", id: row.id }) },
-                              { type: "edit", onClick: () => setModal({ mode: "edit", id: row.id }) },
-                              { type: "delete", onClick: () => handleDelete(row.id) },
-                            ]}
-                          />
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr><td colSpan="8" className="text-center py-4">No platform variables found.</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-            <div className="p4u-admin-filter-row align-items-center justify-content-between gap-2 mt-24">
-              <span>{page} of {totalPages}</span>
-              <div className="d-flex gap-2">
-                <button type="button" className="btn btn-sm btn-outline-secondary radius-8" disabled={!canPrev} onClick={() => setOffset(Math.max(0, offset - limit))}>Prev</button>
-                <button type="button" className="btn btn-sm btn-primary radius-8" disabled={!canNext} onClick={() => setOffset(offset + limit)}>Next</button>
+            <table className="p4u-vendors-table">
+              <thead>
+                <tr>
+                  <th>S.No</th>
+                  <th>Variable Type</th>
+                  <th>Value</th>
+                  <th>Value Type</th>
+                  <th>Currency Type</th>
+                  <th>Created At</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length > 0 ? (
+                  filtered.map((row, index) => {
+                    const v = getVal(row);
+                    return (
+                      <tr key={row.id}>
+                        <td>{offset + index + 1}</td>
+                        <td className="business-name">{row.key || "—"}</td>
+                        <td>{v.amount}</td>
+                        <td>{v.valueType || "—"}</td>
+                        <td>{v.currencyType || "None"}</td>
+                        <td>{formatDate(row.createdAt)}</td>
+                        <td>
+                          <div className="d-flex align-items-center gap-8">
+                            <button
+                              type="button"
+                              className="p4u-vendors-view-btn"
+                              title="View"
+                              onClick={() => setModal({ mode: "view", id: row.id })}
+                            >
+                              <Icon icon="mdi:eye-outline" />
+                            </button>
+                            <button
+                              type="button"
+                              className="p4u-vendors-view-btn"
+                              title="Edit"
+                              onClick={() => setModal({ mode: "edit", id: row.id })}
+                            >
+                              <Icon icon="mdi:pencil-outline" />
+                            </button>
+                            <button
+                              type="button"
+                              className="p4u-vendors-view-btn"
+                              title="Delete"
+                              style={{ color: "#dc2626" }}
+                              onClick={() => handleDelete(row.id)}
+                            >
+                              <Icon icon="mdi:trash-can-outline" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr><td colSpan={7} className="text-center py-4">No platform variables found.</td></tr>
+                )}
+              </tbody>
+            </table>
+
+            <div className="p4u-vendors-toolbar" style={{ marginTop: 16, marginBottom: 0 }}>
+              <span className="text-secondary-light text-sm">{page} of {totalPages}</span>
+              <div className="p4u-vendors-toolbar__actions">
+                <button
+                  type="button"
+                  className="p4u-vendors-btn-outline"
+                  disabled={!canPrev}
+                  onClick={() => setOffset(Math.max(0, offset - limit))}
+                >
+                  Prev
+                </button>
+                <button
+                  type="button"
+                  className="p4u-vendors-btn-outline"
+                  disabled={!canNext}
+                  onClick={() => setOffset(offset + limit)}
+                >
+                  Next
+                </button>
               </div>
             </div>
           </>

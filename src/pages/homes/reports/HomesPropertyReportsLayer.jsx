@@ -84,13 +84,16 @@ export default function HomesPropertyReportsLayer() {
     <div className='p4u-property-reports-page'>
       <div className='p4u-property-reports-header'>
         <h1>Property Reports & Analytics</h1>
-        <div>
-          <select value={range} onChange={(e) => setRange(e.target.value)}>
+        <div className='p4u-property-reports-actions'>
+          <select value={range} onChange={(e) => setRange(e.target.value)} aria-label='Date range'>
             <option value='30d'>Last 30 days</option>
             <option value='90d'>Last 90 days</option>
             <option value='180d'>Last 180 days</option>
           </select>
-          <button type='button' onClick={exportCsv}><Icon icon='mdi:download' />Export CSV</button>
+          <button type='button' className='p4u-property-reports-export' onClick={exportCsv}>
+            <Icon icon='mdi:download' />
+            Export CSV
+          </button>
         </div>
       </div>
 

@@ -20,7 +20,7 @@ const PLAN_DOT_COLORS = {
 
 function planDotColor(name) {
   const key = String(name || "").toLowerCase().trim();
-  return PLAN_DOT_COLORS[key] || "#14b8a6";
+  return PLAN_DOT_COLORS[key] || "#0b7285";
 }
 
 const formatInr = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
@@ -71,8 +71,10 @@ const VendorPlanListLayer = () => {
   useEffect(() => { load(); }, [load]);
 
   const stats = useMemo(() => ({
+    total: items.length,
     localCount: items.filter((i) => i.planType === "local").length,
     vipCount: items.filter((i) => i.planType === "vip").length,
+    activeCount: items.filter((i) => i.isActive).length,
   }), [items]);
 
   const filtered = useMemo(() => {
@@ -113,182 +115,202 @@ const VendorPlanListLayer = () => {
   };
 
   return (
-    <>
-      <div className="mb-24">
-        <h3 className="fw-bold mb-4">Vendor Plans</h3>
-        <p className="text-secondary-light text-sm mb-16">Configure marketplace vendor plans and pricing</p>
-        <ul className="nav nav-pills gap-8 p-4 bg-neutral-100 radius-12 d-inline-flex mb-0">
-          <li className="nav-item">
-            <button
-              type="button"
-              className={`nav-link px-20 py-10 radius-8 border-0 ${activeTab === "local" ? "bg-white text-primary-light shadow-sm fw-semibold" : "bg-transparent text-secondary-light"}`}
-              onClick={() => setActiveTab("local")}
-            >
-              Local Plans ({stats.localCount})
-            </button>
-          </li>
-          <li className="nav-item">
-            <button
-              type="button"
-              className={`nav-link px-20 py-10 radius-8 border-0 ${activeTab === "vip" ? "bg-white text-primary-light shadow-sm fw-semibold" : "bg-transparent text-secondary-light"}`}
-              onClick={() => setActiveTab("vip")}
-            >
-              VIP Plans ({stats.vipCount})
-            </button>
-          </li>
-        </ul>
+    <div className="p4u-vendors-page">
+      <div className="p4u-vendors-hero">
+        <div>
+          <h3>Vendor Plans</h3>
+          <p>{stats.total} plans · Local and VIP marketplace packages</p>
+        </div>
       </div>
 
-      <div className="card radius-12 p-0">
-        <div className="card-body p-24">
-          <div className="p4u-admin-filter-row gap-12 mb-20">
-            <div className="input-group radius-8 p4u-filter-search" style={{ minWidth: 200, maxWidth: 360, flex: "1 1 240px" }}>
-              <span className="input-group-text bg-white border-end-0"><Icon icon="mdi:magnify" /></span>
-              <input
-                type="search"
-                className="form-control border-start-0 h-40-px"
-                placeholder="Search plans…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                autoComplete="off"
-              />
-            </div>
-            <div className="p4u-admin-filter-row__end">
-              <button
-                type="button"
-                className="btn btn-primary radius-8 d-flex align-items-center gap-8 h-40-px px-16"
-                onClick={() => setModal({ mode: "add", planType: activeTab })}
-              >
-                <Icon icon="mdi:plus" className="text-lg" />
-                Add {tabLabel} Plan
-              </button>
-            </div>
+      <div className="p4u-vendors-tabs" role="tablist">
+        <button type="button" className={activeTab === "local" ? "is-active" : ""} onClick={() => setActiveTab("local")}>
+          Local Plans ({stats.localCount})
+        </button>
+        <button type="button" className={activeTab === "vip" ? "is-active" : ""} onClick={() => setActiveTab("vip")}>
+          VIP Plans ({stats.vipCount})
+        </button>
+      </div>
+
+      <div className="p4u-vendors-stats">
+        <div className="p4u-vendors-stat is-total">
+          <span className="p4u-vendors-stat__icon"><Icon icon="mdi:clipboard-list-outline" /></span>
+          <div>
+            <p className="p4u-vendors-stat__label">Total Plans</p>
+            <p className="p4u-vendors-stat__value">{stats.total}</p>
           </div>
-
-          {error && <div className="alert alert-danger radius-12 mb-16" role="alert">{error}</div>}
-
-          {loading ? (
-            <p className="text-secondary-light mb-0">Loading plans…</p>
-          ) : (
-            <>
-              <div className="table-responsive scroll-sm" style={{ overflowX: "auto" }}>
-                <table className="table bordered-table sm-table mb-0 text-nowrap align-middle" style={{ minWidth: 1100 }}>
-                  <thead>
-                    <tr>
-                      <th>PLAN</th>
-                      <th>PRICE</th>
-                      <th>VALIDITY</th>
-                      <th>VISIBILITY</th>
-                      <th>VENDOR TO P4U COMMISSION</th>
-                      <th>MAX USER REDEMPTION %</th>
-                      <th>PAYMENT</th>
-                      <th>PROMOTIONS</th>
-                      <th>STATUS</th>
-                      <th />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pageSlice.length === 0 ? (
-                      <tr><td colSpan="10" className="text-center py-40 text-secondary-light">No plans found.</td></tr>
-                    ) : (
-                      pageSlice.map((row) => {
-                        const promos = promoPills(row);
-                        const dot = planDotColor(row.planName);
-                        return (
-                          <tr key={row.id}>
-                            <td style={{ minWidth: 200, whiteSpace: "normal" }}>
-                              <div className="d-flex align-items-start gap-10">
-                                <span
-                                  className="flex-shrink-0 radius-circle mt-6"
-                                  style={{ width: 10, height: 10, background: dot }}
-                                  aria-hidden
-                                />
-                                <div>
-                                  <div className="fw-semibold">{row.planName}</div>
-                                  {row.description && (
-                                    <div className="text-secondary-light text-xs mt-4" style={{ maxWidth: 280 }}>
-                                      {String(row.description).replace(/<[^>]+>/g, "").slice(0, 120)}
-                                      {String(row.description).length > 120 ? "…" : ""}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="fw-medium">{formatInr(row.price)}</td>
-                            <td>{row.validityDays} days</td>
-                            <td>{prettyVisibility(row)}</td>
-                            <td>{row.commissionPercent}%</td>
-                            <td>{row.maxUserRedemptionPercent}%</td>
-                            <td>
-                              <span className="px-10 py-4 radius-pill text-xs bg-neutral-100 text-secondary-light text-capitalize">
-                                {row.paymentMode || "both"}
-                              </span>
-                            </td>
-                            <td>
-                              {promos.length === 0 ? (
-                                <span className="text-secondary-light text-sm">None</span>
-                              ) : (
-                                <div className="d-flex flex-wrap gap-6">
-                                  {promos.map((p) => (
-                                    <span key={p} className="px-10 py-4 radius-pill text-xs bg-neutral-100 text-secondary-light">{p}</span>
-                                  ))}
-                                </div>
-                              )}
-                            </td>
-                            <td>
-                              <span className={`px-12 py-4 radius-pill text-xs fw-medium ${row.isActive ? "bg-success-100 text-success-700" : "bg-danger-100 text-danger-700"}`}>
-                                {row.isActive ? "Active" : "Inactive"}
-                              </span>
-                            </td>
-                            <td>
-                              <div className="d-flex align-items-center justify-content-end gap-12">
-                                <button type="button" className="btn btn-link p-0 text-primary-600 text-sm fw-medium text-decoration-none" onClick={() => setModal({ mode: "edit", item: row })}>
-                                  Edit
-                                </button>
-                                <button type="button" className="btn btn-link p-0 text-danger-600 text-sm fw-medium text-decoration-none" onClick={() => void handleDelete(row)}>
-                                  Delete
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="p4u-admin-filter-row align-items-center justify-content-between gap-2 mt-24">
-                <span className="text-secondary-light text-sm">
-                  Showing {pageFrom}–{pageTo} of {filtered.length}
-                </span>
-                <div className="d-flex gap-2 align-items-center">
-                  <button
-                    type="button"
-                    className="page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 h-32-px text-md d-flex align-items-center justify-content-center"
-                    disabled={safePage <= 1}
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    aria-label="Previous page"
-                  >
-                    <Icon icon="ep:d-arrow-left" />
-                  </button>
-                  <span className="page-link fw-semibold radius-8 border-0 h-32-px w-32-px text-md bg-primary-600 text-white d-flex align-items-center justify-content-center mb-0">
-                    {safePage}
-                  </span>
-                  <button
-                    type="button"
-                    className="page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 h-32-px text-md d-flex align-items-center justify-content-center"
-                    disabled={safePage >= totalPages}
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    aria-label="Next page"
-                  >
-                    <Icon icon="ep:d-arrow-right" />
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
         </div>
+        <div className="p4u-vendors-stat is-verified">
+          <span className="p4u-vendors-stat__icon"><Icon icon="mdi:check-decagram-outline" /></span>
+          <div>
+            <p className="p4u-vendors-stat__label">Active</p>
+            <p className="p4u-vendors-stat__value">{stats.activeCount}</p>
+          </div>
+        </div>
+        <div className="p4u-vendors-stat is-pending">
+          <span className="p4u-vendors-stat__icon"><Icon icon="mdi:map-marker-radius-outline" /></span>
+          <div>
+            <p className="p4u-vendors-stat__label">Local</p>
+            <p className="p4u-vendors-stat__value">{stats.localCount}</p>
+          </div>
+        </div>
+        <div className="p4u-vendors-stat is-rejected">
+          <span className="p4u-vendors-stat__icon"><Icon icon="mdi:crown-outline" /></span>
+          <div>
+            <p className="p4u-vendors-stat__label">VIP</p>
+            <p className="p4u-vendors-stat__value">{stats.vipCount}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="p4u-vendors-toolbar">
+        <label className="p4u-vendors-search">
+          <Icon icon="mdi:magnify" />
+          <input
+            type="search"
+            placeholder="Search plans…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            autoComplete="off"
+          />
+        </label>
+        <div className="p4u-vendors-toolbar__actions">
+          <button
+            type="button"
+            className="p4u-vendors-btn-primary"
+            onClick={() => setModal({ mode: "add", planType: activeTab })}
+          >
+            <Icon icon="mdi:plus" />
+            Add {tabLabel} Plan
+          </button>
+        </div>
+      </div>
+
+      {error && <div className="alert alert-danger radius-12 mb-16" role="alert">{error}</div>}
+
+      <div className="p4u-vendors-table-wrap">
+        {loading ? (
+          <p className="text-secondary-light mb-0 p-24">Loading plans…</p>
+        ) : (
+          <>
+            <table className="p4u-vendors-table" style={{ minWidth: 1100 }}>
+              <thead>
+                <tr>
+                  <th>Plan</th>
+                  <th>Price</th>
+                  <th>Validity</th>
+                  <th>Visibility</th>
+                  <th>Vendor → P4U Commission</th>
+                  <th>Max User Redemption %</th>
+                  <th>Payment</th>
+                  <th>Promotions</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pageSlice.length === 0 ? (
+                  <tr><td colSpan={10} className="text-center py-40 text-secondary-light">No plans found.</td></tr>
+                ) : pageSlice.map((row) => {
+                  const promos = promoPills(row);
+                  const dot = planDotColor(row.planName);
+                  return (
+                    <tr key={row.id}>
+                      <td style={{ minWidth: 200, whiteSpace: "normal" }}>
+                        <div className="d-flex align-items-start gap-10">
+                          <span
+                            className="flex-shrink-0 radius-circle mt-6"
+                            style={{ width: 10, height: 10, background: dot }}
+                            aria-hidden
+                          />
+                          <div>
+                            <div className="business-name">{row.planName}</div>
+                            {row.description && (
+                              <div className="business-owner">
+                                {String(row.description).replace(/<[^>]+>/g, "").slice(0, 120)}
+                                {String(row.description).length > 120 ? "…" : ""}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="fw-medium">{formatInr(row.price)}</td>
+                      <td>{row.validityDays} days</td>
+                      <td>{prettyVisibility(row)}</td>
+                      <td>{row.commissionPercent}%</td>
+                      <td>{row.maxUserRedemptionPercent}%</td>
+                      <td>
+                        <span className="p4u-vendor-pill is-pending text-capitalize">{row.paymentMode || "both"}</span>
+                      </td>
+                      <td>
+                        {promos.length === 0 ? (
+                          <span className="text-secondary-light text-sm">None</span>
+                        ) : (
+                          <div className="d-flex flex-wrap gap-6">
+                            {promos.map((p) => (
+                              <span key={p} className="p4u-vendor-pill is-verified">{p}</span>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                      <td>
+                        <span className={`p4u-vendor-pill ${row.isActive ? "is-verified" : "is-rejected"}`}>
+                          {row.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="d-flex align-items-center gap-8">
+                          <button
+                            type="button"
+                            className="p4u-vendors-view-btn"
+                            title="Edit"
+                            onClick={() => setModal({ mode: "edit", item: row })}
+                          >
+                            <Icon icon="mdi:pencil-outline" />
+                          </button>
+                          <button
+                            type="button"
+                            className="p4u-vendors-view-btn"
+                            title="Delete"
+                            style={{ color: "#dc2626" }}
+                            onClick={() => void handleDelete(row)}
+                          >
+                            <Icon icon="mdi:trash-can-outline" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            <div className="p4u-vendors-toolbar" style={{ marginTop: 16, marginBottom: 0 }}>
+              <span className="text-secondary-light text-sm">
+                Showing {pageFrom}–{pageTo} of {filtered.length}
+              </span>
+              <div className="p4u-vendors-toolbar__actions">
+                <button
+                  type="button"
+                  className="p4u-vendors-btn-outline"
+                  disabled={safePage <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  Prev
+                </button>
+                <span className="p4u-vendor-pill is-verified">{safePage}</span>
+                <button
+                  type="button"
+                  className="p4u-vendors-btn-outline"
+                  disabled={safePage >= totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {modal && (
@@ -301,7 +323,7 @@ const VendorPlanListLayer = () => {
           />
         </FormModal>
       )}
-    </>
+    </div>
   );
 };
 
