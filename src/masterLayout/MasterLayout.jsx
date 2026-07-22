@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -49,6 +49,7 @@ const MasterLayout = ({ children }) => {
   const [displayName, setDisplayName] = useState("Super Admin");
   const [displayEmail, setDisplayEmail] = useState("admin@planext4u.com");
   const location = useLocation();
+  const sidebarScrollRef = useRef(null);
 
   const handleLogout = () => {
     logout();
@@ -132,6 +133,36 @@ const MasterLayout = ({ children }) => {
     };
   }, [location.pathname]);
 
+  useLayoutEffect(() => {
+    const container = sidebarScrollRef.current;
+    if (!container) return undefined;
+
+    const saved = Number(sessionStorage.getItem('p4u-admin-sidebar-scroll') || 0);
+    container.scrollTop = Number.isFinite(saved) ? saved : 0;
+
+    const frame = requestAnimationFrame(() => {
+      const active = container.querySelector('a.active-page');
+      if (!active) return;
+      const containerRect = container.getBoundingClientRect();
+      const activeRect = active.getBoundingClientRect();
+      if (activeRect.top < containerRect.top) {
+        container.scrollTop -= containerRect.top - activeRect.top + 12;
+      } else if (activeRect.bottom > containerRect.bottom) {
+        container.scrollTop += activeRect.bottom - containerRect.bottom + 12;
+      }
+      sessionStorage.setItem('p4u-admin-sidebar-scroll', String(container.scrollTop));
+    });
+
+    const rememberScroll = () => {
+      sessionStorage.setItem('p4u-admin-sidebar-scroll', String(container.scrollTop));
+    };
+    container.addEventListener('scroll', rememberScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      rememberScroll();
+      container.removeEventListener('scroll', rememberScroll);
+    };
+  }, [location.pathname]);
   let sidebarControl = () => {
     seSidebarActive(!sidebarActive);
   };
@@ -174,7 +205,7 @@ const MasterLayout = ({ children }) => {
           </Link>
         </div>
 
-        <div className='sidebar-menu-area p4u-sidebar-menu-scroll'>
+        <div ref={sidebarScrollRef} className='sidebar-menu-area p4u-sidebar-menu-scroll'>
           <ul className='sidebar-menu' id='sidebar-menu'>
             
             {/* MAIN */}
