@@ -108,7 +108,12 @@ export default function HomesPropertyUsersLayer() {
               {loading ? <tr><td colSpan={4} className='p4u-property-users-empty'>Loading...</td></tr> : null}
               {!loading ? rows.map((user) => (
                 <tr key={user.id}>
-                  <td><strong>{user.name}</strong></td>
+                  <td>
+                    <div className='p4u-property-users-name'>
+                      <span className='p4u-property-users-avatar' aria-hidden>{String(user.name || 'U').trim().charAt(0).toUpperCase() || 'U'}</span>
+                      <strong>{user.name || 'Owner'}</strong>
+                    </div>
+                  </td>
                   <td><code>{user.id}</code></td>
                   <td><span className='p4u-property-users-count'>{user.listingCount}</span></td>
                   <td>

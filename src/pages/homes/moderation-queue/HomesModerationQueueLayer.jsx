@@ -3,6 +3,7 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { toast } from "react-toastify";
 import { listHomesProperties, moderateHomesProperty } from "../../../lib/api/adminApi";
 import { ApiError } from "../../../lib/api/client";
+import { resolveMediaUrl } from "../../../lib/resolveMediaUrl";
 
 const TABS = [
   { key: "pending", label: "Pending" },
@@ -15,8 +16,34 @@ function money(value) { return `₹${Number(value || 0).toLocaleString("en-IN", 
 function dateLabel(value) { if (!value) return "-"; const d = new Date(value); return Number.isNaN(d.getTime()) ? "-" : d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }); }
 function compactTitle(title) { return title && title.length > 24 ? `${title.slice(0, 22)}...` : title || "Untitled property"; }
 function countForTab(items, key) { if (key === "pending") return items.filter((item) => item.status === "pending").length; if (key === "reported") return items.filter((item) => item.reported).length; if (key === "autoFlagged") return items.filter((item) => item.autoFlagged).length; return 0; }
+
+function firstCover(details = {}, metadata = {}) {
+  const pick = (v) => (typeof v === "string" && v.trim() ? v.trim() : "");
+  for (const c of [details.imageUrl, details.coverImage, details.image_url, details.cover_image, metadata.imageUrl, metadata.coverImage]) {
+    const hit = pick(c);
+    if (hit) return hit;
+  }
+  for (const pool of [details.images, details.photos, metadata.images]) {
+    if (!Array.isArray(pool)) continue;
+    for (const img of pool) {
+      if (typeof img === "string" && img.trim()) return img.trim();
+      if (img && typeof img === "object") {
+        const hit = pick(img.url || img.src || img.path || img.imageUrl || img.image_url);
+        if (hit) return hit;
+      }
+    }
+  }
+  return "";
+}
+
+function photoCountOf(row, details = {}) {
+  const listed = Array.isArray(details.images) ? details.images.filter(Boolean).length : 0;
+  return Math.max(Number(row.photoCount || 0), listed, firstCover(details, row.metadata || {}) ? 1 : 0);
+}
+
 function toUiProperty(row) {
   const details = row.details || {};
+  const cover = firstCover(details, row.metadata || {});
   return {
     id: row.id,
     title: row.title || "Untitled property",
@@ -26,7 +53,7 @@ function toUiProperty(row) {
     property: row.propertyType || "-",
     price: money(row.price),
     bhk: details.bhk ?? "-",
-    area: details.area || "-",
+    area: details.area || details.areaSqft || "-",
     floor: details.floor || "-",
     furnishing: details.furnishing || "-",
     parking: details.parking || "-",
@@ -39,7 +66,8 @@ function toUiProperty(row) {
     deposit: details.deposit ? money(details.deposit) : "-",
     description: details.description || "-",
     amenities: Array.isArray(details.amenities) ? details.amenities : [],
-    photos: Number(row.photoCount || 0),
+    photos: photoCountOf(row, details),
+    coverUrl: resolveMediaUrl(cover),
     submitted: dateLabel(row.submittedAt || row.createdAt),
     status: row.moderationStatus || "pending",
     reported: Boolean(row.isReported),
@@ -93,7 +121,7 @@ export default function HomesModerationQueueLayer() {
       <div className='p4u-homes-tabs' role='tablist' aria-label='Moderation filters'>{TABS.map((item) => <button key={item.key} type='button' className={tab === item.key ? 'active' : ''} onClick={() => setTab(item.key)}>{item.label} ({countForTab(properties, item.key)})</button>)}</div>
       <section className='p4u-homes-table-card'><div className='p4u-homes-toolbar'><label className='p4u-homes-search'><Icon icon='mdi:magnify' /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder='Search...' /></label></div><div className='p4u-homes-table-wrap'><table className='p4u-homes-table'><thead><tr><th aria-label='Select'></th><th>Property</th><th>Type</th><th>Price</th><th>By</th><th>Photos</th><th>Submitted</th><th>Actions</th></tr></thead><tbody>
         {loading ? <tr><td colSpan={8} className='p4u-homes-empty'>Loading...</td></tr> : null}
-        {!loading && filtered.map((item) => <tr key={item.id}><td><input type='checkbox' aria-label={`Select ${item.title}`} /></td><td><button type='button' className='p4u-homes-property-link' onClick={() => setSelected(item)}><strong>{item.shortTitle}</strong><span>{item.address}</span></button></td><td><span className='p4u-homes-type-pill'>{item.type}</span></td><td className='p4u-homes-price'>{item.price}</td><td>{item.role}</td><td><span className='p4u-homes-photo-pill'>{item.photos}</span></td><td>{item.submitted}</td><td><div className='p4u-homes-row-actions'><button type='button' className='is-approve' onClick={() => handleAction(item.id, "approved")}><Icon icon='mdi:check-circle-outline' /> <span>Approve</span></button><button type='button' className='is-reject' onClick={() => handleAction(item.id, "rejected")}><Icon icon='mdi:close-circle-outline' /> <span>Reject</span></button><button type='button' className='is-view' onClick={() => setSelected(item)} aria-label='View property'><Icon icon='mdi:eye-outline' /></button></div></td></tr>)}
+        {!loading && filtered.map((item) => <tr key={item.id}><td><input type='checkbox' aria-label={`Select ${item.title}`} /></td><td><button type='button' className='p4u-homes-property-link' onClick={() => setSelected(item)}><span className='p4u-homes-property-cell'>{item.coverUrl ? <img src={item.coverUrl} alt='' className='p4u-homes-thumb' /> : <span className='p4u-homes-thumb is-empty'><Icon icon='mdi:home-outline' /></span>}<span><strong>{item.shortTitle}</strong><span>{item.address}</span></span></span></button></td><td><span className='p4u-homes-type-pill'>{item.type}</span></td><td className='p4u-homes-price'>{item.price}</td><td>{item.role}</td><td><span className={`p4u-homes-photo-pill${item.photos ? '' : ' is-zero'}`}>{item.photos}</span></td><td>{item.submitted}</td><td><div className='p4u-homes-row-actions'><button type='button' className='is-approve' onClick={() => handleAction(item.id, "approved")}><Icon icon='mdi:check-circle-outline' /> <span>Approve</span></button><button type='button' className='is-reject' onClick={() => handleAction(item.id, "rejected")}><Icon icon='mdi:close-circle-outline' /> <span>Reject</span></button><button type='button' className='is-view' onClick={() => setSelected(item)} aria-label='View property'><Icon icon='mdi:eye-outline' /></button></div></td></tr>)}
         {!loading && filtered.length === 0 ? <tr><td colSpan={8} className='p4u-homes-empty'>No properties found.</td></tr> : null}
       </tbody></table></div><div className='p4u-homes-pagination'><span>Showing {filtered.length ? '1' : '0'}-{filtered.length} of {filtered.length}</span><div><button type='button' aria-label='Previous page'><Icon icon='mdi:chevron-left' /></button><strong>1</strong><button type='button' aria-label='Next page'><Icon icon='mdi:chevron-right' /></button></div></div></section>
       <ModerationModal property={selected} onClose={() => setSelected(null)} onAction={handleAction} />
