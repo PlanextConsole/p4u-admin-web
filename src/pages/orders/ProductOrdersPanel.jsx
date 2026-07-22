@@ -38,6 +38,16 @@ const STATUS_OPTIONS = [
 const ACTIVE_STATUSES = new Set(["placed", "paid", "accepted", "in_progress", "delivered", "pending", "created", "order_await_completion"]);
 const COMPLETED_STATUSES = new Set(["completed"]);
 const DELETED_STATUSES = new Set(["cancelled", "canceled"]);
+const CANCELLABLE_STATUSES = new Set([
+  "created",
+  "placed",
+  "pending",
+  "paid",
+  "accepted",
+  "processing",
+  "in_progress",
+  "new",
+]);
 
 export default function ProductOrdersPanel({ deletedOnly = false }) {
   const [orders, setOrders] = useState([]);
@@ -451,6 +461,7 @@ export default function ProductOrdersPanel({ deletedOnly = false }) {
                   filtered.map((r) => {
                     const pill = productStatusPill(r.status);
                     const isCancelled = DELETED_STATUSES.has((r.status || "").toLowerCase());
+                    const canCancel = CANCELLABLE_STATUSES.has((r.status || "").toLowerCase());
                     return (
                       <tr key={r.order.id}>
                         <td>
@@ -508,7 +519,7 @@ export default function ProductOrdersPanel({ deletedOnly = false }) {
                               type: "cancel",
                               icon: "mdi:cancel",
                               title: "Cancel order",
-                              hidden: isCancelled,
+                              hidden: isCancelled || !canCancel,
                               onClick: () => void cancel(r),
                             },
                           ]}

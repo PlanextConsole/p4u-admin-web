@@ -15,6 +15,16 @@ const STEP_LABELS = {
   completed: "Completed",
 };
 const STATUS_OPTIONS = ["placed", "paid", "accepted", "in_progress", "delivered", "completed", "cancelled"];
+const CANCELLABLE_STATUSES = new Set([
+  "created",
+  "placed",
+  "pending",
+  "paid",
+  "accepted",
+  "processing",
+  "in_progress",
+  "new",
+]);
 
 function parseMeta(m) {
   if (m == null) return {};
@@ -235,7 +245,11 @@ const OrderDetailModal = ({ orderId, initialMode = "view", onClose, onSaved, cus
                 <div className="border border-primary-200 bg-primary-50 radius-8 p-16 mb-16">
                   <label className="form-label text-sm fw-semibold">Update Order Status</label>
                   <select className="form-select radius-8" value={status} onChange={(e) => setStatus(e.target.value)} disabled={saving}>
-                    {STATUS_OPTIONS.map((s) => (
+                    {STATUS_OPTIONS.filter((s) => {
+                      if (s !== "cancelled") return true;
+                      const current = String(order?.status || "").toLowerCase();
+                      return CANCELLABLE_STATUSES.has(current) || current === "cancelled";
+                    }).map((s) => (
                       <option key={s} value={s}>{s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}</option>
                     ))}
                   </select>
