@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { listCashSettlements, listOrders, listVendors } from "../../lib/api/adminApi";
+import { toast } from "react-toastify";
+import { listCashSettlements, listOrders, listVendors, updateSettlement } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import SettlementOrderDetailModal from "./SettlementOrderDetailModal";
 
@@ -139,6 +140,7 @@ const SettlementsListLayer = () => {
   const [toDate, setToDate] = useState("");
   const [page, setPage] = useState(1);
   const [modal, setModal] = useState(null);
+  const [settlingId, setSettlingId] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -253,6 +255,25 @@ const SettlementsListLayer = () => {
   const openOrder = (r) => {
     if (!r.orderId) return;
     setModal({ orderId: r.orderId, vendorName: r.vendorName });
+  };
+
+  const markSettled = async (r) => {
+    if (!r?.row?.id) return;
+    if (!window.confirm(`Mark settlement ${r.settlementId} as settled?`)) return;
+    setSettlingId(r.row.id);
+    try {
+      const meta = parseMeta(r.row.metadata);
+      const updated = await updateSettlement(r.row.id, {
+        status: "settled",
+        metadata: { ...meta, settledAt: new Date().toISOString() },
+      });
+      setRows((prev) => prev.map((row) => (row.id === updated.id ? { ...row, ...updated } : row)));
+      toast.success("Settlement marked as settled.");
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : String(e));
+    } finally {
+      setSettlingId("");
+    }
   };
 
   const exportCsv = () => {
@@ -372,19 +393,33 @@ const SettlementsListLayer = () => {
                             <td>{formatTs(r.createdAt)}</td>
                             <td>{r.settledOn ? formatTs(r.settledOn) : "—"}</td>
                             <td>
-                              {r.orderId ? (
-                                <button
-                                  type="button"
-                                  className="btn btn-link p-0 d-inline-flex align-items-center gap-6 text-secondary-light text-decoration-none"
-                                  onClick={() => openOrder(r)}
-                                  title="View order"
-                                >
-                                  <Icon icon="majesticons:eye-line" className="text-lg" />
-                                  <span className="text-sm">{isSettled ? "Settled" : pill.label}</span>
-                                </button>
-                              ) : (
-                                <span className="text-secondary-light text-sm">—</span>
-                              )}
+                              <div className="d-flex align-items-center gap-8 flex-wrap">
+                                {r.orderId ? (
+                                  <button
+                                    type="button"
+                                    className="btn btn-link p-0 d-inline-flex align-items-center gap-6 text-secondary-light text-decoration-none"
+                                    onClick={() => openOrder(r)}
+                                    title="View order"
+                                  >
+                                    <Icon icon="majesticons:eye-line" className="text-lg" />
+                                    <span className="text-sm">{isSettled ? "Settled" : pill.label}</span>
+                                  </button>
+                                ) : (
+                                  <span className="text-secondary-light text-sm">{isSettled ? "Settled" : "—"}</span>
+                                )}
+                                {!isSettled && r.bucket !== "hold" ? (
+                                  <button
+                                    type="button"
+                                    className="btn btn-sm btn-outline-success radius-8 d-inline-flex align-items-center gap-4"
+                                    onClick={() => void markSettled(r)}
+                                    disabled={settlingId === r.row.id}
+                                    title="Mark settled"
+                                  >
+                                    <Icon icon="mdi:check-circle-outline" />
+                                    {settlingId === r.row.id ? "Saving…" : "Mark settled"}
+                                  </button>
+                                ) : null}
+                              </div>
                             </td>
                           </tr>
                         );

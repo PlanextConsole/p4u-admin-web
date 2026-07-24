@@ -57,6 +57,7 @@ export function productStatusPill(status) {
   const s = (status || "").toLowerCase();
   if (s === "completed" || s === "delivered") return { cls: "p4u-order-pill is-completed", label: "Completed" };
   if (s === "cancelled" || s === "canceled") return { cls: "p4u-order-pill is-cancelled", label: "Cancelled" };
+  if (s === "refunded") return { cls: "p4u-order-pill is-cancelled", label: "Refunded" };
   if (s === "placed" || s === "pending" || s === "created") return { cls: "p4u-order-pill is-placed", label: "Placed" };
   if (s === "paid") return { cls: "p4u-order-pill is-paid", label: "Paid" };
   if (s === "accepted") return { cls: "p4u-order-pill is-accepted", label: "Accepted" };
@@ -65,6 +66,44 @@ export function productStatusPill(status) {
     cls: "p4u-order-pill is-placed",
     label: (status || "Placed").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
   };
+}
+
+/** Normalize paymentMode / paymentStatus from order.metadata for display + filters. */
+export function orderPaymentInfo(meta) {
+  const m = meta && typeof meta === "object" ? meta : {};
+  const modeRaw = String(m.paymentMode || m.payment_mode || "").trim().toLowerCase();
+  const statusRaw = String(m.paymentStatus || m.payment_status || "").trim().toLowerCase();
+  const isCod = modeRaw === "cod" || statusRaw === "cod";
+  const paymentMode = isCod ? "cod" : modeRaw === "online" || modeRaw === "prepaid" || modeRaw === "razorpay" || modeRaw === "gateway"
+    ? "online"
+    : modeRaw || (statusRaw === "paid" || statusRaw === "pending" || statusRaw === "failed" || statusRaw === "refunded" ? "online" : "");
+  const paymentStatus = statusRaw || (isCod ? "cod" : "");
+  return {
+    paymentMode,
+    paymentStatus,
+    isCod,
+    modeLabel: isCod ? "COD" : paymentMode === "online" ? "Online" : (modeRaw ? modeRaw.replace(/_/g, " ") : "—"),
+    statusLabel: paymentStatus
+      ? paymentStatus.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+      : "—",
+  };
+}
+
+/** Whether admin can attempt a product gateway refund for this order. */
+export function canRefundProductOrder(order, meta) {
+  const m = meta && typeof meta === "object" ? meta : {};
+  const status = String(order?.status || "").toLowerCase();
+  if (status === "refunded") return false;
+  const pay = orderPaymentInfo(m);
+  if (pay.isCod) return false;
+  const paymentStatus = pay.paymentStatus;
+  const paid = status === "paid" || paymentStatus === "paid" || paymentStatus === "captured";
+  const cancelled = status === "cancelled" || status === "canceled";
+  const returnReq = m.returnRequest && typeof m.returnRequest === "object" ? m.returnRequest : null;
+  const returnOk = returnReq && ["approved", "received", "refund_processing"].includes(String(returnReq.status || "").toLowerCase());
+  const refundDone = String(returnReq?.refundStatus || m.refundStatus || "").toLowerCase() === "completed";
+  if (refundDone || paymentStatus === "refunded") return false;
+  return Boolean(returnOk || (paid && cancelled) || (paid && status === "paid"));
 }
 
 export function serviceStatusPill(status) {

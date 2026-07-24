@@ -10,6 +10,7 @@ import {
   getOrderStats,
   permanentlyDeleteOrder,
   permanentlyDeleteOrders,
+  refundProductOrder,
 } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
 import OrderDetailModal from "./OrderDetailModal";
@@ -22,6 +23,8 @@ import {
   toCsv,
   orderItemsLabel,
   productStatusPill,
+  orderPaymentInfo,
+  canRefundProductOrder,
 } from "./orderUiUtils";
 
 const STATUS_OPTIONS = [
@@ -33,6 +36,12 @@ const STATUS_OPTIONS = [
   { value: "delivered", label: "Delivered" },
   { value: "completed", label: "Completed" },
   { value: "cancelled", label: "Cancelled" },
+];
+
+const PAYMENT_MODE_OPTIONS = [
+  { value: "", label: "Payment" },
+  { value: "cod", label: "COD" },
+  { value: "online", label: "Online" },
 ];
 
 const ACTIVE_STATUSES = new Set(["placed", "paid", "accepted", "in_progress", "delivered", "pending", "created", "order_await_completion"]);
@@ -58,6 +67,7 @@ export default function ProductOrdersPanel({ deletedOnly = false }) {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [paymentModeFilter, setPaymentModeFilter] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [vendorFilter, setVendorFilter] = useState("");
@@ -72,6 +82,7 @@ export default function ProductOrdersPanel({ deletedOnly = false }) {
   const [globalStats, setGlobalStats] = useState(null);
   const [selected, setSelected] = useState(() => new Set());
   const [deleting, setDeleting] = useState(false);
+  const [refundingId, setRefundingId] = useState("");
 
   useEffect(() => {
     listVendors({ limit: 200, offset: 0 }).then((r) => setVendors(r.items || [])).catch(() => {});
@@ -85,11 +96,24 @@ export default function ProductOrdersPanel({ deletedOnly = false }) {
     getOrderStats(params).then((s) => setGlobalStats(s)).catch(() => setGlobalStats(null));
   }, [statusFilter, fromDate, toDate]);
 
+  useEffect(() => {
+    setOffset(0);
+  }, [statusFilter, paymentModeFilter, fromDate, toDate, deletedOnly]);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const res = await listOrders({ limit, offset });
+      const params = { limit, offset };
+      if (statusFilter) {
+        params.status = statusFilter;
+      } else if (deletedOnly) {
+        params.status = "cancelled";
+      }
+      if (fromDate) params.fromDate = fromDate;
+      if (toDate) params.toDate = toDate;
+      if (paymentModeFilter) params.paymentMode = paymentModeFilter;
+      const res = await listOrders(params);
       setOrders(res.items || []);
       setTotal(typeof res.total === "number" ? res.total : 0);
     } catch (e) {
@@ -97,7 +121,7 @@ export default function ProductOrdersPanel({ deletedOnly = false }) {
     } finally {
       setLoading(false);
     }
-  }, [limit, offset]);
+  }, [limit, offset, statusFilter, paymentModeFilter, fromDate, toDate, deletedOnly]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -158,9 +182,11 @@ export default function ProductOrdersPanel({ deletedOnly = false }) {
     const vendorName = vendorMap[o.vendorId] || meta.vendorName || "—";
     const vendorRef = vendorRefById[o.vendorId] || displayRef("VEND", o.vendorId);
     const totalAmt = Number(o.totalAmount || 0) || 0;
+    const payment = orderPaymentInfo(meta);
     return {
       order: o,
       meta,
+      payment,
       customerName,
       customerRef,
       vendorName,
@@ -177,20 +203,10 @@ export default function ProductOrdersPanel({ deletedOnly = false }) {
     const s = (r.status || "").toLowerCase();
     if (deletedOnly) {
       if (!DELETED_STATUSES.has(s)) return false;
-    } else if (DELETED_STATUSES.has(s)) {
+    } else if (DELETED_STATUSES.has(s) && !statusFilter) {
       return false;
     }
-    if (statusFilter && s !== statusFilter) return false;
-    if (fromDate) {
-      const d = new Date(r.createdAt);
-      if (isNaN(d) || d < new Date(fromDate)) return false;
-    }
-    if (toDate) {
-      const d = new Date(r.createdAt);
-      const end = new Date(toDate);
-      end.setHours(23, 59, 59, 999);
-      if (isNaN(d) || d > end) return false;
-    }
+    // status / dates / paymentMode applied server-side; keep client filters for search & local fields
     if (vendorFilter.trim()) {
       const q = vendorFilter.toLowerCase();
       if (!r.vendorName.toLowerCase().includes(q) && !r.vendorRef.toLowerCase().includes(q)) return false;
@@ -218,7 +234,7 @@ export default function ProductOrdersPanel({ deletedOnly = false }) {
       );
     }
     return true;
-  }), [enriched, deletedOnly, statusFilter, fromDate, toDate, vendorFilter, itemFilter, customerFilter, minPrice, maxPrice, search, customerById]);
+  }), [enriched, deletedOnly, statusFilter, vendorFilter, itemFilter, customerFilter, minPrice, maxPrice, search, customerById]);
 
   const selectedCount = filtered.filter((r) => selected.has(r.order.id)).length;
 
@@ -251,6 +267,21 @@ export default function ProductOrdersPanel({ deletedOnly = false }) {
       toast.success("Order cancelled.");
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : String(e));
+    }
+  };
+
+  const refund = async (r) => {
+    const ref = r.order.orderRef || r.order.id;
+    if (!window.confirm(`Issue refund for order ${ref}?`)) return;
+    setRefundingId(r.order.id);
+    try {
+      await refundProductOrder(r.order.id);
+      toast.success("Refund submitted.");
+      await load();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : String(e));
+    } finally {
+      setRefundingId("");
     }
   };
 
@@ -295,7 +326,7 @@ export default function ProductOrdersPanel({ deletedOnly = false }) {
   };
 
   const exportCsv = () => {
-    const header = ["Order ID", "Customer", "Customer Ref", "Vendor", "Vendor Ref", "Items", "Total", "Status", "Created", "Updated"];
+    const header = ["Order ID", "Customer", "Customer Ref", "Vendor", "Vendor Ref", "Items", "Total", "Status", "Payment Mode", "Payment Status", "Created", "Updated"];
     const lines = filtered.map((r) => [
       r.order.orderRef || r.order.id,
       r.customerName,
@@ -305,6 +336,8 @@ export default function ProductOrdersPanel({ deletedOnly = false }) {
       r.itemsLabel,
       r.total,
       r.status,
+      r.payment.modeLabel,
+      r.payment.statusLabel,
       formatTs(r.createdAt),
       formatTs(r.updatedAt),
     ]);
@@ -396,6 +429,11 @@ export default function ProductOrdersPanel({ deletedOnly = false }) {
             <option key={s.value || "all"} value={s.value}>{s.label}</option>
           ))}
         </select>
+        <select value={paymentModeFilter} onChange={(e) => setPaymentModeFilter(e.target.value)} aria-label="Filter payment mode">
+          {PAYMENT_MODE_OPTIONS.map((s) => (
+            <option key={s.value || "all-pay"} value={s.value}>{s.label}</option>
+          ))}
+        </select>
         <label className="p4u-orders-date">
           <Icon icon="mdi:calendar-outline" />
           <span>From Date</span>
@@ -448,6 +486,7 @@ export default function ProductOrdersPanel({ deletedOnly = false }) {
                   <th scope="col">Vendor</th>
                   <th scope="col">Items</th>
                   <th scope="col">Total</th>
+                  <th scope="col">Payment</th>
                   <th scope="col">Status</th>
                   <th scope="col">Created</th>
                   <th scope="col">Updated</th>
@@ -456,12 +495,13 @@ export default function ProductOrdersPanel({ deletedOnly = false }) {
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                  <tr><td colSpan="10" className="text-center py-40 text-secondary-light">No orders found.</td></tr>
+                  <tr><td colSpan="11" className="text-center py-40 text-secondary-light">No orders found.</td></tr>
                 ) : (
                   filtered.map((r) => {
                     const pill = productStatusPill(r.status);
                     const isCancelled = DELETED_STATUSES.has((r.status || "").toLowerCase());
                     const canCancel = CANCELLABLE_STATUSES.has((r.status || "").toLowerCase());
+                    const showRefund = canRefundProductOrder(r.order, r.meta);
                     return (
                       <tr key={r.order.id}>
                         <td>
@@ -484,6 +524,16 @@ export default function ProductOrdersPanel({ deletedOnly = false }) {
                         </td>
                         <td>{r.itemsLabel}</td>
                         <td className="order-total">{formatMoney(r.total)}</td>
+                        <td>
+                          <div className="d-flex flex-column gap-4 align-items-start">
+                            {r.payment.isCod ? (
+                              <span className="px-8 py-2 radius-pill text-xs fw-semibold bg-warning-100 text-warning-700">COD</span>
+                            ) : (
+                              <span className="text-sm fw-medium">{r.payment.modeLabel}</span>
+                            )}
+                            <span className="text-xs text-secondary-light">{r.payment.statusLabel}</span>
+                          </div>
+                        </td>
                         <td><span className={pill.cls}>{pill.label}</span></td>
                         <td>{formatTs(r.createdAt)}</td>
                         <td>{formatTs(r.updatedAt)}</td>
@@ -506,6 +556,15 @@ export default function ProductOrdersPanel({ deletedOnly = false }) {
                                 customerName: r.customerName,
                                 vendorName: r.vendorName,
                               }),
+                            },
+                            {
+                              type: "delete",
+                              icon: "mdi:cash-refund",
+                              title: "Refund",
+                              className: "bg-warning-focus bg-hover-warning-200 text-warning-600",
+                              hidden: !showRefund,
+                              disabled: refundingId === r.order.id,
+                              onClick: () => void refund(r),
                             },
                             {
                               type: "delete",

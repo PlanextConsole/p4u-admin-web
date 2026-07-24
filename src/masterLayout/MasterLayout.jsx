@@ -463,6 +463,12 @@ const MasterLayout = ({ children }) => {
               </NavLink>
             </li>
             <li>
+              <NavLink to='/coupons' className={sidebarNavClass}>
+                <Icon icon='mdi:ticket-percent-outline' className='menu-icon' />
+                <span>Coupons</span>
+              </NavLink>
+            </li>
+            <li>
               <NavLink to='/points' className={sidebarNavClass}>
                 <Icon icon='mdi:star-circle-outline' className='menu-icon' />
                 <span>Points</span>

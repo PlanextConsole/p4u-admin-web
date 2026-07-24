@@ -405,6 +405,11 @@ export function updateOrder(id, body) {
   return api.patch(`/api/admin/orders/individual/${encodeURIComponent(id)}`, body);
 }
 
+/** Product order refund via commerce gateway (requires approved return / paid order). */
+export function refundProductOrder(orderId) {
+  return api.post(`/api/v1/commerce/admin/orders/${encodeURIComponent(orderId)}/refund`, {});
+}
+
 export function permanentlyDeleteOrder(id) {
   return api.delete(`/api/admin/orders/individual/${encodeURIComponent(id)}/permanent`);
 }

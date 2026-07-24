@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { toast } from "react-toastify";
-import { getOrder, updateOrder } from "../../lib/api/adminApi";
+import { getOrder, updateOrder, refundProductOrder } from "../../lib/api/adminApi";
 import { ApiError } from "../../lib/api/client";
+import { canRefundProductOrder, orderPaymentInfo } from "./orderUiUtils";
 
 const STEPS = ["placed", "paid", "accepted", "in_progress", "shipped", "delivered", "completed"];
 const STEP_LABELS = {
@@ -44,6 +45,7 @@ function statusPill(status) {
   const s = (status || "").toLowerCase();
   if (s === "completed" || s === "delivered") return { cls: "bg-success-100 text-success-700", label: "Completed" };
   if (s === "cancelled" || s === "canceled") return { cls: "bg-danger-100 text-danger-700", label: "Cancelled" };
+  if (s === "refunded") return { cls: "bg-danger-100 text-danger-700", label: "Refunded" };
   if (s === "paid") return { cls: "bg-info-100 text-info-700", label: "Paid" };
   if (s === "accepted") return { cls: "bg-info-100 text-info-700", label: "Accepted" };
   if (s === "in_progress") return { cls: "bg-warning-100 text-warning-700", label: "In Progress" };
@@ -68,6 +70,7 @@ const OrderDetailModal = ({ orderId, initialMode = "view", onClose, onSaved, cus
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [refunding, setRefunding] = useState(false);
   const [status, setStatus] = useState("");
 
   useEffect(() => {
@@ -82,6 +85,8 @@ const OrderDetailModal = ({ orderId, initialMode = "view", onClose, onSaved, cus
   }, [orderId]);
 
   const meta = useMemo(() => parseMeta(order?.metadata), [order]);
+  const payment = useMemo(() => orderPaymentInfo(meta), [meta]);
+  const showRefund = useMemo(() => canRefundProductOrder(order, meta), [order, meta]);
   const items = useMemo(() => {
     const r = meta.lines ?? meta.items ?? meta.lineItems ?? meta.orderItems;
     return Array.isArray(r) ? r : [];
@@ -116,6 +121,23 @@ const OrderDetailModal = ({ orderId, initialMode = "view", onClose, onSaved, cus
     }
   };
 
+  const refund = async () => {
+    if (!orderId) return;
+    if (!window.confirm(`Issue refund for order ${order?.orderRef || orderId}?`)) return;
+    setRefunding(true);
+    try {
+      await refundProductOrder(orderId);
+      toast.success("Refund submitted.");
+      const refreshed = await getOrder(orderId);
+      setOrder(refreshed);
+      onSaved && onSaved(refreshed);
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : String(e));
+    } finally {
+      setRefunding(false);
+    }
+  };
+
   return (
     <div
       className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-16 p4u-order-modal-backdrop"
@@ -142,8 +164,15 @@ const OrderDetailModal = ({ orderId, initialMode = "view", onClose, onSaved, cus
                   <div>
                     <h4 className="fw-bold mb-0">{order.orderRef || order.id}</h4>
                     <span className="text-secondary-light text-sm">{formatDate(order.createdAt)}</span>
-                    <div className="mt-4">
+                    <div className="mt-4 d-flex flex-wrap gap-6 align-items-center">
                       <span className={`px-12 py-4 radius-pill text-xs fw-medium ${pill.cls}`}>{pill.label}</span>
+                      {payment.isCod ? (
+                        <span className="px-12 py-4 radius-pill text-xs fw-semibold bg-warning-100 text-warning-700">COD</span>
+                      ) : null}
+                      <span className="text-xs text-secondary-light">
+                        {payment.modeLabel}
+                        {payment.statusLabel !== "—" ? ` · ${payment.statusLabel}` : ""}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -230,6 +259,14 @@ const OrderDetailModal = ({ orderId, initialMode = "view", onClose, onSaved, cus
                   <span className="fw-bold">₹{grandTotal.toLocaleString("en-IN")}</span>
                 </div>
                 <div className="d-flex justify-content-between mt-8">
+                  <span className="text-secondary-light">Payment Mode</span>
+                  <span className="text-secondary-light text-sm">{payment.modeLabel}</span>
+                </div>
+                <div className="d-flex justify-content-between mt-8">
+                  <span className="text-secondary-light">Payment Status</span>
+                  <span className="text-secondary-light text-sm">{payment.statusLabel}</span>
+                </div>
+                <div className="d-flex justify-content-between mt-8">
                   <span className="text-secondary-light">Payment Ref ID</span>
                   <span className="text-secondary-light text-sm">{paymentRef}</span>
                 </div>
@@ -256,7 +293,17 @@ const OrderDetailModal = ({ orderId, initialMode = "view", onClose, onSaved, cus
                 </div>
               )}
 
-              <div className="d-flex justify-content-end gap-12">
+              <div className="d-flex justify-content-end gap-12 flex-wrap">
+                {showRefund && (
+                  <button
+                    type="button"
+                    className="btn btn-outline-warning radius-8 px-24 py-8"
+                    onClick={() => void refund()}
+                    disabled={refunding || saving}
+                  >
+                    {refunding ? "Refunding..." : "Refund"}
+                  </button>
+                )}
                 {mode === "view" ? (
                   <>
                     <button type="button" className="btn btn-outline-secondary radius-8 px-24 py-8" onClick={onClose}>Close</button>
